@@ -51,6 +51,8 @@ target_sources(xrGame PRIVATE
     ActorHelmet.h
     ActorBackpack.cpp
     ActorBackpack.h
+    ActorBelt.cpp
+    ActorBelt.h
     ActorInput.cpp
     actor_input_handler.cpp
     actor_input_handler.h
@@ -2276,6 +2278,8 @@ target_sources(xrGame PRIVATE
     ui/UIActorStateInfo.h
     ui/ui_af_params.cpp
     ui/ui_af_params.h
+    ui/UIAmmoInfo.cpp
+    ui/UIAmmoInfo.h
     ui/UIArtefactPanel.cpp
     ui/UIArtefactPanel.h
     ui/UIBoosterInfo.cpp

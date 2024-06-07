@@ -20,6 +20,15 @@ enum EBoostParams
     eBoostRadiationProtection,
     eBoostTelepaticProtection,
     eBoostChemicalBurnProtection,
+    eBoostGraveImmunity,
+    eBoostHealthIncrease,
+    eBoostPowerIncrease,
+    eBoostSniper,
+    eBoostDoubleShot,
+    eBoostSpeedShot,
+    eBoostSpeedReload,
+    eBoostMoveSpeedIncrease,
+    eBoostJumpIncrease,
     eBoostBurnImmunity,
     eBoostShockImmunity,
     eBoostRadiationImmunity,
@@ -44,6 +53,15 @@ static const pcstr ef_boosters_section_names[] =
     "boost_radiation_protection",
     "boost_telepat_protection",
     "boost_chemburn_protection",
+    "boost_grave_immunity",
+    "boost_health_increase",
+    "boost_power_increase",
+    "boost_sniper",
+    "boost_double_shot",
+    "boost_speed_shot",
+    "boost_speed_reload",
+    "boost_movespeed_increase",
+    "boost_jump_increase",
     "boost_burn_immunity",
     "boost_shock_immunity",
     "boost_radiation_immunity",
@@ -52,7 +70,7 @@ static const pcstr ef_boosters_section_names[] =
     "boost_explosion_immunity",
     "boost_strike_immunity",
     "boost_fire_wound_immunity",
-    "boost_wound_immunity"
+    "boost_wound_immunity",
 };
 
 struct SBooster
@@ -134,7 +152,7 @@ public:
     IC void SetMaxPower(const float val)
     {
         m_fPowerMax = val;
-        clamp(m_fPowerMax, 0.1f, 1.0f);
+        clamp(m_fPowerMax, 0.1f, 100.0f);
     };
     IC float GetMaxPower() const { return m_fPowerMax; };
     void ChangeBleeding(const float percent);
@@ -242,6 +260,15 @@ protected:
     float m_fBoostRadiationProtection;
     float m_fBoostTelepaticProtection;
     float m_fBoostChemicalBurnProtection;
+    float m_fBoostGraveImmunity;
+    float m_fBoostHealthIncrease;
+    float m_fBoostPowerIncrease;
+    float m_fBoostSniper;
+    float m_fBoostDoubleShot;
+    float m_fBoostSpeedShot;
+    float m_fBoostSpeedReload;
+    float m_fBoostMoveSpeedIncrease;
+    float m_fBoostJumpIncrease;
 
     //потеря здоровья от последнего хита
     float m_fHealthLost;

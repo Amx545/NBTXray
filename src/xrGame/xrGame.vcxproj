@@ -120,6 +120,9 @@
     <ClInclude Include="ActivatingCharCollisionDelay.h" />
     <ClInclude Include="Actor.h" />
     <ClInclude Include="ActorAnimation.h" />
+    <ClInclude Include="ActorBelt.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="ActorCondition.h" />
     <ClInclude Include="ActorEffector.h" />
     <ClInclude Include="ActorHelmet.h" />
@@ -1305,6 +1308,9 @@
     <ClInclude Include="ui\UIActorInfo.h" />
     <ClInclude Include="ui\UIActorMenu.h" />
     <ClInclude Include="ui\UIActorStateInfo.h" />
+    <ClInclude Include="ui\UIAmmoInfo.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="ui\UIArtefactPanel.h" />
     <ClInclude Include="ui\UIBoosterInfo.h" />
     <ClInclude Include="ui\UIBuyWeaponTab.h" />
@@ -1611,6 +1617,9 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <ClCompile Include="ActorAnimation.cpp" />
+    <ClCompile Include="ActorBelt.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="ActorCameras.cpp" />
     <ClCompile Include="ActorCondition.cpp">
       <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
@@ -3225,6 +3234,7 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <ClCompile Include="ui\UIActorStateInfo.cpp" />
+    <ClCompile Include="ui\UIAmmoInfo.cpp" />
     <ClCompile Include="ui\UIArtefactPanel.cpp" />
     <ClCompile Include="ui\UIBoosterInfo.cpp" />
     <ClCompile Include="ui\UIBuyWeaponTab.cpp" />
@@ -3429,6 +3439,7 @@
     <ClCompile Include="WeaponStatMgunIR.cpp" />
     <ClCompile Include="WeaponSVD.cpp" />
     <ClCompile Include="WeaponUpgrade.cpp" />
+    <ClCompile Include="WeaponUSP45.cpp" />
     <ClCompile Include="WeaponVal.cpp" />
     <ClCompile Include="WeaponVintorez.cpp" />
     <ClCompile Include="weapon_ammo_dump_impl.cpp" />

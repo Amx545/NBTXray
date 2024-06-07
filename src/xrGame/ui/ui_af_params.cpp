@@ -229,6 +229,7 @@ UIArtefactParamItem::InitResult UIArtefactParamItem::Init(CUIXml& xml, pcstr sec
         VERIFY(m_texture_plus.size());
     }
     xml.SetLocalRoot(base_node);
+    Log(" ui_ammo_LOAD_Normal ");
     return InitResult::Normal;
 }
 
@@ -249,6 +250,7 @@ UIArtefactParamItem::InitResult UIArtefactParamItem::InitPlain(CUIXml& xml, pcst
     AttachChild(m_value);
     m_value->Show(false); // hack
 
+    Log(" ui_ammo_LOAD_Plain ");
     return InitResult::Plain;
 }
 

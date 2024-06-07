@@ -191,8 +191,8 @@ bool CWeaponMagazinedWGrenade::Action(u16 cmd, u32 flags)
         {
             if (iAmmoElapsed)
                 LaunchGrenade();
-            else
-                Reload();
+            /** else
+                Reload();*/
 
             if (GetState() == eIdle)
                 OnEmptyClick();
@@ -429,12 +429,12 @@ void CWeaponMagazinedWGrenade::OnAnimationEnd(u32 state)
     case eSwitch: { SwitchState(eIdle);
     }
     break;
-    case eFire:
+    /** case eFire :
     {
         if (m_bGrenadeMode)
             Reload();
     }
-    break;
+    break;*/
     }
     inherited::OnAnimationEnd(state);
 }
@@ -949,6 +949,7 @@ bool CWeaponMagazinedWGrenade::GetBriefInfo(II_BriefInfo& info)
         info.fmj_ammo._set("--");
         info.ap_ammo._set("--");
         info.third_ammo._set("--"); //Alundaio
+        info.actual_ammo._set("--");
         info.total_ammo = "--";
     }
     else
@@ -957,6 +958,7 @@ bool CWeaponMagazinedWGrenade::GetBriefInfo(II_BriefInfo& info)
         info.fmj_ammo._set("");
         info.ap_ammo._set("");
         info.third_ammo._set("");
+        info.actual_ammo._set("");
 
         int total = 0;
         if (at_size >= 1)
@@ -980,6 +982,11 @@ bool CWeaponMagazinedWGrenade::GetBriefInfo(II_BriefInfo& info)
             info.third_ammo._set(int_str);
             total += third;
         }
+        if (at_size >= 4)
+        {
+            const int four = m_bGrenadeMode ? GetAmmoCount2(3) : GetAmmoCount(3);
+            total += four;
+        }
 
         xr_sprintf(int_str, "%d", total);
         info.total_ammo = int_str;
@@ -991,12 +998,18 @@ bool CWeaponMagazinedWGrenade::GetBriefInfo(II_BriefInfo& info)
         LPCSTR ammo_type = m_ammoTypes[m_magazine.back().m_LocalAmmoType].c_str();
         info.name._set(StringTable().translate(pSettings->r_string(ammo_type, "inv_name_short")));
         info.icon._set(ammo_type);
+        const int curammo = GetAmmoCount(m_magazine.back().m_LocalAmmoType);
+        xr_sprintf(int_str, "%d", curammo);
+        info.actual_ammo = int_str;
     }
     else
     {
         LPCSTR ammo_type = m_ammoTypes[m_ammoType].c_str();
         info.name._set(StringTable().translate(pSettings->r_string(ammo_type, "inv_name_short")));
         info.icon._set(ammo_type);
+        const int curammo = GetAmmoCount(m_ammoType);
+        xr_sprintf(int_str, "%d", curammo);
+        info.actual_ammo = int_str;
     }
 
     if (!IsGrenadeLauncherAttached())

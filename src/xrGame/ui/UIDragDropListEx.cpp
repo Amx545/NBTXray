@@ -4,6 +4,7 @@
 #include "Common/object_broker.h"
 #include "UICellItem.h"
 #include "xrUICore/Cursor/UICursor.h"
+#include "InventoryOwner.h"
 //Alundaio
 #include "Inventory.h"
 //-Alundaio
@@ -26,6 +27,8 @@ CUIDragDropListEx::CUIDragDropListEx() : CUIWindow(CUIDragDropListEx::GetDebugTy
     m_vScrollBar->SetAutoDelete(true);
     m_selected_item = nullptr;
     m_bConditionProgBarVisible = false;
+    af_count = 0;
+    bHelm = true;
 
     SetCellSize(Ivector2().set(50, 50));
     SetCellsCapacity(Ivector2().set(0, 0));
@@ -194,6 +197,7 @@ Ivector2 CUIDragDropListEx::CalculateCapacity(int desiredCells)
         return { 0, 0 };
 
     const Ivector2& cap = m_orig_cell_capacity;
+    return cap;
     if (cap.x > 1 && cap.y > 1) // oh, ok..
     {
         if (cap.x == cap.y) // simple
@@ -206,9 +210,9 @@ Ivector2 CUIDragDropListEx::CalculateCapacity(int desiredCells)
         }
         else if (cap.x > cap.y) // horizontal
         {
-            const int count = desiredCells / cap.y;
+            const int count = desiredCells / cap.x;
             const bool beltCellsAreEven = desiredCells % cap.y == 0;
-            R_ASSERT2(beltCellsAreEven, "Wrong max_belt value or wrong cells markup.");
+            //R_ASSERT2(beltCellsAreEven, strcat);
             return { count, cap.y };
         }
         else // vertical
@@ -1041,14 +1045,36 @@ void CUICellContainer::Draw()
         {
             const Fvector2 oldPos = highlighter->GetWndPos();
             const Fvector2& spacing = m_pParentDragDropList->GetHighlighterSpacing();
-            for (int x = tgt_cells.x1; x <= tgt_cells.x2; x++)
+            const u32 af_count = m_pParentDragDropList->GetAFCount();
+            if (af_count > 0)
             {
+                int i = 0;
                 for (int y = tgt_cells.y1; y <= tgt_cells.y2; y++)
                 {
-                    const Fvector2 newPos = { oldPos.x + spacing.x * x, oldPos.y + spacing.y * y };
-                    highlighter->SetWndPos(newPos);
-                    highlighter->Draw();
+                    for (int x = tgt_cells.x1; x <= tgt_cells.x2; x++)
+                    {
+                        if (i < af_count)
+                        {
+                            const Fvector2 newPos = {oldPos.x + spacing.x * x, oldPos.y + spacing.y * y};
+                            highlighter->SetWndPos(newPos);
+                            highlighter->Draw();
+                            i++;
+                        }
+                    }
                 }
+            }
+            else
+            {
+                for (int x = tgt_cells.x1; x <= tgt_cells.x2; x++)
+                {
+                    for (int y = tgt_cells.y1; y <= tgt_cells.y2; y++)
+                    {
+                        const Fvector2 newPos = {oldPos.x + spacing.x * x, oldPos.y + spacing.y * y};
+                        highlighter->SetWndPos(newPos);
+                        highlighter->Draw();
+                    }
+                }
+
             }
             highlighter->SetWndPos(oldPos);
         }
@@ -1142,8 +1168,10 @@ void CUICellContainer::DrawBlocker() const
     if (!maxCapacity.x && !maxCapacity.y)
         return;
 
-    const Ivector2& capacity = m_pParentDragDropList->CellsCapacity();
-    if (maxCapacity.x <= capacity.x && maxCapacity.y <= capacity.y)
+    //const Ivector2& capacity = m_pParentDragDropList->CellsCapacity();
+    //if (maxCapacity.x <= capacity.x && maxCapacity.y <= capacity.y)
+       //return;
+    if (!m_pParentDragDropList->GetHelmStatus())
         return;
 
     if (m_pParentDragDropList->GetVirtualCells())
@@ -1154,7 +1182,7 @@ void CUICellContainer::DrawBlocker() const
     {
         Irect tgt_cells;
         // Prepare X
-        if (capacity.x < maxCapacity.x)
+        /** if (capacity.x < maxCapacity.x)
         {
             tgt_cells.x1 = capacity.x;
             tgt_cells.x2 = maxCapacity.x;
@@ -1174,17 +1202,41 @@ void CUICellContainer::DrawBlocker() const
         {
             tgt_cells.y1 = maxCapacity.y - 1;
             tgt_cells.y2 = maxCapacity.y;
-        }
+        }*/
+        tgt_cells.y1 = 0;
+        tgt_cells.y2 = maxCapacity.y;
+        tgt_cells.x1 = 0;
+        tgt_cells.x2 = maxCapacity.x;
         const Fvector2 oldPos = blocker->GetWndPos();
         const Fvector2& spacing = m_pParentDragDropList->GetBlockerSpacing();
-
-        for (int x = tgt_cells.x1; x < tgt_cells.x2; x++)
+        const u32 af_count = m_pParentDragDropList->GetAFCount();
+        if (af_count > 0)
         {
+            int i = 0;
             for (int y = tgt_cells.y1; y < tgt_cells.y2; y++)
             {
-                const Fvector2 newPos = { oldPos.x + spacing.x * x, oldPos.y + spacing.y * y };
-                blocker->SetWndPos(newPos);
-                blocker->Draw();
+                for (int x = tgt_cells.x1; x < tgt_cells.x2; x++)
+                {
+                    if (i >= af_count)
+                    {
+                        const Fvector2 newPos = {oldPos.x + spacing.x * x, oldPos.y + spacing.y * y};
+                        blocker->SetWndPos(newPos);
+                        blocker->Draw();
+                    }
+                    i++;
+                }
+            }
+        }
+        else
+        {
+            for (int x = tgt_cells.x1; x < tgt_cells.x2; x++)
+            {
+                for (int y = tgt_cells.y1; y < tgt_cells.y2; y++)
+                {
+                    const Fvector2 newPos = {oldPos.x + spacing.x * x, oldPos.y + spacing.y * y};
+                    blocker->SetWndPos(newPos);
+                    blocker->Draw();
+                }
             }
         }
         blocker->SetWndPos(oldPos);

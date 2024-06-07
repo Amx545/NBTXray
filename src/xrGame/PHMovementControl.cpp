@@ -1580,6 +1580,7 @@ void CPHMovementControl::GetCharacterVelocity(Fvector& velocity)
 }
 
 void CPHMovementControl::SetJumpUpVelocity(float velocity) { m_character->SetJupmUpVelocity(velocity); }
+float CPHMovementControl::GetJumpUpVelocity() { return m_character->GetJupmUpVelocity(); }
 void CPHMovementControl::EnableCharacter()
 {
     if (m_character && m_character->b_exist)

@@ -50,7 +50,16 @@ SCRIPT_EXPORT(CEntityCondition, (),
                 value("eBoostExplImmunity", int(EBoostParams::eBoostExplImmunity)),
                 value("eBoostStrikeImmunity", int(EBoostParams::eBoostStrikeImmunity)),
                 value("eBoostFireWoundImmunity", int(EBoostParams::eBoostFireWoundImmunity)),
-                value("eBoostWoundImmunity", int(EBoostParams::eBoostWoundImmunity))
+                value("eBoostWoundImmunity", int(EBoostParams::eBoostWoundImmunity)),
+                value("eBoostGraveImmunity", int(EBoostParams::eBoostGraveImmunity)),
+                value("eBoostHealthIncrease", int(EBoostParams::eBoostHealthIncrease)),
+                value("eBoostPowerIncrease", int(EBoostParams::eBoostPowerIncrease)),
+                value("eBoostSniper", int(EBoostParams::eBoostSniper)),
+                value("eBoostDoubleShot", int(EBoostParams::eBoostDoubleShot)),
+                value("eBoostSpeedShot", int(EBoostParams::eBoostSpeedShot)),
+                value("eBoostSpeedReload", int(EBoostParams::eBoostSpeedReload)),
+                value("eBoostMoveSpeedIncrease", int(EBoostParams::eBoostMoveSpeedIncrease)),
+                value("eBoostJumpIncrease", int(EBoostParams::eBoostJumpIncrease))
             ]
     ];
 });
@@ -101,6 +110,15 @@ SCRIPT_EXPORT(CActorCondition, (CEntityCondition),
             .def("BoostRadiationProtection", &CActorCondition::BoostRadiationProtection)
             .def("BoostTelepaticProtection", &CActorCondition::BoostTelepaticProtection)
             .def("BoostChemicalBurnProtection", &CActorCondition::BoostChemicalBurnProtection)
+            .def("BoostGraveImmunity", &CActorCondition::BoostGraveImmunity)
+            .def("BoostHealthIncrease", &CActorCondition::BoostHealthIncrease)
+            .def("BoostPowerIncrease", &CActorCondition::BoostPowerIncrease)
+            .def("BoostSniper", &CActorCondition::BoostSniper)
+            .def("BoostDoubleShot", &CActorCondition::BoostDoubleShot)
+            .def("BoostSpeedShot", &CActorCondition::BoostSpeedShot)
+            .def("BoostSpeedReload", &CActorCondition::BoostSpeedReload)
+            .def("BoostMoveSpeedIncrease", &CActorCondition::BoostMoveSpeedIncrease)
+            .def("BoostJumpIncrease", &CActorCondition::BoostJumpIncrease)
             .def("IsLimping", &CActorCondition::IsLimping)
             .def("IsCantWalk", &CActorCondition::IsCantWalk)
             .def("IsCantWalkWeight", &CActorCondition::IsCantWalkWeight)

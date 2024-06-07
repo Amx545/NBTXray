@@ -73,12 +73,26 @@ public:
     void BoostRadiationProtection(const float value);
     void BoostTelepaticProtection(const float value);
     void BoostChemicalBurnProtection(const float value);
+    void BoostGraveImmunity(const float value);
+    void BoostHealthIncrease(const float value);
+    void BoostPowerIncrease(const float value);
+    void BoostSniper(const float value);
+    void BoostDoubleShot(const float value);
+    void BoostSpeedShot(const float value);
+    void BoostSpeedReload(const float value);
+    void BoostMoveSpeedIncrease(const float value);
+    void BoostJumpIncrease(const float value);
+    void BoostHealthMinus(const float value);
+    void BoostStaminaMinus(const float value);
+    void BoostMoveSpeedMinus(const float value);
+    void BoostJumpMinus(const float value);
     const auto& GetCurBoosterInfluences() const { return m_booster_influences; }
     // хромание при потере сил и здоровья
     virtual bool IsLimping() const;
     virtual bool IsCantWalk() const;
     virtual bool IsCantWalkWeight();
     virtual bool IsCantSprint() const;
+    float GetDamagePerk() { return m_fBoostDoubleShot; }
 
     void PowerHit(float power, bool apply_outfit);
     float GetPower() const { return m_fPower; }

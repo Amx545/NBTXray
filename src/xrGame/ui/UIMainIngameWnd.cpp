@@ -121,28 +121,97 @@ void CUIMainIngameWnd::Init()
     m_ind_overweight = UIHelper::CreateStatic(uiXml, "indicator_overweight", this, false);
 
     if ((m_ind_boost_psy = UIHelper::CreateStatic(uiXml, "indicator_booster_psy", this, false)))
+    {
         m_ind_boost_psy->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_psy, false);
+    }
 
     if ((m_ind_boost_radia = UIHelper::CreateStatic(uiXml, "indicator_booster_radia", this, false)))
+    {
         m_ind_boost_radia->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_radia, false);
+    }
 
     if ((m_ind_boost_chem = UIHelper::CreateStatic(uiXml, "indicator_booster_chem", this, false)))
+    {
         m_ind_boost_chem->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_chem, false);
+    }
 
     if ((m_ind_boost_wound = UIHelper::CreateStatic(uiXml, "indicator_booster_wound", this, false)))
+    {
         m_ind_boost_wound->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_wound, false);
+    }
 
     if ((m_ind_boost_weight = UIHelper::CreateStatic(uiXml, "indicator_booster_weight", this, false)))
+    {
         m_ind_boost_weight->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_weight, false);
+    }
 
     if ((m_ind_boost_health = UIHelper::CreateStatic(uiXml, "indicator_booster_health", this, false)))
+    {
         m_ind_boost_health->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_health, false);
+    }
 
     if ((m_ind_boost_power = UIHelper::CreateStatic(uiXml, "indicator_booster_power", this, false)))
+    {
         m_ind_boost_power->Show(false);
-
+        m_ind_boost_state.emplace(m_ind_boost_power, false);
+    }
     if ((m_ind_boost_rad = UIHelper::CreateStatic(uiXml, "indicator_booster_rad", this, false)))
+    {
         m_ind_boost_rad->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_rad, false);
+    }
+    if ((m_ind_boost_grave = UIHelper::CreateStatic(uiXml, "indicator_booster_grave", this, false)))
+    {
+        m_ind_boost_grave->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_grave, false);
+    }
+    if ((m_ind_boost_health_increase = UIHelper::CreateStatic(uiXml, "indicator_booster_health_increase", this, false)))
+    {
+        m_ind_boost_health_increase->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_health_increase, false);
+    }
+    if ((m_ind_boost_power_increase = UIHelper::CreateStatic(uiXml, "indicator_booster_power_increase", this, false)))
+    {
+        m_ind_boost_power_increase->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_power_increase, false);
+    }
+    if ((m_ind_boost_sniper = UIHelper::CreateStatic(uiXml, "indicator_booster_sniper", this, false)))
+    {
+        m_ind_boost_sniper->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_sniper, false);
+    }
+    if ((m_ind_boost_double_shot = UIHelper::CreateStatic(uiXml, "indicator_booster_double_shot", this, false)))
+    {
+        m_ind_boost_double_shot->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_double_shot, false);
+    }
+    if ((m_ind_boost_speed_shot = UIHelper::CreateStatic(uiXml, "indicator_booster_speed_shot", this, false)))
+    {
+        m_ind_boost_speed_shot->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_speed_shot, false);
+    }
+    if ((m_ind_boost_speed_reload = UIHelper::CreateStatic(uiXml, "indicator_booster_speed_reload", this, false)))
+    {
+        m_ind_boost_speed_reload->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_speed_reload, false);
+    }
+    if ((m_ind_boost_movespeed_increase = UIHelper::CreateStatic(uiXml, "indicator_booster_movespeed_increase", this, false)))
+    {
+        m_ind_boost_movespeed_increase->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_movespeed_increase, false);
+    }
+    if ((m_ind_boost_jump_increase = UIHelper::CreateStatic(uiXml, "indicator_booster_jump_increase", this, false)))
+    {
+        m_ind_boost_jump_increase->Show(false);
+        m_ind_boost_state.emplace(m_ind_boost_jump_increase, false);
+    }
+
 
     // Загружаем иконки
     /*	if ( IsGameTypeSingle() )
@@ -899,75 +968,24 @@ void CUIMainIngameWnd::DrawMainIndicatorsForInventory()
     for (const auto& slot : m_quick_slots_texts)
         slot->Draw();
 
-    if (m_ind_boost_psy && m_ind_boost_psy->IsShown())
+    for (const auto& Iter : m_ind_boost_state)
     {
-        m_ind_boost_psy->Update();
-        m_ind_boost_psy->Draw();
+        if (Iter.first && Iter.first->IsShown())
+        {
+            Iter.first->Update();
+            Iter.first->Draw();
+        }
     }
-
-    if (m_ind_boost_radia && m_ind_boost_radia->IsShown())
-    {
-        m_ind_boost_radia->Update();
-        m_ind_boost_radia->Draw();
-    }
-
-    if (m_ind_boost_chem && m_ind_boost_chem->IsShown())
-    {
-        m_ind_boost_chem->Update();
-        m_ind_boost_chem->Draw();
-    }
-
-    if (m_ind_boost_wound && m_ind_boost_wound->IsShown())
-    {
-        m_ind_boost_wound->Update();
-        m_ind_boost_wound->Draw();
-    }
-
-    if (m_ind_boost_weight && m_ind_boost_weight->IsShown())
-    {
-        m_ind_boost_weight->Update();
-        m_ind_boost_weight->Draw();
-    }
-
-    if (m_ind_boost_health && m_ind_boost_health->IsShown())
-    {
-        m_ind_boost_health->Update();
-        m_ind_boost_health->Draw();
-    }
-
-    if (m_ind_boost_power && m_ind_boost_power->IsShown())
-    {
-        m_ind_boost_power->Update();
-        m_ind_boost_power->Draw();
-    }
-
-    if (m_ind_boost_rad && m_ind_boost_rad->IsShown())
-    {
-        m_ind_boost_rad->Update();
-        m_ind_boost_rad->Draw();
-    }
-
     m_ui_hud_states->DrawZoneIndicators();
 }
 
 void CUIMainIngameWnd::UpdateBoosterIndicators(const CEntityCondition::BOOSTER_MAP& influences)
 {
-    if (m_ind_boost_psy)
-        m_ind_boost_psy->Show(false);
-    if (m_ind_boost_radia)
-        m_ind_boost_radia->Show(false);
-    if (m_ind_boost_chem)
-        m_ind_boost_chem->Show(false);
-    if (m_ind_boost_wound)
-        m_ind_boost_wound->Show(false);
-    if (m_ind_boost_weight)
-        m_ind_boost_weight->Show(false);
-    if (m_ind_boost_health)
-        m_ind_boost_health->Show(false);
-    if (m_ind_boost_power)
-        m_ind_boost_power->Show(false);
-    if (m_ind_boost_rad)
-        m_ind_boost_rad->Show(false);
+    for (const auto& Iter : m_ind_boost_state)
+    {
+        if (Iter.first)
+            Iter.first->Show(false);
+    }
 
     LPCSTR str_flag = "ui_slow_blinking_alpha";
     u8 flags = 0;
@@ -1078,6 +1096,149 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const CEntityCondition::BOOSTER_M
             }
             break;
         }
+        case eBoostGraveImmunity: 
+        {
+            if (m_ind_boost_grave)
+            {
+                m_ind_boost_grave->Show(true);
+                if (booster.fBoostTime <= 3.0f)
+                    m_ind_boost_grave->SetColorAnimation(str_flag, flags);
+                else
+                    m_ind_boost_grave->ResetColorAnimation();
+            }
+            break;
+        }
+        case eBoostHealthIncrease: {
+            if (m_ind_boost_health_increase)
+            {
+                m_ind_boost_health_increase->Show(true);
+                if (booster.fBoostTime <= 3.0f)
+                    m_ind_boost_health_increase->SetColorAnimation(str_flag, flags);
+                else
+                    m_ind_boost_health_increase->ResetColorAnimation();
+            }
+            break;
+        }
+        case eBoostPowerIncrease: {
+            if (m_ind_boost_power_increase)
+            {
+                m_ind_boost_power_increase->Show(true);
+                if (booster.fBoostTime <= 3.0f)
+                    m_ind_boost_power_increase->SetColorAnimation(str_flag, flags);
+                else
+                    m_ind_boost_power_increase->ResetColorAnimation();
+            }
+            break;
+        }
+        case eBoostSniper: {
+            if (m_ind_boost_sniper)
+            {
+                m_ind_boost_sniper->Show(true);
+                if (booster.fBoostTime <= 3.0f)
+                    m_ind_boost_sniper->SetColorAnimation(str_flag, flags);
+                else
+                    m_ind_boost_sniper->ResetColorAnimation();
+            }
+            break;
+        }
+        case eBoostDoubleShot: {
+            if (m_ind_boost_double_shot)
+            {
+                m_ind_boost_double_shot->Show(true);
+                if (booster.fBoostTime <= 3.0f)
+                    m_ind_boost_double_shot->SetColorAnimation(str_flag, flags);
+                else
+                    m_ind_boost_double_shot->ResetColorAnimation();
+            }
+            break;
+        }
+        case eBoostSpeedShot: {
+            if (m_ind_boost_speed_shot)
+            {
+                m_ind_boost_speed_shot->Show(true);
+                if (booster.fBoostTime <= 3.0f)
+                    m_ind_boost_speed_shot->SetColorAnimation(str_flag, flags);
+                else
+                    m_ind_boost_speed_shot->ResetColorAnimation();
+            }
+            break;
+        }
+        case eBoostSpeedReload: {
+            if (m_ind_boost_speed_reload)
+            {
+                m_ind_boost_speed_reload->Show(true);
+                if (booster.fBoostTime <= 3.0f)
+                    m_ind_boost_speed_reload->SetColorAnimation(str_flag, flags);
+                else
+                    m_ind_boost_speed_reload->ResetColorAnimation();
+            }
+            break;
+        }
+        case eBoostMoveSpeedIncrease: {
+            if (m_ind_boost_movespeed_increase)
+            {
+                m_ind_boost_movespeed_increase->Show(true);
+                if (booster.fBoostTime <= 3.0f)
+                    m_ind_boost_movespeed_increase->SetColorAnimation(str_flag, flags);
+                else
+                    m_ind_boost_movespeed_increase->ResetColorAnimation();
+            }
+            break;
+        }
+        case eBoostJumpIncrease: {
+            if (m_ind_boost_jump_increase)
+            {
+                m_ind_boost_jump_increase->Show(true);
+                if (booster.fBoostTime <= 3.0f)
+                    m_ind_boost_jump_increase->SetColorAnimation(str_flag, flags);
+                else
+                    m_ind_boost_jump_increase->ResetColorAnimation();
+            }
+            break;
+        }
+        }
+    }
+
+    if (!m_ind_boost_state.empty())
+    {
+        xr_map<CUIStatic*, bool>::iterator It;
+        for (It = m_ind_boost_state.begin(); It != m_ind_boost_state.end(); It++)
+        {
+            if (It->first)
+            {
+                if (It->first->IsShown() && !It->second)
+                {
+                    m_ind_boost_pos.push_back(It->first);
+                    It->second = true;
+                }
+                else if (!It->first->IsShown() && It->second)
+                {
+                    It->second = false;
+                }
+            }
+        }
+    }
+
+    if (!m_ind_boost_pos.empty())
+    {
+        int i = 0;
+        Fvector2 p = {16.f, 660.f};
+        float dx = 26.f;
+        float dy = 46.f;
+        for (auto iter = m_ind_boost_pos.end() - 1; iter >= m_ind_boost_pos.begin(); iter--)
+        {
+            bool bState = m_ind_boost_state[iter[0]];
+            if (bState)
+            {
+                iter[0]->SetWndPos({p.x + dx * i, p.y});
+                i++;
+                iter[0]->Update();
+                iter[0]->Draw();
+            }
+            else
+            {
+                m_ind_boost_pos.erase(iter);
+            }
         }
     }
 }
