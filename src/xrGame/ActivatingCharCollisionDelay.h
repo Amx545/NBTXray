@@ -12,7 +12,7 @@ class activating_character_delay : private Noncopyable
 public:
     activating_character_delay(CCharacterPhysicsSupport* char_support_);
     void update();
-    bool active();
+    bool active();//rec
 
 private:
     bool do_position_correct();
