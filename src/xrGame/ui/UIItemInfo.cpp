@@ -15,7 +15,9 @@
 #include "UIInvUpgradeProperty.h"
 #include "UIOutfitInfo.h"
 #include "UIBoosterInfo.h"
+#include "UIAmmoInfo.h"
 #include "Weapon.h"
+#include "WeaponAmmo.h"
 #include "CustomOutfit.h"
 #include "ActorHelmet.h"
 #include "eatable_item.h"
@@ -42,6 +44,7 @@ CUIItemInfo::CUIItemInfo() : CUIWindow(CUIItemInfo::GetDebugType())
     UIProperties = NULL;
     UIOutfitInfo = NULL;
     UIBoosterInfo = NULL;
+    UIAmmoInfo = NULL;
     UIArtefactParams = NULL;
     UIName = NULL;
     UIBackground = NULL;
@@ -58,6 +61,7 @@ CUIItemInfo::~CUIItemInfo()
     xr_delete(UIProperties);
     xr_delete(UIOutfitInfo);
     xr_delete(UIBoosterInfo);
+    xr_delete(UIAmmoInfo);
 }
 
 bool CUIItemInfo::InitItemInfo(cpcstr xml_name)
@@ -109,6 +113,10 @@ bool CUIItemInfo::InitItemInfo(cpcstr xml_name)
         UIBoosterInfo = xr_new<CUIBoosterInfo>();
         if (!UIBoosterInfo->InitFromXml(uiXml))
             xr_delete(UIBoosterInfo);
+
+        UIAmmoInfo = xr_new<CUIAmmoParams>();
+        if (!UIAmmoInfo->InitFromXml(uiXml))
+            xr_delete(UIAmmoInfo);
 
         // UIDesc_line						= xr_new<CUIStatic>("Description line");
         // AttachChild						(UIDesc_line);
@@ -225,6 +233,17 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
             }
             UICost->Show(true);
         }
+        else if (m_pInvItem->Cost() > 0 && !m_pInvItem->IsQuestItem())
+        {
+            xr_sprintf(str, "%d RU", m_pInvItem->Cost()); // will be owerwritten in multiplayer
+            UICost->SetText(str);
+            pos.x = UICost->GetWndPos().x;
+            if (m_complex_desc)
+            {
+                UICost->SetWndPos(pos);
+            }
+            UICost->Show(true);
+        }
         else
             UICost->Show(false);
     }
@@ -284,6 +303,7 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
         TryAddOutfitInfo(*pInvItem, pCompareItem);
         TryAddUpgradeInfo(*pInvItem);
         TryAddBoosterInfo(*pInvItem);
+        TryAddAmmoInfo(pInvItem);
 
         if (m_b_FitToHeight)
         {
@@ -403,6 +423,20 @@ void CUIItemInfo::TryAddBoosterInfo(CInventoryItem& pInvItem)
         UIBoosterInfo->SetInfo(pInvItem.object().cNameSect());
         UIDesc->AddWindow(UIBoosterInfo, false);
     }
+}
+
+void CUIItemInfo::TryAddAmmoInfo(CInventoryItem* pInvItem) 
+{ 
+    if (!UIAmmoInfo)
+        return;
+    //UIDesc->AddWindow(UIAmmoInfo, false);
+    CWeaponAmmo* ammo = smart_cast<CWeaponAmmo*>(pInvItem);
+    if (ammo)
+    {
+        UIAmmoInfo->SetInfo(ammo);
+        UIDesc->AddWindow(UIAmmoInfo, false);
+    }
+
 }
 
 void CUIItemInfo::Draw()

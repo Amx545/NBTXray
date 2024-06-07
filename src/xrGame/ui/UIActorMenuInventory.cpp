@@ -28,6 +28,7 @@
 #include "antirad.h"
 #include "CustomOutfit.h"
 #include "ActorHelmet.h"
+#include "ActorBelt.h"
 #include "xrUICore/Cursor/UICursor.h"
 #include "MPPlayersBag.h"
 #include "player_hud.h"
@@ -44,6 +45,7 @@ void CUIActorMenu::InitInventoryMode()
     m_pLists[eInventoryBeltList]->Show(true);
     m_pLists[eInventoryOutfitList]->Show(true);
     ShowIfExist(m_pLists[eInventoryHelmetList], true);
+    ShowIfExist(m_pLists[eInventoryActorBeltList], true);
     ShowIfExist(m_pLists[eInventoryDetectorList], true);
     ShowIfExist(m_pLists[eInventoryBackpackList], true);
     ShowIfExist(m_pLists[eInventoryKnifeList], true);
@@ -244,8 +246,9 @@ void CUIActorMenu::OnInventoryAction(PIItem pItem, u16 action_type)
 {
     CUIDragDropListEx* all_lists[] =
     {
-        m_pLists[eInventoryBeltList], m_pLists[eInventoryKnifeList], m_pLists[eInventoryPistolList], m_pLists[eInventoryAutomaticList],
-        m_pLists[eInventoryBackpackList], m_pLists[eInventoryOutfitList], m_pLists[eInventoryHelmetList], m_pLists[eInventoryDetectorList],
+        m_pLists[eInventoryBeltList], m_pLists[eInventoryKnifeList], m_pLists[eInventoryPistolList], m_pLists[eInventoryAutomaticList], m_pLists[eInventoryBackpackList],
+        m_pLists[eInventoryOutfitList], m_pLists[eInventoryActorBeltList], m_pLists[eInventoryHelmetList],
+        m_pLists[eInventoryDetectorList],
         m_pLists[eInventoryBagList], m_pLists[eTradeActorBagList], m_pLists[eTradeActorList]
     };
 
@@ -455,6 +458,7 @@ void CUIActorMenu::InitInventoryContents(CUIDragDropListEx* pBagList, bool onlyB
     InitCellForSlot(DETECTOR_SLOT);
     InitCellForSlot(GRENADE_SLOT);
     InitCellForSlot(HELMET_SLOT);
+    InitCellForSlot(ACTORBELT_SLOT);
     InitCellForSlot(BACKPACK_SLOT);
 
     //Alundaio
@@ -581,10 +585,12 @@ bool CUIActorMenu::ToSlot(CUICellItem* itm, bool force_place, u16 slot_id)
         if (slot_id == KNIFE_SLOT && m_pActorInvOwner->inventory().CanPutInSlot(iitem, KNIFE_SLOT))
             return ToSlot(itm, force_place, KNIFE_SLOT);
 
-        if (slot_id == INV_SLOT_2 && m_pActorInvOwner->inventory().CanPutInSlot(iitem, INV_SLOT_3) && CallOfPripyatMode)
+        if (slot_id == INV_SLOT_2 && m_pActorInvOwner->inventory().CanPutInSlot(iitem, INV_SLOT_3) &&
+            CallOfPripyatMode && false)
             return ToSlot(itm, force_place, INV_SLOT_3);
 
-        if (slot_id == INV_SLOT_3 && m_pActorInvOwner->inventory().CanPutInSlot(iitem, INV_SLOT_2) && CallOfPripyatMode)
+        if (slot_id == INV_SLOT_3 && m_pActorInvOwner->inventory().CanPutInSlot(iitem, INV_SLOT_2) &&
+            CallOfPripyatMode && false)
             return ToSlot(itm, force_place, INV_SLOT_2);
 
         CUIDragDropListEx* slot_list = GetSlotList(slot_id);
@@ -759,6 +765,8 @@ CUIDragDropListEx* CUIActorMenu::GetSlotList(u16 slot_idx)
     case OUTFIT_SLOT: return m_pLists[eInventoryOutfitList]; break;
 
     case HELMET_SLOT: return m_pLists[eInventoryHelmetList]; break;
+
+    case ACTORBELT_SLOT: return m_pLists[eInventoryActorBeltList]; break;
 
     case DETECTOR_SLOT: return m_pLists[eInventoryDetectorList]; break;
 
@@ -1447,16 +1455,19 @@ void CUIActorMenu::ProcessPropertiesBoxClicked(CUIWindow* w, void* d)
 void CUIActorMenu::UpdateOutfit()
 {
     const u32 maxCount = m_pActorInvOwner->inventory().BeltMaxWidth();
-    const Ivector2 maxCap = m_pLists[eInventoryBeltList]->CalculateCapacity(maxCount);
-    m_pLists[eInventoryBeltList]->SetMaxCellsCapacity(maxCap);
+    const Ivector2 cap = m_pLists[eInventoryBeltList]->CalculateCapacity(maxCount);
+    m_pLists[eInventoryBeltList]->SetMaxCellsCapacity(cap);
+
+    const u32 af_count = m_pActorInvOwner->inventory().BeltWidth();
+    m_pLists[eInventoryBeltList]->SetAFCount(af_count);
 
     CCustomOutfit* outfit = m_pActorInvOwner->GetOutfit();
     if (m_pLists[eInventoryHelmetList])
     {
         if (outfit && !outfit->bIsHelmetAvaliable)
-            m_pLists[eInventoryHelmetList]->SetCellsCapacity({ 0, 0 });
+            m_pLists[eInventoryHelmetList]->SetHelmStatus(true);
         else
-            m_pLists[eInventoryHelmetList]->SetCellsCapacity(m_pLists[eInventoryHelmetList]->MaxCellsCapacity());
+            m_pLists[eInventoryHelmetList]->SetHelmStatus(false);
     }
 
     if (ShadowOfChernobylMode)
@@ -1464,16 +1475,46 @@ void CUIActorMenu::UpdateOutfit()
         m_pLists[eInventoryBeltList]->ResetCellsCapacity();
         return;
     }
-    if (!outfit)
+    CActorBelt* af_belt = m_pActorInvOwner->GetItemFromSlot<CActorBelt>(ACTORBELT_SLOT);
+    if (!outfit&&!af_belt)
     {
         MoveArtefactsToBag();
         m_pLists[eInventoryBeltList]->SetCellsCapacity({ 0, 0 });
         return;
     }
+    else if (!outfit&&af_belt)
+    {
+        if (m_pLists[eInventoryBeltList]->ItemsCount() >= af_belt->get_artefact_count())
+        {
+            u32 i = 0;
+            u32 ic = m_pLists[eInventoryBeltList]->ItemsCount() - af_belt->get_artefact_count();
+            while (i < ic)
+            {
+                CUICellItem* ci = m_pLists[eInventoryBeltList]->GetItemIdx(m_pLists[eInventoryBeltList]->ItemsCount() - 1);
+                VERIFY(ci && ci->m_pData);
+                ToBag(ci, false);
+                i++;
+            } // for i
+        }
+    }
+    else if (outfit && !af_belt)
+    {
+        if (m_pLists[eInventoryBeltList]->ItemsCount() >= outfit->get_artefact_count())
+        {
+            u32 i = 0;
+            u32 ic = m_pLists[eInventoryBeltList]->ItemsCount() - outfit->get_artefact_count();
+            while (i < ic)
+            {
+                CUICellItem* ci = m_pLists[eInventoryBeltList]->GetItemIdx(m_pLists[eInventoryBeltList]->ItemsCount()-1);
+                VERIFY(ci && ci->m_pData);
+                ToBag(ci, false);
+                i++;
+            } // for i
+        }
+    }
 
-    const u32 af_count = m_pActorInvOwner->inventory().BeltWidth();
-    const Ivector2 cap = m_pLists[eInventoryBeltList]->CalculateCapacity(af_count);
-    m_pLists[eInventoryBeltList]->SetCellsCapacity(cap);
+    //const Ivector2 cap = m_pLists[eInventoryBeltList]->CalculateCapacity(af_count);
+    //m_pLists[eInventoryBeltList]->SetCellsCapacity(cap);
 }
 
 void CUIActorMenu::MoveArtefactsToBag()

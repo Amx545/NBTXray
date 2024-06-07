@@ -52,6 +52,15 @@ public:
     CUIStatic* m_ind_boost_health{};
     CUIStatic* m_ind_boost_power{};
     CUIStatic* m_ind_boost_rad{};
+    CUIStatic* m_ind_boost_grave{};
+    CUIStatic* m_ind_boost_health_increase{};
+    CUIStatic* m_ind_boost_power_increase{};
+    CUIStatic* m_ind_boost_sniper{};
+    CUIStatic* m_ind_boost_double_shot{};
+    CUIStatic* m_ind_boost_speed_shot{};
+    CUIStatic* m_ind_boost_speed_reload{};
+    CUIStatic* m_ind_boost_movespeed_increase{};
+    CUIStatic* m_ind_boost_jump_increase{};
 
     CUIArtefactPanel* UIArtefactPanel{};
 
@@ -66,6 +75,8 @@ public:
 
     xr_vector<CUIStatic*> m_quick_slots_icons;
     xr_vector<CUIStatic*> m_quick_slots_texts;
+    xr_vector<CUIStatic*> m_ind_boost_pos;
+    xr_map<CUIStatic*,bool> m_ind_boost_state;
 
 protected:
     // 5 статиков для отображения иконок:

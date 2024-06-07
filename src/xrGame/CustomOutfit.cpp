@@ -98,8 +98,9 @@ void CCustomOutfit::Load(LPCSTR section)
     m_fBleedingRestoreSpeed = READ_IF_EXISTS(pSettings, r_float, section, "bleeding_restore_speed", 0.0f);
 
     m_full_icon_name = pSettings->r_string(section, "full_icon_name");
+
     m_artefact_count = READ_IF_EXISTS(pSettings, r_u32, section, "artefact_count", 0);
-    clamp(m_artefact_count, (u32)0, (u32)5);
+    clamp(m_artefact_count, (u32)0, (u32)7);
 
     m_BonesProtectionSect = READ_IF_EXISTS(pSettings, r_string, section, "bones_koeff_protection", "");
     bIsHelmetAvaliable = !!READ_IF_EXISTS(pSettings, r_bool, section, "helmet_avaliable", true);

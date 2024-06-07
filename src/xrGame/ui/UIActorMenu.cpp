@@ -18,6 +18,7 @@
 #include "GrenadeLauncher.h"
 #include "trade_parameters.h"
 #include "ActorHelmet.h"
+#include "ActorBelt.h"
 #include "ActorBackpack.h"
 #include "CustomOutfit.h"
 #include "CustomDetector.h"
@@ -328,6 +329,8 @@ EDDListType CUIActorMenu::GetListType(CUIDragDropListEx* l)
         return iActorSlot;
     if (l == m_pLists[eInventoryHelmetList] && m_pLists[eInventoryHelmetList] != nullptr)
         return iActorSlot;
+    if (l == m_pLists[eInventoryActorBeltList] && m_pLists[eInventoryActorBeltList] != nullptr)
+        return iActorSlot;
     if (l == m_pLists[eInventoryDetectorList] && m_pLists[eInventoryDetectorList] != nullptr)
         return iActorSlot;
 
@@ -538,6 +541,8 @@ void CUIActorMenu::clear_highlight_lists()
     m_pLists[eInventoryAutomaticList]->Highlight(false);
     if (m_pLists[eInventoryHelmetList])
         m_pLists[eInventoryHelmetList]->Highlight(false);
+    if (m_pLists[eInventoryActorBeltList])
+        m_pLists[eInventoryActorBeltList]->Highlight(false);
     if (m_pLists[eInventoryBackpackList])
         m_pLists[eInventoryBackpackList]->Highlight(false);
     m_pLists[eInventoryOutfitList]->Highlight(false);
@@ -582,12 +587,23 @@ void CUIActorMenu::highlight_item_slot(CUICellItem* cell_item)
     CCustomDetector* detector = smart_cast<CCustomDetector*>(item);
     CEatableItem* eatable = smart_cast<CEatableItem*>(item);
     CArtefact* artefact = smart_cast<CArtefact*>(item);
+    CActorBelt* actor_belt = smart_cast<CActorBelt*>(item);
 
     u16 slot_id = item->BaseSlot();
-    if (weapon && (slot_id == INV_SLOT_2 || slot_id == INV_SLOT_3))
+    if (weapon && slot_id == INV_SLOT_2)
     {
         m_pLists[eInventoryPistolList]->Highlight(true);
+        return;
+    }
+    if (weapon && slot_id == INV_SLOT_3)
+    {
         m_pLists[eInventoryAutomaticList]->Highlight(true);
+        return;
+    }
+    if (actor_belt && slot_id == ACTORBELT_SLOT)
+    {
+        if (m_pLists[eInventoryActorBeltList])
+            m_pLists[eInventoryActorBeltList]->Highlight(true);
         return;
     }
     if (helmet && slot_id == HELMET_SLOT)
@@ -878,6 +894,8 @@ void CUIActorMenu::ClearAllLists()
     m_pLists[eInventoryOutfitList]->ClearAll(true);
     if (m_pLists[eInventoryHelmetList])
         m_pLists[eInventoryHelmetList]->ClearAll(true);
+    if (m_pLists[eInventoryActorBeltList])
+        m_pLists[eInventoryActorBeltList]->ClearAll(true);
     if (m_pLists[eInventoryDetectorList])
         m_pLists[eInventoryDetectorList]->ClearAll(true);
     if (m_pLists[eInventoryBackpackList])
@@ -963,13 +981,13 @@ bool CUIActorMenu::CanSetItemToList(PIItem item, CUIDragDropListEx* l, u16& ret_
         return true;
     }
 
-    if (item_slot == INV_SLOT_3 && l == m_pLists[eInventoryPistolList] && CallOfPripyatMode)
+    if (item_slot == INV_SLOT_3 && l == m_pLists[eInventoryPistolList] && CallOfPripyatMode && false)
     {
         ret_slot = INV_SLOT_2;
         return true;
     }
 
-    if (item_slot == INV_SLOT_2 && l == m_pLists[eInventoryAutomaticList] && CallOfPripyatMode)
+    if (item_slot == INV_SLOT_2 && l == m_pLists[eInventoryAutomaticList] && CallOfPripyatMode && false)
     {
         ret_slot = INV_SLOT_3;
         return true;

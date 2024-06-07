@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="AI">
@@ -6492,6 +6492,12 @@
     <ClInclude Include="xrGame.h">
       <Filter>Core\Server</Filter>
     </ClInclude>
+    <ClInclude Include="ui\UIAmmoInfo.h">
+      <Filter>UI\Common\ui-item-infos</Filter>
+    </ClInclude>
+    <ClInclude Include="ActorBelt.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Outfit</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
@@ -9850,6 +9856,15 @@
     </ClCompile>
     <ClCompile Include="ui\UIMapFilters.cpp">
       <Filter>UI\Common\PDA\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIAmmoInfo.cpp">
+      <Filter>UI\Common\ui-item-infos</Filter>
+    </ClCompile>
+    <ClCompile Include="ActorBelt.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Outfit</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponUSP45.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon USP45</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

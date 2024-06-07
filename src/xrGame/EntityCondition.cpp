@@ -62,6 +62,15 @@ CEntityCondition::CEntityCondition(CEntityAlive* object) : CEntityConditionSimpl
     m_fBoostRadiationProtection = 0.f;
     m_fBoostTelepaticProtection = 0.f;
     m_fBoostChemicalBurnProtection = 0.f;
+    m_fBoostGraveImmunity = 0.f;
+    m_fBoostHealthIncrease = 0.f;
+    m_fBoostPowerIncrease = 0.f;
+    m_fBoostSniper = 0.f;
+    m_fBoostDoubleShot = 1.f;
+    m_fBoostSpeedShot = 0.f;
+    m_fBoostSpeedReload = 0.f;
+    m_fBoostMoveSpeedIncrease = 0.f;
+    m_fBoostJumpIncrease = 0.f;
 
     m_fDeltaHealth = 0;
     m_fDeltaPower = 0;
@@ -638,6 +647,15 @@ void SBooster::Load(const shared_str& sect, EBoostParams type)
     case eBoostRadiationImmunity: fBoostValue = pSettings->r_float(sect.c_str(), "boost_radiation_immunity"); break;
     case eBoostTelepaticImmunity: fBoostValue = pSettings->r_float(sect.c_str(), "boost_telepat_immunity"); break;
     case eBoostChemicalBurnImmunity: fBoostValue = pSettings->r_float(sect.c_str(), "boost_chemburn_immunity"); break;
+    case eBoostGraveImmunity: fBoostValue = pSettings->r_float(sect.c_str(), "boost_grave_immunity"); break;
+    case eBoostHealthIncrease: fBoostValue = pSettings->r_float(sect.c_str(), "boost_health_increase"); break;
+    case eBoostPowerIncrease: fBoostValue = pSettings->r_float(sect.c_str(), "boost_power_increase"); break;
+    case eBoostSniper: fBoostValue = pSettings->r_float(sect.c_str(), "boost_sniper"); break;
+    case eBoostDoubleShot: fBoostValue = pSettings->r_float(sect.c_str(), "boost_double_shot"); break;
+    case eBoostSpeedShot: fBoostValue = pSettings->r_float(sect.c_str(), "boost_speed_shot"); break;
+    case eBoostSpeedReload: fBoostValue = pSettings->r_float(sect.c_str(), "boost_speed_reload"); break;
+    case eBoostMoveSpeedIncrease: fBoostValue = pSettings->r_float(sect.c_str(), "boost_movespeed_increase"); break;
+    case eBoostJumpIncrease: fBoostValue = pSettings->r_float(sect.c_str(), "boost_jump_increase"); break;
     case eBoostExplImmunity: fBoostValue = pSettings->r_float(sect.c_str(), "boost_explosion_immunity"); break;
     case eBoostStrikeImmunity: fBoostValue = pSettings->r_float(sect.c_str(), "boost_strike_immunity"); break;
     case eBoostFireWoundImmunity: fBoostValue = pSettings->r_float(sect.c_str(), "boost_fire_wound_immunity"); break;

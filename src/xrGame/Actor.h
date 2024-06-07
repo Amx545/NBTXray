@@ -543,6 +543,11 @@ public:
     virtual void load(IReader& input_packet);
     virtual void net_Save(NET_Packet& P);
     virtual bool net_SaveRelevant();
+    u8 GetSaveCount() { return actor_save_count; }
+    void SetSaveCount(u8 val) { actor_save_count = val; }
+
+private:
+    u8 actor_save_count;
 
 protected:
     xr_deque<net_update> NET;

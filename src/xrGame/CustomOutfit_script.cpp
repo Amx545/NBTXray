@@ -1,6 +1,7 @@
 #include "pch_script.h"
 #include "CustomOutfit.h"
 #include "ActorHelmet.h"
+#include "ActorBelt.h"
 #include "xrScriptEngine/ScriptExporter.hpp"
 
 void CCustomOutfit_Export(lua_State* luaState)
@@ -65,3 +66,22 @@ void CHelmet_Export(lua_State* luaState)
 }
 
 SCRIPT_EXPORT_FUNC(CHelmet, (CGameObject), CHelmet_Export);
+
+void CActorBelt_Export(lua_State* luaState)
+{
+    using namespace luabind;
+
+    module(luaState)[class_<CActorBelt, CGameObject>("CActorBelt")
+                         .def(constructor<>())
+                         .def_readwrite("m_additional_weight", &CActorBelt::m_additional_weight)
+                         .def_readwrite("m_additional_weight2", &CActorBelt::m_additional_weight2)
+                         .def_readwrite("m_fHealthRestoreSpeed", &CActorBelt::m_fHealthRestoreSpeed)
+                         .def_readwrite("m_fRadiationRestoreSpeed", &CActorBelt::m_fRadiationRestoreSpeed)
+                         .def_readwrite("m_fSatietyRestoreSpeed", &CActorBelt::m_fSatietyRestoreSpeed)
+                         .def_readwrite("m_fPowerRestoreSpeed", &CActorBelt::m_fPowerRestoreSpeed)
+                         .def_readwrite("m_fBleedingRestoreSpeed", &CActorBelt::m_fBleedingRestoreSpeed)
+                         .def("get_artefact_count", &CActorBelt::get_artefact_count)
+    ];
+}
+
+SCRIPT_EXPORT_FUNC(CActorBelt, (CGameObject), CActorBelt_Export);

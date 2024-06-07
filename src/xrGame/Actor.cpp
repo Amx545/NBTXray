@@ -217,6 +217,7 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 
     // Alex ADD: for smooth crouch fix
     CurrentHeight = -1.f;
+    actor_save_count = 1;
 }
 
 CActor::~CActor()
