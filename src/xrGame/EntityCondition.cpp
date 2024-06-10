@@ -65,10 +65,10 @@ CEntityCondition::CEntityCondition(CEntityAlive* object) : CEntityConditionSimpl
     m_fBoostGraveImmunity = 0.f;
     m_fBoostHealthIncrease = 0.f;
     m_fBoostPowerIncrease = 0.f;
-    m_fBoostSniper = 0.f;
+    m_fBoostSniper = 1.f;
     m_fBoostDoubleShot = 1.f;
-    m_fBoostSpeedShot = 0.f;
-    m_fBoostSpeedReload = 0.f;
+    m_fBoostSpeedShot = 1.f;
+    m_fBoostSpeedReload = 1.f;
     m_fBoostMoveSpeedIncrease = 0.f;
     m_fBoostJumpIncrease = 0.f;
 

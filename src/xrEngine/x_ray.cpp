@@ -68,12 +68,11 @@ public:
         return allow_to_include_path(*ignored, path);
     }
 };
-}
+} // namespace
 
 template <typename T>
-void InitConfig(T& config, pcstr name, bool fatal = true,
-    bool readOnly = true, bool loadAtStart = true, bool saveAtEnd = true,
-    u32 sectCount = 0, const CInifile::allow_include_func_t& allowIncludeFunc = nullptr)
+void InitConfig(T& config, pcstr name, bool fatal = true, bool readOnly = true, bool loadAtStart = true,
+    bool saveAtEnd = true, u32 sectCount = 0, const CInifile::allow_include_func_t& allowIncludeFunc = nullptr)
 {
     string_path fname;
     FS.update_path(fname, "$game_config$", name);
@@ -118,7 +117,7 @@ void InitSettings()
     ZoneScoped;
 
     xr_auth_strings_t ignoredPaths, checkedPaths;
-    fill_auth_check_params(ignoredPaths, checkedPaths); //TODO port xrNetServer to Linux
+    fill_auth_check_params(ignoredPaths, checkedPaths); // TODO port xrNetServer to Linux
     PathIncludePred includePred(&ignoredPaths);
     CInifile::allow_include_func_t includeFilter;
     includeFilter.bind(&includePred, &PathIncludePred::IsIncluded);
@@ -127,7 +126,6 @@ void InitSettings()
     InitConfig(pSettingsAuth, "system.ltx", true, true, true, false, 0, includeFilter);
     InitConfig(pSettingsOpenXRay, "openxray.ltx", false, true, true, false);
     InitConfig(pGameIni, "game.ltx");
-
 
     if (strstr(Core.Params, "-shoc") || strstr(Core.Params, "-soc"))
         set_shoc_mode();
@@ -223,63 +221,30 @@ CApplication::CApplication(pcstr commandLine, GameModule* game)
         shortcuts.Disable();
 #endif
 
-#ifdef USE_DISCORD_INTEGRATION
-    discord::Activity activity{};
-    {
-        ZoneScopedN("Init Discord");
-        discord::Core::Create(DISCORD_APP_ID, discord::CreateFlags::NoRequireDiscord, &m_discord_core);
-
-#   ifndef MASTER_GOLD
-        if (m_discord_core)
-        {
-            const auto level = xrDebug::DebuggerIsPresent() ? discord::LogLevel::Debug : discord::LogLevel::Info;
-            m_discord_core->SetLogHook(level, [](discord::LogLevel level, pcstr message)
-            {
-                switch (level)
-                {
-                case discord::LogLevel::Error: Log("!", message); break;
-                case discord::LogLevel::Warn:  Log("~", message); break;
-                case discord::LogLevel::Info:  Log("*", message); break;
-                case discord::LogLevel::Debug: Log("#", message); break;
-                }
-            });
-        }
-#   endif
-
-        activity.SetType(discord::ActivityType::Playing);
-        activity.SetApplicationId(DISCORD_APP_ID);
-        activity.SetState("Starting engine...");
-        activity.GetAssets().SetLargeImage("logo");
-        if (m_discord_core)
-        {
-            std::lock_guard guard{ m_discord_lock };
-            m_discord_core->ActivityManager().UpdateActivity(activity, nullptr);
-        }
-    }
-#endif
-
     if (!strstr(commandLine, "-nosplash"))
     {
         const bool topmost = !strstr(commandLine, "-splashnotop");
         ShowSplash(topmost);
     }
 
-    const auto& inputTask = TaskManager::AddTask([]
-    {
+    const auto& inputTask = TaskManager::AddTask([] {
         const bool captureInput = !strstr(Core.Params, "-i");
         pInput = xr_new<CInput>(captureInput);
     });
 
-    const auto& createSoundDevicesList = TaskManager::AddTask([]
-    {
-        Engine.Sound.CreateDevicesList();
-    });
+    const auto& createSoundDevicesList = TaskManager::AddTask([] { Engine.Sound.CreateDevicesList(); });
 
 #ifdef XR_PLATFORM_WINDOWS
-    const auto& createRendererList = TaskManager::AddTask([]
+    const auto& createRendererList = TaskManager::AddTask([] { Engine.External.CreateRendererList(); });
+#endif
+
+    pcstr fsltx = "-fsltx ";
+    string_path fsgame = "";
+    if (strstr(commandLine, fsltx))
     {
-        Engine.External.CreateRendererList();
-    });
+        const size_t sz = xr_strlen(fsltx);
+        sscanf(strstr(commandLine, fsltx) + sz, "%[^ ] ", fsgame);
+    }
 
     Core.Initialize("OpenXRay", commandLine, true, *fsgame ? fsgame : nullptr);
 
@@ -321,10 +286,7 @@ CApplication::CApplication(pcstr commandLine, GameModule* game)
         Console->Execute(loadArgs + 1);
 
     // Initialize APP
-    const auto& createLightAnim = TaskScheduler->AddTask([]
-    {
-        LALib.OnCreate();
-    });
+    const auto& createLightAnim = TaskScheduler->AddTask([] { LALib.OnCreate(); });
 
     Device.Create();
     TaskScheduler->Wait(createLightAnim);
@@ -380,7 +342,8 @@ CApplication::~CApplication()
         PROCESS_INFORMATION pi = {};
         // We use CreateProcess to setup working folder
         pcstr tempDir = xr_strlen(g_sLaunchWorkingFolder) ? g_sLaunchWorkingFolder : nullptr;
-        CreateProcess(g_sLaunchOnExit_app, g_sLaunchOnExit_params, nullptr, nullptr, FALSE, 0, nullptr, tempDir, &si, &pi);
+        CreateProcess(
+            g_sLaunchOnExit_app, g_sLaunchOnExit_params, nullptr, nullptr, FALSE, 0, nullptr, tempDir, &si, &pi);
 #endif
     }
 
@@ -405,8 +368,7 @@ int CApplication::Run()
         bool shouldActivate = false;
 
         SDL_Event events[MAX_WINDOW_EVENTS];
-        const int count = SDL_PeepEvents(events, MAX_WINDOW_EVENTS,
-            SDL_GETEVENT, SDL_WINDOWEVENT, SDL_WINDOWEVENT);
+        const int count = SDL_PeepEvents(events, MAX_WINDOW_EVENTS, SDL_GETEVENT, SDL_WINDOWEVENT, SDL_WINDOWEVENT);
 
         for (int i = 0; i < count; ++i)
         {
@@ -414,8 +376,7 @@ int CApplication::Run()
 
             switch (event.type)
             {
-            case SDL_WINDOWEVENT:
-            {
+            case SDL_WINDOWEVENT: {
                 const auto window = SDL_GetWindowFromID(event.window.windowID);
 
                 switch (event.window.event)
@@ -489,7 +450,8 @@ void CApplication::ShowSplash(bool topmost)
     if (topmost)
         flags |= SDL_WINDOW_ALWAYS_ON_TOP;
 
-    m_window = SDL_CreateWindow("OpenXRay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_surface->w, m_surface->h, flags);
+    m_window =
+        SDL_CreateWindow("OpenXRay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_surface->w, m_surface->h, flags);
     SDL_ShowWindow(m_window);
 
     m_splash_thread = Threading::RunThread("Splash Thread", &CApplication::SplashProc, this);
@@ -529,6 +491,46 @@ void CApplication::HideSplash()
     SDL_FreeSurface(m_surface);
 }
 
+void CApplication::InitializeDiscord()
+{
+#ifdef USE_DISCORD_INTEGRATION
+    ZoneScoped;
+    discord::Core* core;
+    discord::Core::Create(DISCORD_APP_ID, discord::CreateFlags::NoRequireDiscord, &core);
+
+#ifndef MASTER_GOLD
+    if (core)
+    {
+        const auto level = xrDebug::DebuggerIsPresent() ? discord::LogLevel::Debug : discord::LogLevel::Info;
+        core->SetLogHook(level, [](discord::LogLevel level, pcstr message) {
+            switch (level)
+            {
+            case discord::LogLevel::Error: Log("!", message); break;
+            case discord::LogLevel::Warn: Log("~", message); break;
+            case discord::LogLevel::Info: Log("*", message); break;
+            case discord::LogLevel::Debug: Log("#", message); break;
+            }
+        });
+    }
+#endif
+
+    if (core)
+    {
+        const std::locale locale("");
+
+        discord::Activity activity{};
+        activity.SetType(discord::ActivityType::Playing);
+        activity.SetApplicationId(DISCORD_APP_ID);
+        activity.SetState(StringToUTF8(Core.ApplicationTitle, locale).c_str());
+        activity.GetAssets().SetLargeImage("logo");
+        core->ActivityManager().UpdateActivity(activity, nullptr);
+
+        std::lock_guard guard{m_discord_lock};
+        m_discord_core = core;
+    }
+#endif
+}
+
 void CApplication::UpdateDiscordStatus()
 {
 #ifdef USE_DISCORD_INTEGRATION
@@ -536,7 +538,7 @@ void CApplication::UpdateDiscordStatus()
         return;
 
     ZoneScoped;
-    std::lock_guard guard{ m_discord_lock };
+    std::lock_guard guard{m_discord_lock};
     m_discord_core->RunCallbacks();
 #endif
 }

@@ -98,11 +98,11 @@ void HUD_SOUND_ITEM::PlaySound(
         index = (u8)hud_snd.sounds.size()-1;
 
     hud_snd.m_activeSnd = &hud_snd.sounds[index];
-
     hud_snd.m_activeSnd->snd.play_at_pos(const_cast<IGameObject*>(parent),
         flags & sm_2D ? Fvector().set(0, 0, 0) : position, flags, hud_snd.m_activeSnd->delay);
 
     hud_snd.m_activeSnd->snd.set_volume(hud_snd.m_activeSnd->volume * (b_hud_mode ? psHUDSoundVolume : 1.0f));
+    //hud_snd.m_activeSnd->snd.set_frequency(hud_snd.m_activeSnd->snd.get_params()->freq*1.2f);
 }
 
 void HUD_SOUND_ITEM::StopSound(HUD_SOUND_ITEM& hud_snd)

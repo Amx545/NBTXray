@@ -14,7 +14,7 @@ class CInventoryItem;
 class CUIHudStatesWnd;
 class CUIMotionIcon;
 class CUIArtefactPanel;
-
+class CUIBoostStatesWnd;
 class CUIMainIngameWnd final : public CUIWindow
 {
 public:
@@ -34,6 +34,7 @@ protected:
     CUIZoneMap* UIZoneMap{};
 
     CUIHudStatesWnd* m_ui_hud_states{};
+    CUIBoostStatesWnd* m_ui_boost_states{};
 
     CUIStatic* m_ind_bleeding{};
     CUIStatic* m_ind_radiation{};
@@ -44,24 +45,6 @@ protected:
     CUIStatic* m_ind_overweight{};
 
 public:
-    CUIStatic* m_ind_boost_psy{};
-    CUIStatic* m_ind_boost_radia{};
-    CUIStatic* m_ind_boost_chem{};
-    CUIStatic* m_ind_boost_wound{};
-    CUIStatic* m_ind_boost_weight{};
-    CUIStatic* m_ind_boost_health{};
-    CUIStatic* m_ind_boost_power{};
-    CUIStatic* m_ind_boost_rad{};
-    CUIStatic* m_ind_boost_grave{};
-    CUIStatic* m_ind_boost_health_increase{};
-    CUIStatic* m_ind_boost_power_increase{};
-    CUIStatic* m_ind_boost_sniper{};
-    CUIStatic* m_ind_boost_double_shot{};
-    CUIStatic* m_ind_boost_speed_shot{};
-    CUIStatic* m_ind_boost_speed_reload{};
-    CUIStatic* m_ind_boost_movespeed_increase{};
-    CUIStatic* m_ind_boost_jump_increase{};
-
     CUIArtefactPanel* UIArtefactPanel{};
 
     void ShowZoneMap(bool status);
@@ -75,8 +58,7 @@ public:
 
     xr_vector<CUIStatic*> m_quick_slots_icons;
     xr_vector<CUIStatic*> m_quick_slots_texts;
-    xr_vector<CUIStatic*> m_ind_boost_pos;
-    xr_map<CUIStatic*,bool> m_ind_boost_state;
+    
 
 protected:
     // 5 статиков для отображения иконок:

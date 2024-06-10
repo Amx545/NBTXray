@@ -93,6 +93,9 @@ public:
     virtual bool IsCantWalkWeight();
     virtual bool IsCantSprint() const;
     float GetDamagePerk() { return m_fBoostDoubleShot; }
+    float GetSpeedReloadPerk() { return m_fBoostSpeedReload; }
+    float GetSpeedShotPerk() { return m_fBoostSpeedShot; }
+    float GetSniperPerk() { return m_fBoostSniper; }
 
     void PowerHit(float power, bool apply_outfit);
     float GetPower() const { return m_fPower; }

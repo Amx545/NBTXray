@@ -2,6 +2,7 @@
 
 #include "WeaponMagazined.h"
 #include "Actor.h"
+#include "ActorCondition.h"
 #include "ParticlesObject.h"
 #include "Scope.h"
 #include "Silencer.h"
@@ -547,14 +548,21 @@ void CWeaponMagazined::state_Fire(float dt)
             }
 
             m_bFireSingleShot = false;
-
-            //Alundaio: Use fModeShotTime instead of fOneShotTime if current fire mode is 2-shot burst
-            //Alundaio: Cycle down RPM after two shots; used for Abakan/AN-94
-            if (GetCurrentFireMode() == 2 || (cycleDown == true && m_iShotNum <= 1))
-                fShotTimeCounter = modeShotTime;
+            CActor* actor = smart_cast<CActor*>(H_Parent());
+            if (ParentIsActor())
+            {
+                // Alundaio: Use modeShotTime instead of fOneShotTime if current fire mode is 2-shot burst
+                // Alundaio: Cycle down RPM after two shots; used for Abakan/AN-94
+                if (GetCurrentFireMode() == 2 || (cycleDown == true && m_iShotNum <= 1))
+                    fShotTimeCounter = modeShotTime / actor->conditions().GetSpeedShotPerk();
+                else
+                    fShotTimeCounter = fOneShotTime / actor->conditions().GetSpeedShotPerk();
+                // Alundaio: END
+            }
             else
+            {
                 fShotTimeCounter = fOneShotTime;
-            //Alundaio: END
+            }
 
             ++m_iShotNum;
 
@@ -1121,19 +1129,25 @@ void CWeaponMagazined::PlayAnimReload()
 {
     const auto state = GetState();
     VERIFY(state == eReload);
+    float speed = 1.f;
+    CActor* pActor = smart_cast<CActor*>(this->H_Parent());
+    if (pActor)
+    {
+        speed *= pActor->conditions().GetSpeedReloadPerk();
+    }
     if (bMisfire)
     {
         if (cpcstr anim_name = WhichHUDAnimationExist("anm_reload_misfire", "anim_reload_misfire"))
             PlayHUDMotion(anim_name, true, this, state);
         else
-            PlayHUDMotion("anm_reload", "anim_reload", true, this, state);
+            PlayHUDMotion("anm_reload", "anim_reload", true, this, state, speed);
     }
     else
     {
         if (cpcstr anim_name = iAmmoElapsed == 0 ? WhichHUDAnimationExist("anm_reload_empty", "anim_reload_empty") : nullptr)
-            PlayHUDMotion(anim_name, true, this, state);
+            PlayHUDMotion(anim_name, true, this, state, speed);
         else
-            PlayHUDMotion("anm_reload", "anim_reload", true, this, state);
+            PlayHUDMotion("anm_reload", "anim_reload", true, this, state, speed);
     }
 }
 

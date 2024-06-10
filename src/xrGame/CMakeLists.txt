@@ -2283,6 +2283,8 @@ target_sources(xrGame PRIVATE
     ui/UIArtefactPanel.cpp
     ui/UIArtefactPanel.h
     ui/UIBoosterInfo.cpp
+    ui/UIBoostStatesWnd.h
+    ui/UIBoostStatesWnd.cpp
     ui/UIBoosterInfo.h
     ui/UIBuyWeaponTab.cpp
     ui/UIBuyWeaponTab.h

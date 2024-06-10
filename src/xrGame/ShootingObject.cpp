@@ -496,15 +496,6 @@ void CShootingObject::FireBullet(const Fvector& pos, const Fvector& shot_dir, fl
             if (pActor)
             {
                 l_fHitPower = fvHitPower[g_SingleGameDifficulty] * pActor->conditions().GetDamagePerk();
-
-                string32 str;
-                xr_sprintf(str, "%f", l_fHitPower);
-                string32 str1 = "AMMOPower  ";
-                string32 str2;
-                xr_sprintf(str2, "%f", pActor->conditions().GetDamagePerk());
-                pstr _strBuff;
-                STRCONCAT(_strBuff, str1, str, " ", str2);
-                Log(_strBuff);
             }
         }
         else
