@@ -21,10 +21,28 @@ CUIBoosterInfo::~CUIBoosterInfo()
 
 constexpr pcstr boost_influence_caption[] =
 {
-    "ui_inv_health", "ui_inv_power", "ui_inv_radiation", "ui_inv_bleeding",
-    "ui_inv_outfit_additional_weight", "ui_inv_outfit_radiation_protection", "ui_inv_outfit_telepatic_protection",
-    "ui_inv_outfit_chemical_burn_protection", "ui_inv_outfit_burn_immunity", "ui_inv_outfit_shock_immunity",
-    "ui_inv_outfit_radiation_immunity", "ui_inv_outfit_telepatic_immunity", "ui_inv_outfit_chemical_burn_immunity"
+    "ui_inv_health",
+    "ui_inv_power",
+    "ui_inv_radiation",
+    "ui_inv_bleeding",
+    "ui_inv_outfit_additional_weight",
+    "ui_inv_outfit_radiation_protection",
+    "ui_inv_outfit_telepatic_protection",
+    "ui_inv_outfit_chemical_burn_protection",
+    "ui_inv_booster_grave_immunity",
+    "ui_inv_booster_health_increase",
+    "ui_inv_booster_power_increase",
+    "ui_inv_booster_sniper",
+    "ui_inv_booster_double_shot",
+    "ui_inv_booster_speed_shot",
+    "ui_inv_booster_speed_reload",
+    "ui_inv_booster_movespeed_increase",
+    "ui_inv_booster_jump_increase",
+    "ui_inv_booster_burn_immunity",
+    "ui_inv_outfit_shock_immunity",
+    "ui_inv_outfit_radiation_immunity",
+    "ui_inv_outfit_telepatic_immunity",
+    "ui_inv_outfit_chemical_burn_immunity"
 };
 
 bool CUIBoosterInfo::InitFromXml(CUIXml& xml)
@@ -111,6 +129,15 @@ void CUIBoosterInfo::SetInfo(shared_str const& section)
             case eBoostPowerRestore:
             case eBoostBleedingRestore:
             case eBoostMaxWeight:
+            case eBoostGraveImmunity:
+            case eBoostHealthIncrease:
+            case eBoostPowerIncrease:
+            case eBoostSniper:
+            case eBoostDoubleShot:
+            case eBoostSpeedShot:
+            case eBoostSpeedReload:
+            case eBoostMoveSpeedIncrease:
+            case eBoostJumpIncrease:
                 max_val = 1.0f;
                 break;
             case eBoostRadiationRestore:

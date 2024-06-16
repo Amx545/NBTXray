@@ -227,6 +227,7 @@ public:
     virtual void SetMaximumVelocity(dReal vel) { m_max_velocity = vel; }
     virtual dReal GetMaximumVelocity() { return m_max_velocity; }
     virtual void SetJupmUpVelocity(dReal velocity) { jump_up_velocity = velocity; }
+    virtual dReal GetJupmUpVelocity() { return jump_up_velocity; }
     virtual bool JumpState() { return b_jumping || b_jump; };
     virtual const Fvector& ControlAccel() const { return m_acceleration; }
     virtual bool TouchRestrictor(ERestrictionType rttype);

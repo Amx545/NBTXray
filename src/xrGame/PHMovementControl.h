@@ -280,6 +280,7 @@ public:
     void ApplyImpulse(const Fvector& dir, const float P);
     void ApplyHit(const Fvector& dir, const float P, ALife::EHitType hit_type);
     void SetJumpUpVelocity(float velocity);
+    float GetJumpUpVelocity();
     void EnableCharacter();
     void SetOjectContactCallback(ObjectContactCallbackFun* callback);
     void SetFootCallBack(ObjectContactCallbackFun* callback);

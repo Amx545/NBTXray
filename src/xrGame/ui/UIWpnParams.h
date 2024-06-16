@@ -21,25 +21,42 @@ public:
 protected:
     CUIDoubleProgressBar m_progressAccuracy; // red or green
     CUIDoubleProgressBar m_progressHandling;
-    CUIDoubleProgressBar m_progressDamage;
-    CUIDoubleProgressBar m_progressRPM;
+    CUIDoubleProgressBar m_progressRecoil;
+    CUIDoubleProgressBar m_progressReliability;
+    //CUIDoubleProgressBar m_progressDamage;
+    //CUIDoubleProgressBar m_progressRPM;
 
     CUIStatic* m_icon_acc;
     CUIStatic* m_icon_dam;
+    CUIStatic* m_icon_rlb;
+    CUIStatic* m_icon_rcl;
     CUIStatic* m_icon_han;
     CUIStatic* m_icon_rpm;
+    CUIStatic* m_icon_bsp;
 
     CUIStatic* m_stAmmo;
     CUIStatic m_textAccuracy{ "Accuracy" };
-    CUIStatic m_textHandling{ "Handling" };
+    CUIStatic m_textHandling{"Handling"};
+    CUIStatic m_textRecoil{"Recoil"};
+    CUIStatic m_textReliability{"Reliability"};
     CUIStatic m_textDamage{ "Damage" };
-    CUIStatic m_textRPM{ "RPM" };
+    CUIStatic m_textRPM{"RPM"};
+    CUIStatic m_textBSpd{"BSpd"};
+    CUIStatic* m_textBSpdN;
+    CUIStatic* m_textDamageN;
+    CUIStatic* m_textRPMN;
+    CUIStatic* m_textBSpdSlot;
+    CUIStatic* m_textDamageSlot;
+    CUIStatic* m_textRPMSlot;
+    CUIStatic* m_textAmmoCountSlot;
     CUIStatic* m_textAmmoTypes;
     CUIStatic* m_textAmmoUsedType;
     CUIStatic* m_textAmmoCount;
     CUIStatic* m_textAmmoCount2;
     CUIStatic* m_stAmmoType1;
     CUIStatic* m_stAmmoType2;
+    CUIStatic* m_stAmmoType3;
+    CUIStatic* m_stAmmoType4;
     CUIStatic* m_Prop_line;
 };
 

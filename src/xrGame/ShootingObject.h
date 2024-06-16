@@ -13,6 +13,7 @@
 class CCartridge;
 class CParticlesObject;
 class IRender_Sector;
+class CActor;
 
 extern const Fvector zero_vel;
 
@@ -62,6 +63,7 @@ protected:
 
     float fOneShotTime{};
     float modeShotTime;
+    u8 rarity_amplifier;
     bool cycleDown;
     Fvector4 fvHitPower{};
     Fvector4 fvHitPowerCritical{};

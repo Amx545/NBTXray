@@ -109,6 +109,7 @@ public:
     virtual void SetMaximumVelocity(dReal /**vel**/) {} //!!
     virtual dReal GetMaximumVelocity() { return 0; }
     virtual void SetJupmUpVelocity(dReal /**velocity**/) {} //!!
+    virtual dReal GetJupmUpVelocity() { return 0; }
     virtual void IPosition(Fvector& /**pos**/) {}
     virtual u16 ContactBone() { return 0; }
     virtual void DeathPosition(Fvector& /**deathPos**/) {}

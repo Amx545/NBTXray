@@ -2,6 +2,7 @@
 
 #include "WeaponMagazined.h"
 #include "Actor.h"
+#include "ActorCondition.h"
 #include "ParticlesObject.h"
 #include "Scope.h"
 #include "Silencer.h"
@@ -189,9 +190,9 @@ void CWeaponMagazined::FireEnd()
     inherited::FireEnd();
 
     // XXX: disable autoreload via console
-    CActor* actor = smart_cast<CActor*>(H_Parent());
-    if (m_pInventory && !iAmmoElapsed && actor && GetState() != eReload)
-        Reload();
+    //CActor* actor = smart_cast<CActor*>(H_Parent());
+    //if (m_pInventory && !iAmmoElapsed && actor && GetState() != eReload)
+    //Reload();
 }
 
 void CWeaponMagazined::Reload()
@@ -547,14 +548,21 @@ void CWeaponMagazined::state_Fire(float dt)
             }
 
             m_bFireSingleShot = false;
-
-            //Alundaio: Use fModeShotTime instead of fOneShotTime if current fire mode is 2-shot burst
-            //Alundaio: Cycle down RPM after two shots; used for Abakan/AN-94
-            if (GetCurrentFireMode() == 2 || (cycleDown == true && m_iShotNum <= 1))
-                fShotTimeCounter = modeShotTime;
+            CActor* actor = smart_cast<CActor*>(H_Parent());
+            if (ParentIsActor())
+            {
+                // Alundaio: Use modeShotTime instead of fOneShotTime if current fire mode is 2-shot burst
+                // Alundaio: Cycle down RPM after two shots; used for Abakan/AN-94
+                if (GetCurrentFireMode() == 2 || (cycleDown == true && m_iShotNum <= 1))
+                    fShotTimeCounter = modeShotTime / actor->conditions().GetSpeedShotPerk();
+                else
+                    fShotTimeCounter = fOneShotTime / actor->conditions().GetSpeedShotPerk();
+                // Alundaio: END
+            }
             else
+            {
                 fShotTimeCounter = fOneShotTime;
-            //Alundaio: END
+            }
 
             ++m_iShotNum;
 
@@ -724,16 +732,9 @@ void CWeaponMagazined::switch2_Fire()
 
 void CWeaponMagazined::switch2_Empty()
 {
-    OnZoomOut();
-
-    if (!TryReload())
-    {
-        OnEmptyClick();
-    }
-    else
-    {
-        inherited::FireEnd();
-    }
+    //OnZoomOut();
+    OnEmptyClick();
+    //inherited::FireEnd();
 }
 void CWeaponMagazined::PlayReloadSound()
 {
@@ -1128,23 +1129,32 @@ void CWeaponMagazined::PlayAnimReload()
 {
     const auto state = GetState();
     VERIFY(state == eReload);
+    float speed = 1.f;
+    CActor* pActor = smart_cast<CActor*>(this->H_Parent());
+    if (pActor)
+    {
+        speed *= pActor->conditions().GetSpeedReloadPerk();
+    }
     if (bMisfire)
     {
         if (cpcstr anim_name = WhichHUDAnimationExist("anm_reload_misfire", "anim_reload_misfire"))
             PlayHUDMotion(anim_name, true, this, state);
         else
-            PlayHUDMotion("anm_reload", "anim_reload", true, this, state);
+            PlayHUDMotion("anm_reload", "anim_reload", true, this, state, speed);
     }
     else
     {
         if (cpcstr anim_name = iAmmoElapsed == 0 ? WhichHUDAnimationExist("anm_reload_empty", "anim_reload_empty") : nullptr)
-            PlayHUDMotion(anim_name, true, this, state);
+            PlayHUDMotion(anim_name, true, this, state, speed);
         else
-            PlayHUDMotion("anm_reload", "anim_reload", true, this, state);
+            PlayHUDMotion("anm_reload", "anim_reload", true, this, state, speed);
     }
 }
 
-void CWeaponMagazined::PlayAnimAim() { PlayHUDMotion("anm_idle_aim", "anim_idle_aim", true, nullptr, GetState()); }
+void CWeaponMagazined::PlayAnimAim() 
+{
+    PlayHUDMotion("anm_idle_aim", "anim_idle_aim", true, nullptr, GetState());
+}
 void CWeaponMagazined::PlayAnimIdle()
 {
     if (GetState() != eIdle)
@@ -1160,7 +1170,14 @@ void CWeaponMagazined::PlayAnimIdle()
 void CWeaponMagazined::PlayAnimShoot()
 {
     VERIFY(GetState() == eFire);
-    PlayHUDMotion("anm_shots", "anim_shoot", false, this, GetState());
+    if (IsZoomed())
+    {
+        PlayHUDMotion("anm_shots_aim", "anim_shoot", FALSE, this, GetState());
+    }
+    else
+    {
+        PlayHUDMotion("anm_shots", "anim_shoot", false, this, GetState());
+    }
 }
 
 void CWeaponMagazined::OnZoomIn()
@@ -1347,6 +1364,7 @@ bool CWeaponMagazined::GetBriefInfo(II_BriefInfo& info)
         info.fmj_ammo._set("--");
         info.ap_ammo._set("--");
         info.third_ammo._set("--"); //Alundaio
+        info.actual_ammo._set("--");
         info.total_ammo = "--";
     }
     else
@@ -1356,6 +1374,7 @@ bool CWeaponMagazined::GetBriefInfo(II_BriefInfo& info)
         info.fmj_ammo._set("");
         info.ap_ammo._set("");
         info.third_ammo._set("");
+        info.actual_ammo._set("");
 
         int total = 0;
         if (at_size >= 1)
@@ -1379,6 +1398,11 @@ bool CWeaponMagazined::GetBriefInfo(II_BriefInfo& info)
             info.third_ammo._set(int_str);
             total += third;
         }
+        if (at_size >= 4)
+        {
+            const int four = GetAmmoCount(3);
+            total += four;
+        }
 
         xr_sprintf(int_str, "%d", total);
         info.total_ammo = int_str;
@@ -1390,12 +1414,18 @@ bool CWeaponMagazined::GetBriefInfo(II_BriefInfo& info)
         LPCSTR ammo_type = m_ammoTypes[m_magazine.back().m_LocalAmmoType].c_str();
         info.name = StringTable().translate(pSettings->r_string(ammo_type, "inv_name_short"));
         info.icon = ammo_type;
+        const int curammo = GetAmmoCount(m_magazine.back().m_LocalAmmoType);
+        xr_sprintf(int_str, "%d", curammo);
+        info.actual_ammo = int_str;
     }
     else
     {
         LPCSTR ammo_type = m_ammoTypes[m_ammoType].c_str();
         info.name = StringTable().translate(pSettings->r_string(ammo_type, "inv_name_short"));
         info.icon = ammo_type;
+        const int curammo = GetAmmoCount(m_ammoType);
+        xr_sprintf(int_str, "%d", curammo);
+        info.actual_ammo = int_str;
     }
     return true;
 }

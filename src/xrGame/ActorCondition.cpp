@@ -35,6 +35,15 @@ BOOL GodMode()
 
 CActorCondition::CActorCondition(CActor* object) : inherited(object)
 {
+    m_iActorLevel = 1;
+    m_iActorPoint = 5;
+    m_iActorVitality = 0;
+    m_iActorStrength = 0;
+    m_iActorIntelligence = 0;
+    m_iActorDexterity = 0;
+    m_fActorExperience = 0;
+    m_fActorRequiredExperience = 0;
+
     m_fJumpPower = 0.f;
     m_fStandPower = 0.f;
     m_fWalkPower = 0.f;
@@ -134,6 +143,7 @@ void CActorCondition::LoadCondition(LPCSTR entity_section)
     VERIFY(!fis_zero(m_zone_max_power[ALife::infl_psi]));
     VERIFY(!fis_zero(m_zone_max_power[ALife::infl_electra]));
     VERIFY(!fis_zero(m_max_power_restore_speed));
+    GetActorLevelUp();
 }
 
 float CActorCondition::GetZoneMaxPower(ALife::EInfluenceType type) const
@@ -289,7 +299,7 @@ void CActorCondition::UpdateCondition()
         if (!m_death_effector->IsActual())
             m_death_effector->Stop();
     }
-
+    UpdateStats();
     AffectDamage_InjuriousMaterialAndMonstersInfluence();
 }
 
@@ -300,11 +310,33 @@ void CActorCondition::UpdateBoosters()
         BOOSTER_MAP::iterator it = m_booster_influences.find((EBoostParams)i);
         if (it != m_booster_influences.end())
         {
-            it->second.fBoostTime -= m_fDeltaTime / (IsGameTypeSingle() ? Level().GetGameTimeFactor() : 1.0f);
-            if (it->second.fBoostTime <= 0.0f)
+            if (it->second.m_type == eBoostGraveImmunity)
             {
-                DisableBoostParameters(it->second);
-                m_booster_influences.erase(it);
+                if (Device.fTimeGlobal > m_fInvulnerableTime)
+                {
+                    float curr_health = GetHealth();
+                    it->second.fBoostTime -= m_fDeltaTime / (IsGameTypeSingle() ? Level().GetGameTimeFactor() : 1.0f);
+                    if (curr_health > 0.0f && curr_health + m_fDeltaHealth <= 0.0f)
+                    {
+                        SetHealth(0.2);
+                        m_fInvulnerableTime = Device.fTimeGlobal + m_fBoostGraveImmunity;
+                        it->second.fBoostTime = 0.0f;
+                    }
+                    if (it->second.fBoostTime <= 0.0f)
+                    {
+                        DisableBoostParameters(it->second);
+                        m_booster_influences.erase(it);
+                    }
+                }
+            }
+            else
+            {
+                it->second.fBoostTime -= m_fDeltaTime / (IsGameTypeSingle() ? Level().GetGameTimeFactor() : 1.0f);
+                if (it->second.fBoostTime <= 0.0f)
+                {
+                    DisableBoostParameters(it->second);
+                    m_booster_influences.erase(it);
+                }
             }
         }
     }
@@ -416,6 +448,42 @@ float CActorCondition::GetZoneDanger() const
 }
 
 void CActorCondition::UpdateRadiation() { inherited::UpdateRadiation(); }
+
+void CActorCondition::UpdateStats() 
+{
+    u32 exp = m_fActorExperience;
+    luabind::functor<u32> funct;
+    R_ASSERT(GEnv.ScriptEngine->functor("actor_states.get_stat_full_xp_float", funct));
+    m_fActorExperience = funct();
+    if (exp != m_fActorExperience)
+    {
+        GetActorLevelUp();
+    }
+    if (m_fActorExperience>m_fActorRequiredExperience)
+    {
+        m_fActorExperience = m_fActorExperience - m_fActorRequiredExperience;
+        luabind::functor<void> funct1;
+        R_ASSERT(GEnv.ScriptEngine->functor("actor_states.set_stat_full_xp", funct1));
+        funct1(m_fActorExperience);
+        m_iActorLevel += 1;
+        m_iActorPoint += 1;
+        GetActorLevelUp();
+    }
+}
+
+void CActorCondition::GetActorLevelUp() 
+{ 
+    if (m_iActorLevel <= 13)
+    {
+        m_fActorRequiredExperience = (u32)(0.0068f * m_iActorLevel * m_iActorLevel * m_iActorLevel -
+            0.06f * m_iActorLevel * m_iActorLevel + 17.1f * m_iActorLevel + 639.0f);
+    }
+    else
+    {
+        m_fActorRequiredExperience = (u32)(0.02f * m_iActorLevel * m_iActorLevel * m_iActorLevel +
+            3.06f * m_iActorLevel * m_iActorLevel + 105.6f * m_iActorLevel - 895.0f);
+    }
+}
 void CActorCondition::UpdateSatiety()
 {
     if (!IsGameTypeSingle())
@@ -543,6 +611,14 @@ void CActorCondition::save(NET_Packet& output_packet)
         output_packet.w_float(b->second.fBoostValue);
         output_packet.w_float(b->second.fBoostTime);
     }
+    save_data(m_iActorLevel, output_packet);
+    save_data(m_iActorPoint, output_packet);
+    save_data(m_iActorVitality, output_packet);
+    save_data(m_iActorStrength, output_packet);
+    save_data(m_iActorIntelligence, output_packet);
+    save_data(m_iActorDexterity, output_packet);
+    save_data(m_fActorExperience, output_packet);
+    save_data(m_fActorRequiredExperience, output_packet);
 }
 
 void CActorCondition::load(IReader& input_packet)
@@ -572,6 +648,14 @@ void CActorCondition::load(IReader& input_packet)
         m_booster_influences[B.m_type] = B;
         BoostParameters(B);
     }
+    load_data(m_iActorLevel, input_packet);
+    load_data(m_iActorPoint, input_packet);
+    load_data(m_iActorVitality, input_packet);
+    load_data(m_iActorStrength, input_packet);
+    load_data(m_iActorIntelligence, input_packet);
+    load_data(m_iActorDexterity, input_packet);
+    load_data(m_fActorExperience, input_packet);
+    load_data(m_fActorRequiredExperience, input_packet);
 }
 
 void CActorCondition::reinit()
@@ -611,6 +695,15 @@ void CActorCondition::BoostParameters(const SBooster& B)
         case eBoostRadiationProtection: BoostRadiationProtection(B.fBoostValue); break;
         case eBoostTelepaticProtection: BoostTelepaticProtection(B.fBoostValue); break;
         case eBoostChemicalBurnProtection: BoostChemicalBurnProtection(B.fBoostValue); break;
+        case eBoostGraveImmunity: BoostGraveImmunity(B.fBoostValue); break;
+        case eBoostHealthIncrease: BoostHealthIncrease(B.fBoostValue); break;
+        case eBoostPowerIncrease: BoostPowerIncrease(B.fBoostValue); break;
+        case eBoostSniper: BoostSniper(B.fBoostValue); break;
+        case eBoostDoubleShot: BoostDoubleShot(B.fBoostValue); break;
+        case eBoostSpeedShot: BoostSpeedShot(B.fBoostValue); break;
+        case eBoostSpeedReload: BoostSpeedReload(B.fBoostValue); break;
+        case eBoostMoveSpeedIncrease: BoostMoveSpeedIncrease(B.fBoostValue); break;
+        case eBoostJumpIncrease: BoostJumpIncrease(B.fBoostValue); break;
         default: NODEFAULT;
         }
     }
@@ -639,6 +732,15 @@ void CActorCondition::DisableBoostParameters(const SBooster& B)
     case eBoostRadiationProtection: BoostRadiationProtection(-B.fBoostValue); break;
     case eBoostTelepaticProtection: BoostTelepaticProtection(-B.fBoostValue); break;
     case eBoostChemicalBurnProtection: BoostChemicalBurnProtection(-B.fBoostValue); break;
+    case eBoostGraveImmunity: BoostGraveImmunity(-B.fBoostValue); break;
+    case eBoostHealthIncrease: BoostHealthMinus(B.fBoostValue); break;
+    case eBoostPowerIncrease: BoostStaminaMinus(B.fBoostValue); break;
+    case eBoostSniper: BoostSniper(-B.fBoostValue); break;
+    case eBoostDoubleShot: BoostDoubleShot(-B.fBoostValue); break;
+    case eBoostSpeedShot: BoostSpeedShot(-B.fBoostValue); break;
+    case eBoostSpeedReload: BoostSpeedReload(-B.fBoostValue); break;
+    case eBoostMoveSpeedIncrease: BoostMoveSpeedMinus(B.fBoostValue); break;
+    case eBoostJumpIncrease: BoostJumpMinus(B.fBoostValue); break;
     default: NODEFAULT;
     }
 }
@@ -675,6 +777,9 @@ void CActorCondition::ClearAllBoosters()
         DisableBoostParameters((*it).second);
     }
 }
+
+//-------------------------------BOOSTER-------------------------------------
+
 void CActorCondition::BoostHpRestore(const float value) { m_change_v.m_fV_HealthRestore += value; }
 void CActorCondition::BoostPowerRestore(const float value) { m_fV_SatietyPower += value; }
 void CActorCondition::BoostRadiationRestore(const float value) { m_change_v.m_fV_Radiation += value; }
@@ -696,6 +801,55 @@ void CActorCondition::BoostWoundImmunity(const float value) { m_fBoostWoundImmun
 void CActorCondition::BoostRadiationProtection(const float value) { m_fBoostRadiationProtection += value; }
 void CActorCondition::BoostTelepaticProtection(const float value) { m_fBoostTelepaticProtection += value; }
 void CActorCondition::BoostChemicalBurnProtection(const float value) { m_fBoostChemicalBurnProtection += value; }
+void CActorCondition::BoostGraveImmunity(const float value) { m_fBoostGraveImmunity += value; }
+void CActorCondition::BoostHealthIncrease(const float value) 
+{
+    m_fBoostHealthIncrease = GetMaxHealth() * (value + 1.f);
+    object().SetMaxHealth(m_fBoostHealthIncrease);
+}
+void CActorCondition::BoostPowerIncrease(const float value) 
+{ 
+    m_fBoostPowerIncrease = GetMaxPower() * (value + 1.f);
+    SetMaxPower(m_fBoostPowerIncrease);
+}
+void CActorCondition::BoostSniper(const float value) { m_fBoostSniper += value; }
+void CActorCondition::BoostDoubleShot(const float value) { m_fBoostDoubleShot += value; }
+void CActorCondition::BoostSpeedShot(const float value) { m_fBoostSpeedShot += value; }
+void CActorCondition::BoostSpeedReload(const float value) { m_fBoostSpeedReload += value; }
+void CActorCondition::BoostMoveSpeedIncrease(const float value) 
+{ 
+    m_fBoostMoveSpeedIncrease = (1.f + value) * object().m_fSprintFactor;
+    object().m_fSprintFactor = m_fBoostMoveSpeedIncrease;
+}
+void CActorCondition::BoostJumpIncrease(const float value) 
+{
+    m_fBoostJumpIncrease = (1.f + value) * object().character_physics_support()->movement()->GetJumpUpVelocity();
+    object().character_physics_support()->movement()->SetJumpUpVelocity(m_fBoostJumpIncrease);
+}
+
+void CActorCondition::BoostHealthMinus(const float value)
+{
+    m_fBoostHealthIncrease = GetMaxHealth() / (value + 1.f);
+    object().SetMaxHealth(m_fBoostHealthIncrease);
+}
+void CActorCondition::BoostStaminaMinus(const float value) 
+{
+    m_fBoostPowerIncrease = GetMaxPower() / (value + 1.f);
+    SetMaxPower(m_fBoostPowerIncrease);
+}
+void CActorCondition::BoostMoveSpeedMinus(const float value) 
+{
+    m_fBoostMoveSpeedIncrease = object().m_fSprintFactor / (1.f + value);
+    object().m_fSprintFactor = m_fBoostMoveSpeedIncrease;
+}
+void CActorCondition::BoostJumpMinus(const float value) 
+{
+    m_fBoostJumpIncrease = object().character_physics_support()->movement()->GetJumpUpVelocity() / (1.f + value);
+    object().character_physics_support()->movement()->SetJumpUpVelocity(m_fBoostJumpIncrease);
+}
+
+//-------------------------------END BOOSTER-------------------------------------
+
 void CActorCondition::UpdateTutorialThresholds()
 {
     string256 cb_name;

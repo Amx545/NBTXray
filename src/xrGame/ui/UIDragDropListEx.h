@@ -56,6 +56,8 @@ private:
     Fvector2 m_blocker_spacing;
     Fvector2 m_highlighter_spacing;
     bool m_bConditionProgBarVisible;
+    bool bHelm;
+    u32 af_count;
 
 protected:
     CUICellItem* m_selected_item;
@@ -98,6 +100,10 @@ public:
 
     u32 back_color;
 
+    void SetAFCount(int val) { af_count = val; }
+    u32 GetAFCount() { return af_count; }
+    void SetHelmStatus(bool val) { bHelm = val; }
+    bool GetHelmStatus() { return bHelm; }
     const Ivector2& CellsCapacity();
     void SetCellsCapacity(const Ivector2 c);
     void SetStartCellsCapacity(const Ivector2 c)

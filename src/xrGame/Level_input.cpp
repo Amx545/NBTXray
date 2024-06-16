@@ -232,7 +232,7 @@ void CLevel::IR_OnKeyboardPress(int key)
             return;
 
         strconcat(sizeof(command), command, "load ", saved_game);
-        Console->Execute(command);
+        Console->Execute(" load_last_save ");
         return;
     }
 

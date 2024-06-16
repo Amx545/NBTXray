@@ -263,9 +263,9 @@ void CHudItem::on_a_hud_attach()
     }
 }
 
-u32 CHudItem::PlayHUDMotion(const shared_str& M, BOOL bMixIn, CHudItem* W, u32 state)
+u32 CHudItem::PlayHUDMotion(const shared_str& M, BOOL bMixIn, CHudItem* W, u32 state, float speed)
 {
-    u32 anim_time = PlayHUDMotion_noCB(M, bMixIn);
+    u32 anim_time = PlayHUDMotion_noCB(M, bMixIn,speed);
     if (anim_time > 0)
     {
         m_bStopAtEndAnimIsRunning = true;
@@ -280,19 +280,20 @@ u32 CHudItem::PlayHUDMotion(const shared_str& M, BOOL bMixIn, CHudItem* W, u32 s
     return anim_time;
 }
 
-u32 CHudItem::PlayHUDMotion(const shared_str& M, const shared_str& M2, BOOL bMixIn, CHudItem* W, u32 state)
+u32 CHudItem::PlayHUDMotion(const shared_str& M, const shared_str& M2, BOOL bMixIn, CHudItem* W, u32 state, 
+    float speed)
 {
     u32 time = 0;
 
     if (isHUDAnimationExist(M.c_str()))
-        time = PlayHUDMotion(M, bMixIn, W, state);
+        time = PlayHUDMotion(M, bMixIn, W, state, speed);
     else if (isHUDAnimationExist(M2.c_str()))
-        time = PlayHUDMotion(M2, bMixIn, W, state);
+        time = PlayHUDMotion(M2, bMixIn, W, state, speed);
 
     return time;
 }
 
-u32 CHudItem::PlayHUDMotion_noCB(const shared_str& motion_name, BOOL bMixIn)
+u32 CHudItem::PlayHUDMotion_noCB(const shared_str& motion_name, BOOL bMixIn, float speed)
 {
     m_current_motion = motion_name;
 
@@ -303,7 +304,7 @@ u32 CHudItem::PlayHUDMotion_noCB(const shared_str& motion_name, BOOL bMixIn)
     }
     if (HudItemData())
     {
-        return HudItemData()->anim_play(motion_name, bMixIn, m_current_motion_def, m_started_rnd_anim_idx);
+        return HudItemData()->anim_play(motion_name, bMixIn, m_current_motion_def, m_started_rnd_anim_idx, speed);
     }
     else
     {

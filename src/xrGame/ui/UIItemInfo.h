@@ -11,6 +11,7 @@ class CUIArtefactParams;
 class CUIFrameWindow;
 class UIInvUpgPropertiesWnd;
 class CUIOutfitInfo;
+class CUIAmmoParams;
 class CUIBoosterInfo;
 class CUICellItem;
 
@@ -47,6 +48,7 @@ public:
     void TryAddOutfitInfo(CInventoryItem& pInvItem, CInventoryItem* pCompareItem);
     void TryAddUpgradeInfo(CInventoryItem& pInvItem);
     void TryAddBoosterInfo(CInventoryItem& pInvItem);
+    void TryAddAmmoInfo(CInventoryItem* pInvItem);
 
     virtual void Draw();
     bool m_b_FitToHeight;
@@ -67,6 +69,7 @@ public:
     UIInvUpgPropertiesWnd* UIProperties;
     CUIOutfitInfo* UIOutfitInfo;
     CUIBoosterInfo* UIBoosterInfo;
+    CUIAmmoParams* UIAmmoInfo;
 
     Fvector2 UIItemImageSize;
     CUIStatic* UIItemImage;

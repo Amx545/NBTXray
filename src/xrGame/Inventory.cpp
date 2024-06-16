@@ -2,9 +2,11 @@
 #include "Inventory.h"
 #include "Actor.h"
 #include "CustomOutfit.h"
+#include "ActorBelt.h"
 #include "trade.h"
 #include "Weapon.h"
 #include "Grenade.h"
+#include "inventory_space.h"
 
 #include "ui/UIInventoryUtilities.h"
 #include "ui/UIActorMenu.h"
@@ -46,13 +48,15 @@ bool defaultSlotActiveness[] =
     false, // detector
     false, // torch
     true, // artefact
-    false // helmet
+    false, // helmet
+    false, // helmet
+    false // belt
 };
 
 CInventory::CInventory()
 {
     m_fMaxWeight = pSettings->r_float("inventory", "max_weight");
-    m_iMaxBelt = pSettings->read_if_exists<s32>("inventory", "max_belt", 5);
+    m_iMaxBelt = pSettings->read_if_exists<s32>("inventory", "max_belt", 12);
 
     u16 slotsCount = SLOTS_COUNT;
     pSettings->read_if_exists<u16>(slotsCount, "inventory", "slots_count", "slots"); // slots_count in CS/COP, slots in SOC
@@ -1267,15 +1271,23 @@ bool CInventory::CanTakeItem(CInventoryItem* inventory_item) const
 u32 CInventory::BeltWidth() const
 {
     CActor* pActor = smart_cast<CActor*>(m_pOwner);
+    u32 af_count = 0;
     if (pActor)
     {
         CCustomOutfit* outfit = pActor->GetOutfit();
+        CActorBelt* belt = pActor->GetItemFromSlot<CActorBelt>(ACTORBELT_SLOT);
         if (outfit)
         {
-            return outfit->get_artefact_count();
+            af_count += outfit->get_artefact_count();
+        }
+        if (belt)
+        {
+            af_count += belt->get_artefact_count();
         }
     }
-    return 0; // m_iMaxBelt;
+    if (af_count > BeltMaxWidth())
+        af_count = BeltMaxWidth();
+    return af_count; // m_iMaxBelt;
 }
 
 u32 CInventory::BeltMaxWidth() const

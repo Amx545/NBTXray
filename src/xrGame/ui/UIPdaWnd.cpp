@@ -29,6 +29,7 @@
 #include "UIRankingWnd.h"
 #include "UILogsWnd.h"
 #include "UIScriptWnd.h"
+#include "UISkillPdaWnd.h"
 
 #define PDA_XML "pda.xml"
 
@@ -44,6 +45,7 @@ CUIPdaWnd::CUIPdaWnd() : CUIDialogWnd(CUIPdaWnd::GetDebugType())
     pUIFactionWarWnd = nullptr;
     pUIActorInfo = nullptr;
     pUIRankingWnd = nullptr;
+    pUISkillPdaWnd = nullptr;
     pUILogsWnd = nullptr;
     m_hint_wnd = nullptr;
     Init();
@@ -63,6 +65,8 @@ CUIPdaWnd::~CUIPdaWnd()
         delete_data(pUIRankingWnd);
     if (pUILogsWnd)
         delete_data(pUILogsWnd);
+    if (pUISkillPdaWnd)
+        delete_data(pUISkillPdaWnd);
     delete_data(m_hint_wnd);
     if (UINoice)
         delete_data(UINoice);
@@ -119,6 +123,10 @@ void CUIPdaWnd::Init()
         pUILogsWnd = xr_new<CUILogsWnd>();
         if (!pUILogsWnd->Init())
             xr_delete(pUILogsWnd);
+
+        pUISkillPdaWnd = xr_new<CUISkillPdaWnd>();
+        if (!pUISkillPdaWnd->Init())
+            xr_delete(pUISkillPdaWnd);
     }
 
     UITabControl = xr_new<CUITabControl>();
@@ -226,6 +234,7 @@ void CUIPdaWnd::SetActiveSubdialog(const shared_str& section)
         { "eptFractionWar", pUIFactionWarWnd },
         { "eptStatistics",  pUIActorInfo },
         { "eptRanking",     pUIRankingWnd },
+        { "eptSkillPda",    pUISkillPdaWnd},
         { "eptLogs",        pUILogsWnd },
     };
 
@@ -335,6 +344,10 @@ void CUIPdaWnd::DrawHint()
     {
         pUIRankingWnd->DrawHint();
     }
+    else if (m_pActiveDialog == pUISkillPdaWnd && pUISkillPdaWnd)
+    {
+        //pUISkillPdaWnd->DrawHint();
+    }
     else if (m_pActiveDialog == pUILogsWnd && pUILogsWnd)
     {
     }
@@ -372,6 +385,8 @@ void CUIPdaWnd::Reset()
         pUIActorInfo->ResetAll();
     if (pUIRankingWnd)
         pUIRankingWnd->ResetAll();
+    if (pUISkillPdaWnd)
+        pUISkillPdaWnd->ResetAll();
     if (pUILogsWnd)
         pUILogsWnd->ResetAll();
 }

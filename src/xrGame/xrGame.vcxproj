@@ -120,6 +120,9 @@
     <ClInclude Include="ActivatingCharCollisionDelay.h" />
     <ClInclude Include="Actor.h" />
     <ClInclude Include="ActorAnimation.h" />
+    <ClInclude Include="ActorBelt.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="ActorCondition.h" />
     <ClInclude Include="ActorEffector.h" />
     <ClInclude Include="ActorHelmet.h" />
@@ -1305,8 +1308,12 @@
     <ClInclude Include="ui\UIActorInfo.h" />
     <ClInclude Include="ui\UIActorMenu.h" />
     <ClInclude Include="ui\UIActorStateInfo.h" />
+    <ClInclude Include="ui\UIAmmoInfo.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="ui\UIArtefactPanel.h" />
     <ClInclude Include="ui\UIBoosterInfo.h" />
+    <ClInclude Include="ui\UIBoostStatesWnd.h" />
     <ClInclude Include="ui\UIBuyWeaponTab.h" />
     <ClInclude Include="ui\UIBuyWndBase.h" />
     <ClInclude Include="ui\UIBuyWndShared.h" />
@@ -1375,6 +1382,7 @@
     <ClInclude Include="ui\UIScriptWnd.h" />
     <ClInclude Include="ui\UISecondTaskWnd.h" />
     <ClInclude Include="ui\UIServerInfo.h" />
+    <ClInclude Include="ui\UISkillPdaWnd.h" />
     <ClInclude Include="ui\UISkinSelector.h" />
     <ClInclude Include="ui\UISleepStatic.h" />
     <ClInclude Include="ui\UISpawnWnd.h" />
@@ -1611,6 +1619,9 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <ClCompile Include="ActorAnimation.cpp" />
+    <ClCompile Include="ActorBelt.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="ActorCameras.cpp" />
     <ClCompile Include="ActorCondition.cpp">
       <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
@@ -3225,8 +3236,10 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <ClCompile Include="ui\UIActorStateInfo.cpp" />
+    <ClCompile Include="ui\UIAmmoInfo.cpp" />
     <ClCompile Include="ui\UIArtefactPanel.cpp" />
     <ClCompile Include="ui\UIBoosterInfo.cpp" />
+    <ClCompile Include="ui\UIBoostStatesWnd.cpp" />
     <ClCompile Include="ui\UIBuyWeaponTab.cpp" />
     <ClCompile Include="ui\UIBuyWndShared.cpp" />
     <ClCompile Include="ui\UICarPanel.cpp" />
@@ -3350,6 +3363,7 @@
     </ClCompile>
     <ClCompile Include="ui\UISecondTaskWnd.cpp" />
     <ClCompile Include="ui\UIServerInfo.cpp" />
+    <ClCompile Include="ui\UISkillPdaWnd.cpp" />
     <ClCompile Include="ui\UISkinSelector.cpp" />
     <ClCompile Include="ui\UISleepStatic.cpp" />
     <ClCompile Include="ui\UISpawnWnd.cpp" />
@@ -3429,6 +3443,7 @@
     <ClCompile Include="WeaponStatMgunIR.cpp" />
     <ClCompile Include="WeaponSVD.cpp" />
     <ClCompile Include="WeaponUpgrade.cpp" />
+    <ClCompile Include="WeaponUSP45.cpp" />
     <ClCompile Include="WeaponVal.cpp" />
     <ClCompile Include="WeaponVintorez.cpp" />
     <ClCompile Include="weapon_ammo_dump_impl.cpp" />

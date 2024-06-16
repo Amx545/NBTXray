@@ -149,6 +149,8 @@ void CUIHudStatesWnd::InitFromXml(CUIXml& xml, LPCSTR path)
     m_ui_weapon_cur_ammo = UIHelper::CreateStatic(xml, "static_cur_ammo", this, false);
     m_ui_weapon_fmj_ammo = UIHelper::CreateStatic(xml, "static_fmj_ammo", this, false);
     m_ui_weapon_ap_ammo = UIHelper::CreateStatic(xml, "static_ap_ammo", this, false);
+    m_ui_cur_hp = UIHelper::CreateStatic(xml, "static_cur_hp", this, false);
+    m_ui_cur_st = UIHelper::CreateStatic(xml, "static_cur_st", this, false);
     m_ui_weapon_third_ammo = UIHelper::CreateStatic(xml, "static_third_ammo", this, false); //Alundaio: Option to display a third ammo type
     m_fire_mode = UIHelper::CreateStatic(xml, "static_fire_mode", this);
     m_ui_grenade = UIHelper::CreateStatic(xml, "static_grenade", this, false);
@@ -258,21 +260,38 @@ void CUIHudStatesWnd::UpdateHealth(CActor* actor)
     //	}
 
     const float cur_health = actor->GetfHealth();
+    float cur_max_health = actor->GetMaxHealth() * 100.f;
     m_ui_health_bar->SetProgressPos(iCeil(cur_health * 100.0f * 35.f) / 35.f);
+    m_ui_health_bar->SetRange(0.f, iCeil(cur_max_health * 35.f) / 35.f);
     if (_abs(cur_health - m_last_health) > m_health_blink)
     {
         m_last_health = cur_health;
         m_ui_health_bar->m_UIProgressItem.ResetColorAnimation();
     }
-
+    if (m_ui_cur_hp)
+    {
+        int ival = (int)cur_max_health;
+        string16 str;
+        xr_sprintf(str, sizeof(str), "%d", ival);
+        m_ui_cur_hp->SetText(str);
+    }
+    const float cur_stamina = actor->conditions().GetPower();
+    const float cur_max_stamina = actor->conditions().GetMaxPower() * 100.f;
     if (m_ui_stamina_bar)
     {
-        const float cur_stamina = actor->conditions().GetPower();
         m_ui_stamina_bar->SetProgressPos(iCeil(cur_stamina * 100.0f * 35.f) / 35.f);
+        m_ui_stamina_bar->SetRange(0.f, iCeil(cur_max_stamina * 35.f) / 35.f);
         if (!actor->conditions().IsCantSprint())
         {
             m_ui_stamina_bar->m_UIProgressItem.ResetColorAnimation();
         }
+    }
+    if (m_ui_cur_st)
+    {
+        int ival = (int)cur_max_stamina;
+        string16 str;
+        xr_sprintf(str, sizeof(str), "%d", ival);
+        m_ui_cur_st->SetText(str);
     }
 
     if (m_static_armor && m_ui_armor_bar)
@@ -363,15 +382,15 @@ void CUIHudStatesWnd::UpdateActiveItemInfo(CActor* actor)
         if (m_ui_weapon_fmj_ammo)
         {
             m_ui_weapon_fmj_ammo->Show(true);
-            m_ui_weapon_fmj_ammo->SetText(m_item_info.fmj_ammo.c_str());
-            m_ui_weapon_fmj_ammo->SetTextColor(color_rgba(238, 155, 23, 150));
+            m_ui_weapon_fmj_ammo->SetText(m_item_info.actual_ammo.c_str());
+            m_ui_weapon_fmj_ammo->SetTextColor(color_rgba(238, 155, 23, 255));
         }
 
         if (m_ui_weapon_ap_ammo)
         {
             m_ui_weapon_ap_ammo->Show(true);
-            m_ui_weapon_ap_ammo->SetText(m_item_info.ap_ammo.c_str());
-            m_ui_weapon_ap_ammo->SetTextColor(color_rgba(238, 155, 23, 150));
+            m_ui_weapon_ap_ammo->SetText(m_item_info.total_ammo.c_str());
+            m_ui_weapon_ap_ammo->SetTextColor(color_rgba(238, 155, 23, 255));
         }
 
         //Alundaio: Third ammo type and also set text color for each ammo type
@@ -431,7 +450,7 @@ void CUIHudStatesWnd::UpdateActiveItemInfo(CActor* actor)
                 m_ui_grenade->SetTextColor(color_rgba(238, 155, 23, 150));
         }
 
-        CWeaponMagazined* wpnm = smart_cast<CWeaponMagazined*>(item);
+        /* CWeaponMagazined* wpnm = smart_cast<CWeaponMagazined*>(item);
         if (wpnm)
         {
             if (wpnm->m_ammoType == 0 && m_ui_weapon_fmj_ammo)
@@ -440,7 +459,7 @@ void CUIHudStatesWnd::UpdateActiveItemInfo(CActor* actor)
                 m_ui_weapon_ap_ammo->SetTextColor(color_rgba(238, 155, 23, 255));
             else if (wpnm->m_ammoType == 2 && m_ui_weapon_third_ammo)
                 m_ui_weapon_third_ammo->SetTextColor(color_rgba(238, 155, 23, 255));
-        }
+        }*/
         //-Alundaio
     }
     else

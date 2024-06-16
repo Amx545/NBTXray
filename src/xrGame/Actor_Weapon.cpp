@@ -4,6 +4,7 @@
 #include "StdAfx.h"
 
 #include "Actor.h"
+#include "ActorCondition.h"
 #include "ActorEffector.h"
 #include "Missile.h"
 #include "Inventory.h"
@@ -31,7 +32,7 @@ float CActor::GetWeaponAccuracy() const
     {
         return m_fDispAim;
     }
-    float dispersion = m_fDispBase * GetWeaponParam(W, Get_PDM_Base(), 1.0f);
+    float dispersion = (m_fDispBase * GetWeaponParam(W, Get_PDM_Base(), 1.0f)) / conditions().GetSniperPerk();
 
     CEntity::SEntityState state;
     if (g_State(state))
@@ -65,7 +66,7 @@ void CActor::g_fireParams(const CHudItem* pHudItem, Fvector& fire_pos, Fvector& 
 {
     fire_pos = Cameras().Position();
     fire_dir = Cameras().Direction();
-
+    
     const CMissile* pMissile = smart_cast<const CMissile*>(pHudItem);
     if (pMissile)
     {

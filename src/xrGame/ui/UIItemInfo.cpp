@@ -15,7 +15,9 @@
 #include "UIInvUpgradeProperty.h"
 #include "UIOutfitInfo.h"
 #include "UIBoosterInfo.h"
+#include "UIAmmoInfo.h"
 #include "Weapon.h"
+#include "WeaponAmmo.h"
 #include "CustomOutfit.h"
 #include "ActorHelmet.h"
 #include "eatable_item.h"
@@ -42,6 +44,7 @@ CUIItemInfo::CUIItemInfo() : CUIWindow(CUIItemInfo::GetDebugType())
     UIProperties = NULL;
     UIOutfitInfo = NULL;
     UIBoosterInfo = NULL;
+    UIAmmoInfo = NULL;
     UIArtefactParams = NULL;
     UIName = NULL;
     UIBackground = NULL;
@@ -58,6 +61,7 @@ CUIItemInfo::~CUIItemInfo()
     xr_delete(UIProperties);
     xr_delete(UIOutfitInfo);
     xr_delete(UIBoosterInfo);
+    xr_delete(UIAmmoInfo);
 }
 
 bool CUIItemInfo::InitItemInfo(cpcstr xml_name)
@@ -109,6 +113,10 @@ bool CUIItemInfo::InitItemInfo(cpcstr xml_name)
         UIBoosterInfo = xr_new<CUIBoosterInfo>();
         if (!UIBoosterInfo->InitFromXml(uiXml))
             xr_delete(UIBoosterInfo);
+
+        UIAmmoInfo = xr_new<CUIAmmoParams>();
+        if (!UIAmmoInfo->InitFromXml(uiXml))
+            xr_delete(UIAmmoInfo);
 
         // UIDesc_line						= xr_new<CUIStatic>("Description line");
         // AttachChild						(UIDesc_line);
@@ -180,9 +188,24 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
     string256 str;
     if (UIName)
     {
+        u32 color = UIName->GetTextColor();
+        switch (pInvItem->RarityItem())
+        {
+        case 0: color = color_argb(255, 180, 180, 180); break;
+        case 1: color = color_argb(255, 0, 255, 128); break;
+        case 2: color = color_argb(255, 0, 38, 255); break;
+        case 3: color = color_argb(255, 128, 0, 128); break;
+        case 4: color = color_argb(255, 255, 255, 0); break;
+        case 5: color = color_argb(255, 255, 128, 0); break;
+        case 6: color = color_argb(255, 255, 0, 0); break;
+        case 7: color = color_argb(255, 0, 255, 0); break;
+        default: break;
+        }
+        UIName->SetTextColor(color);
         UIName->SetText(pInvItem->NameItem());
         UIName->AdjustHeightToText();
         pos.y = UIName->GetWndPos().y + UIName->GetHeight() + 4.0f;
+
     }
     if (UIWeight)
     {
@@ -217,6 +240,17 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
         if (item_price != u32(-1))
         {
             xr_sprintf(str, "%d RU", item_price); // will be owerwritten in multiplayer
+            UICost->SetText(str);
+            pos.x = UICost->GetWndPos().x;
+            if (m_complex_desc)
+            {
+                UICost->SetWndPos(pos);
+            }
+            UICost->Show(true);
+        }
+        else if (m_pInvItem->Cost() > 0 && !m_pInvItem->IsQuestItem())
+        {
+            xr_sprintf(str, "%d RU", m_pInvItem->Cost()); // will be owerwritten in multiplayer
             UICost->SetText(str);
             pos.x = UICost->GetWndPos().x;
             if (m_complex_desc)
@@ -284,6 +318,7 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
         TryAddOutfitInfo(*pInvItem, pCompareItem);
         TryAddUpgradeInfo(*pInvItem);
         TryAddBoosterInfo(*pInvItem);
+        TryAddAmmoInfo(pInvItem);
 
         if (m_b_FitToHeight)
         {
@@ -403,6 +438,20 @@ void CUIItemInfo::TryAddBoosterInfo(CInventoryItem& pInvItem)
         UIBoosterInfo->SetInfo(pInvItem.object().cNameSect());
         UIDesc->AddWindow(UIBoosterInfo, false);
     }
+}
+
+void CUIItemInfo::TryAddAmmoInfo(CInventoryItem* pInvItem) 
+{ 
+    if (!UIAmmoInfo)
+        return;
+    //UIDesc->AddWindow(UIAmmoInfo, false);
+    CWeaponAmmo* ammo = smart_cast<CWeaponAmmo*>(pInvItem);
+    if (ammo)
+    {
+        UIAmmoInfo->SetInfo(ammo);
+        UIDesc->AddWindow(UIAmmoInfo, false);
+    }
+
 }
 
 void CUIItemInfo::Draw()

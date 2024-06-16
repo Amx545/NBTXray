@@ -409,9 +409,10 @@ void attachable_hud_item::reload_measures()
         m_attach_offset = m_measures.load(m_sect_name, m_model);
 }
 
-u32 attachable_hud_item::anim_play(const shared_str& anm_name_b, BOOL bMixIn, const CMotionDef*& md, u8& rnd_idx)
+u32 attachable_hud_item::anim_play(const shared_str& anm_name_b, BOOL bMixIn, const CMotionDef*& md, 
+    u8& rnd_idx, float anm_speed)
 {
-    const float speed = CalcMotionSpeed(anm_name_b);
+    const float speed = CalcMotionSpeed(anm_name_b) * anm_speed;
 
     string256 anim_name_r;
     const bool is_16x9 = UICore::is_widescreen();

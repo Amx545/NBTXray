@@ -11,11 +11,14 @@
 
 struct SLuaWpnParams
 {
-    luabind::functor<float> m_functorRPM;
     luabind::functor<float> m_functorAccuracy;
-    luabind::functor<float> m_functorDamage;
     luabind::functor<float> m_functorDamageMP;
     luabind::functor<float> m_functorHandling;
+    luabind::functor<float> m_functorRecoil;
+    luabind::functor<float> m_functorReliability;
+    luabind::functor<u32> m_functorRPM;
+    luabind::functor<u32> m_functorDamage;
+    luabind::functor<u32> m_functorBSpd;
 
     SLuaWpnParams();
     ~SLuaWpnParams();
@@ -36,6 +39,12 @@ SLuaWpnParams::SLuaWpnParams()
     VERIFY(functor_exists);
     functor_exists = GEnv.ScriptEngine->functor("ui_wpn_params.GetAccuracy", m_functorAccuracy);
     VERIFY(functor_exists);
+    functor_exists = GEnv.ScriptEngine->functor("ui_wpn_params.GetBSpd", m_functorBSpd);
+    VERIFY(functor_exists);
+    functor_exists = GEnv.ScriptEngine->functor("ui_wpn_params.GetRecoil", m_functorRecoil);
+    VERIFY(functor_exists);
+    functor_exists = GEnv.ScriptEngine->functor("ui_wpn_params.GetReliability", m_functorReliability);
+    VERIFY(functor_exists);
 }
 
 SLuaWpnParams::~SLuaWpnParams() {}
@@ -48,11 +57,14 @@ CUIWpnParams::CUIWpnParams() : CUIWindow("Weapon Params")
     AttachChild(&m_textDamage);
     AttachChild(&m_textHandling);
     AttachChild(&m_textRPM);
+    AttachChild(&m_textBSpd);
+    AttachChild(&m_textRecoil);
+    AttachChild(&m_textReliability);
 
     AttachChild(&m_progressAccuracy);
-    AttachChild(&m_progressDamage);
+    AttachChild(&m_progressRecoil);
     AttachChild(&m_progressHandling);
-    AttachChild(&m_progressRPM);
+    AttachChild(&m_progressReliability);
 }
 
 bool CUIWpnParams::InitFromXml(CUIXml& xml_doc)
@@ -68,26 +80,43 @@ bool CUIWpnParams::InitFromXml(CUIXml& xml_doc)
     m_icon_dam = UIHelper::CreateStatic(xml_doc, "wpn_params:static_damage", this, false);
     m_icon_han = UIHelper::CreateStatic(xml_doc, "wpn_params:static_handling", this, false);
     m_icon_rpm = UIHelper::CreateStatic(xml_doc, "wpn_params:static_rpm", this, false);
+    m_icon_rpm = UIHelper::CreateStatic(xml_doc, "wpn_params:static_bspd", this, false);
+    m_icon_han = UIHelper::CreateStatic(xml_doc, "wpn_params:static_recoil", this, false);
+    m_icon_rpm = UIHelper::CreateStatic(xml_doc, "wpn_params:static_reliability", this, false);
 
     CUIXmlInit::InitStatic(xml_doc, "wpn_params:cap_accuracy", 0, &m_textAccuracy);
     CUIXmlInit::InitStatic(xml_doc, "wpn_params:cap_damage", 0, &m_textDamage);
     CUIXmlInit::InitStatic(xml_doc, "wpn_params:cap_handling", 0, &m_textHandling);
     CUIXmlInit::InitStatic(xml_doc, "wpn_params:cap_rpm", 0, &m_textRPM);
+    CUIXmlInit::InitStatic(xml_doc, "wpn_params:cap_bspd", 0, &m_textBSpd);
+    CUIXmlInit::InitStatic(xml_doc, "wpn_params:cap_recoil", 0, &m_textRecoil);
+    CUIXmlInit::InitStatic(xml_doc, "wpn_params:cap_reliability", 0, &m_textReliability);
 
     m_progressAccuracy.InitFromXml(xml_doc, "wpn_params:progress_accuracy");
-    m_progressDamage.InitFromXml(xml_doc, "wpn_params:progress_damage");
+    m_progressRecoil.InitFromXml(xml_doc, "wpn_params:progress_recoil");
     m_progressHandling.InitFromXml(xml_doc, "wpn_params:progress_handling");
-    m_progressRPM.InitFromXml(xml_doc, "wpn_params:progress_rpm");
+    m_progressReliability.InitFromXml(xml_doc, "wpn_params:progress_reliability");
+
+    m_textBSpdN = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_bspdn", this, false);
+    m_textDamageN = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_damagen", this, false);
+    m_textRPMN = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_rpmn", this, false);
+
+    m_textBSpdSlot = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_bspdslot", this, false);
+    m_textDamageSlot = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_damageslot", this, false);
+    m_textRPMSlot = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_rpmslot", this, false);
 
     if (IsGameTypeSingle())
     {
         m_stAmmo = UIHelper::CreateStatic(xml_doc, "wpn_params:static_ammo", this, false);
         m_textAmmoCount = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_ammo_count", this, false);
         m_textAmmoCount2 = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_ammo_count2", this, false);
+        m_textAmmoCountSlot = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_ammo_countslot", this, false);
         m_textAmmoTypes = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_ammo_types", this, false);
         m_textAmmoUsedType = UIHelper::CreateStatic(xml_doc, "wpn_params:cap_ammo_used_type", this, false);
         m_stAmmoType1 = UIHelper::CreateStatic(xml_doc, "wpn_params:static_ammo_type1", this, false);
         m_stAmmoType2 = UIHelper::CreateStatic(xml_doc, "wpn_params:static_ammo_type2", this, false);
+        m_stAmmoType3 = UIHelper::CreateStatic(xml_doc, "wpn_params:static_ammo_type3", this, false);
+        m_stAmmoType4 = UIHelper::CreateStatic(xml_doc, "wpn_params:static_ammo_type4", this, false);
     }
     return true;
 }
@@ -116,17 +145,21 @@ void CUIWpnParams::SetInfo(CInventoryItem* slot_wpn, CInventoryItem& cur_wpn)
     str_upgrades[0] = 0;
     cur_wpn.get_upgrades_str(str_upgrades);
 
-    float cur_rpm = iFloor(g_lua_wpn_params->m_functorRPM(cur_section, str_upgrades) * 53.0f) / 53.0f;
+    u32 cur_rpm = g_lua_wpn_params->m_functorRPM(cur_section, str_upgrades);
     float cur_accur = iFloor(g_lua_wpn_params->m_functorAccuracy(cur_section, str_upgrades) * 53.0f) / 53.0f;
     float cur_hand = iFloor(g_lua_wpn_params->m_functorHandling(cur_section, str_upgrades) * 53.0f) / 53.0f;
-    float cur_damage = (GameID() == eGameIDSingle) ?
-        iFloor(g_lua_wpn_params->m_functorDamage(cur_section, str_upgrades) * 53.0f) / 53.0f :
-        iFloor(g_lua_wpn_params->m_functorDamageMP(cur_section, str_upgrades) * 53.0f) / 53.0f;
+    u32 cur_damage = g_lua_wpn_params->m_functorDamage(cur_section, str_upgrades);
+    u32 cur_bspd = g_lua_wpn_params->m_functorBSpd(cur_section, str_upgrades);
+    float cur_recoil = iFloor(g_lua_wpn_params->m_functorRecoil(cur_section, str_upgrades) * 53.0f) / 53.0f;
+    float cur_rlb = iFloor(g_lua_wpn_params->m_functorReliability(cur_section, str_upgrades) * 53.0f) / 53.0f;
 
-    float slot_rpm = cur_rpm;
     float slot_accur = cur_accur;
     float slot_hand = cur_hand;
-    float slot_damage = cur_damage;
+    float slot_recoil = cur_recoil;
+    float slot_rlb = cur_rlb;
+    u32 slot_rpm = cur_rpm;
+    u32 slot_damage = cur_damage;
+    u32 slot_bspd = cur_bspd;
 
     if (slot_wpn && (slot_wpn != &cur_wpn))
     {
@@ -134,18 +167,91 @@ void CUIWpnParams::SetInfo(CInventoryItem* slot_wpn, CInventoryItem& cur_wpn)
         str_upgrades[0] = 0;
         slot_wpn->get_upgrades_str(str_upgrades);
 
-        slot_rpm = iFloor(g_lua_wpn_params->m_functorRPM(slot_section, str_upgrades) * 53.0f) / 53.0f;
+        slot_rpm = g_lua_wpn_params->m_functorRPM(slot_section, str_upgrades);
         slot_accur = iFloor(g_lua_wpn_params->m_functorAccuracy(slot_section, str_upgrades) * 53.0f) / 53.0f;
         slot_hand = iFloor(g_lua_wpn_params->m_functorHandling(slot_section, str_upgrades) * 53.0f) / 53.0f;
-        slot_damage = (GameID() == eGameIDSingle) ?
-            iFloor(g_lua_wpn_params->m_functorDamage(slot_section, str_upgrades) * 53.0f) / 53.0f :
-            iFloor(g_lua_wpn_params->m_functorDamageMP(slot_section, str_upgrades) * 53.0f) / 53.0f;
+        slot_damage = g_lua_wpn_params->m_functorDamage(slot_section, str_upgrades);
+        slot_bspd = g_lua_wpn_params->m_functorBSpd(slot_section, str_upgrades);
+        slot_recoil = iFloor(g_lua_wpn_params->m_functorRecoil(slot_section, str_upgrades) * 53.0f) / 53.0f;
+        slot_rlb = iFloor(g_lua_wpn_params->m_functorReliability(slot_section, str_upgrades) * 53.0f) / 53.0f;
     }
 
     m_progressAccuracy.SetTwoPos(cur_accur, slot_accur);
-    m_progressDamage.SetTwoPos(cur_damage, slot_damage);
+    m_progressRecoil.SetTwoPos(cur_recoil, slot_recoil);
     m_progressHandling.SetTwoPos(cur_hand, slot_hand);
-    m_progressRPM.SetTwoPos(cur_rpm, slot_rpm);
+    m_progressReliability.SetTwoPos(cur_rlb, slot_rlb);
+
+    if (m_textBSpdN && m_textBSpdSlot)
+    {
+        m_textBSpdSlot->SetTextColor(color_rgba(170, 170, 170, 255));
+        if (cur_bspd == slot_bspd)
+        {
+            m_textBSpdN->SetTextColor(color_rgba(170, 170, 170, 255));
+            m_textBSpdSlot->SetTextColor(color_rgba(255, 255, 255, 0));
+        }
+        else if (cur_bspd < slot_bspd)
+        {
+            m_textBSpdN->SetTextColor(color_rgba(255, 0, 0, 255));
+        }
+        else
+        {
+            m_textBSpdN->SetTextColor(color_rgba(0, 255, 0, 255));
+        }
+
+        string128 str;
+        xr_sprintf(str, sizeof(str), "%d", cur_bspd);
+        m_textBSpdN->SetText(str);
+        xr_sprintf(str, sizeof(str), "%d", slot_bspd);
+        m_textBSpdSlot->SetText(str);
+    }
+
+    if (m_textDamageN && m_textDamageSlot)
+    {
+        m_textDamageSlot->SetTextColor(color_rgba(170, 170, 170, 255));
+        if (cur_damage == slot_damage)
+        {
+            m_textDamageN->SetTextColor(color_rgba(170, 170, 170, 255));
+            m_textDamageSlot->SetTextColor(color_rgba(255, 255, 255, 0));
+        }
+        else if (cur_damage < slot_damage)
+        {
+            m_textDamageN->SetTextColor(color_rgba(255, 0, 0, 255));
+        }
+        else
+        {
+            m_textDamageN->SetTextColor(color_rgba(0, 255, 0, 255));
+        }
+
+        string128 str;
+        xr_sprintf(str, sizeof(str), "%d", cur_damage);
+        m_textDamageN->SetText(str);
+        xr_sprintf(str, sizeof(str), "%d", slot_damage);
+        m_textDamageSlot->SetText(str);
+    }
+
+    if (m_textRPMN && m_textRPMSlot)
+    {
+        m_textRPMSlot->SetTextColor(color_rgba(170, 170, 170, 255));
+        if (cur_rpm == slot_rpm)
+        {
+            m_textRPMN->SetTextColor(color_rgba(170, 170, 170, 255));
+            m_textRPMSlot->SetTextColor(color_rgba(255, 255, 255, 0));
+        }
+        else if (cur_rpm < slot_rpm)
+        {
+            m_textRPMN->SetTextColor(color_rgba(255, 0, 0, 255));
+        }
+        else
+        {
+            m_textRPMN->SetTextColor(color_rgba(0, 255, 0, 255));
+        }
+
+        string128 str;
+        xr_sprintf(str, sizeof(str), "%d", cur_rpm);
+        m_textRPMN->SetText(str);
+        xr_sprintf(str, sizeof(str), "%d", slot_rpm);
+        m_textRPMSlot->SetText(str);
+    }
 
     if (IsGameTypeSingle())
     {
@@ -163,18 +269,28 @@ void CUIWpnParams::SetInfo(CInventoryItem* slot_wpn, CInventoryItem& cur_wpn)
                 ammo_count2 = slot_weapon->GetAmmoMagSize();
         }
 
-        if (m_textAmmoCount2)
+        if (m_textAmmoCount2 && m_textAmmoCountSlot)
         {
+            m_textAmmoCountSlot->SetTextColor(color_rgba(170, 170, 170, 255));
             if (ammo_count == ammo_count2)
+            {
                 m_textAmmoCount2->SetTextColor(color_rgba(170, 170, 170, 255));
+                m_textAmmoCountSlot->SetTextColor(color_rgba(255, 255, 255, 0));
+            }
             else if (ammo_count < ammo_count2)
+            {
                 m_textAmmoCount2->SetTextColor(color_rgba(255, 0, 0, 255));
+            }
             else
+            {
                 m_textAmmoCount2->SetTextColor(color_rgba(0, 255, 0, 255));
+            }
 
             string128 str;
             xr_sprintf(str, sizeof(str), "%d", ammo_count);
             m_textAmmoCount2->SetText(str);
+            xr_sprintf(str, sizeof(str), "%d", ammo_count2);
+            m_textAmmoCountSlot->SetText(str);
         }
 
         const auto& ammo_types = weapon->m_ammoTypes;
@@ -223,6 +339,48 @@ void CUIWpnParams::SetInfo(CInventoryItem* slot_wpn, CInventoryItem& cur_wpn)
             m_stAmmoType2->TextureOn();
             m_stAmmoType2->SetStretchTexture(true);
             m_stAmmoType2->SetWndSize(
+                Fvector2().set((tex_rect.x2 - tex_rect.x1) * UI().get_current_kx(), tex_rect.y2 - tex_rect.y1));
+        }
+        if (m_stAmmoType3)
+        {
+            m_stAmmoType3->SetShader(InventoryUtilities::GetEquipmentIconsShader());
+            if (ammo_types.size() <= 2 && m_stAmmoType1 && m_stAmmoType2)
+            {
+                tex_rect.set(0, 0, 1, 1);
+            }
+            else
+            {
+                tex_rect.x1 = float(pSettings->r_u32(ammo_types[2].c_str(), "inv_grid_x") * INV_GRID_WIDTH);
+                tex_rect.y1 = float(pSettings->r_u32(ammo_types[2].c_str(), "inv_grid_y") * INV_GRID_HEIGHT);
+                tex_rect.x2 = float(pSettings->r_u32(ammo_types[2].c_str(), "inv_grid_width") * INV_GRID_WIDTH);
+                tex_rect.y2 = float(pSettings->r_u32(ammo_types[2].c_str(), "inv_grid_height") * INV_GRID_HEIGHT);
+                tex_rect.rb.add(tex_rect.lt);
+            }
+            m_stAmmoType3->SetTextureRect(tex_rect);
+            m_stAmmoType3->TextureOn();
+            m_stAmmoType3->SetStretchTexture(true);
+            m_stAmmoType3->SetWndSize(
+                Fvector2().set((tex_rect.x2 - tex_rect.x1) * UI().get_current_kx(), tex_rect.y2 - tex_rect.y1));
+        }
+        if (m_stAmmoType4)
+        {
+            m_stAmmoType4->SetShader(InventoryUtilities::GetEquipmentIconsShader());
+            if (ammo_types.size() <= 3 && m_stAmmoType1 && m_stAmmoType2 && m_stAmmoType3)
+            {
+                tex_rect.set(0, 0, 1, 1);
+            }
+            else
+            {
+                tex_rect.x1 = float(pSettings->r_u32(ammo_types[3].c_str(), "inv_grid_x") * INV_GRID_WIDTH);
+                tex_rect.y1 = float(pSettings->r_u32(ammo_types[3].c_str(), "inv_grid_y") * INV_GRID_HEIGHT);
+                tex_rect.x2 = float(pSettings->r_u32(ammo_types[3].c_str(), "inv_grid_width") * INV_GRID_WIDTH);
+                tex_rect.y2 = float(pSettings->r_u32(ammo_types[3].c_str(), "inv_grid_height") * INV_GRID_HEIGHT);
+                tex_rect.rb.add(tex_rect.lt);
+            }
+            m_stAmmoType4->SetTextureRect(tex_rect);
+            m_stAmmoType4->TextureOn();
+            m_stAmmoType4->SetStretchTexture(true);
+            m_stAmmoType4->SetWndSize(
                 Fvector2().set((tex_rect.x2 - tex_rect.x1) * UI().get_current_kx(), tex_rect.y2 - tex_rect.y1));
         }
     }

@@ -99,6 +99,7 @@ public:
 
     LPCSTR NameItem(); // remove <virtual> by sea
     LPCSTR NameShort();
+    u8 RarityItem() { return m_rarity; }
     shared_str ItemDescription() { return m_Description; }
     virtual bool GetBriefInfo(II_BriefInfo& info)
     {
@@ -187,6 +188,7 @@ public:
     virtual bool IsNecessaryItem(const shared_str& item_sect) { return false; };
 protected:
     u32 m_cost;
+    u8 m_rarity;
     float m_weight;
     float m_fCondition;
     shared_str m_Description;

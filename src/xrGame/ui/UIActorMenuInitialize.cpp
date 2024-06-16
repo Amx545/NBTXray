@@ -201,6 +201,7 @@ void CUIActorMenu::InitializeUniversal(CUIXml& uiXml)
 
         { eInventoryOutfitList,    "dragdrop_outfit",          "progess_bar_outfit",  "outfit_slot_highlight",   nullptr,            true },
         { eInventoryHelmetList,    "dragdrop_helmet",          "progess_bar_helmet",  "helmet_slot_highlight",   "helmet_over",      false },
+        { eInventoryActorBeltList, "dragdrop_actorbelt",       nullptr,               "actorbelt_slot_highlight",nullptr,            false },
 
         { eInventoryBeltList,      "dragdrop_belt",            nullptr,               "artefact_slot_highlight", "belt_list_over",   true },
         { eInventoryDetectorList,  "dragdrop_detector",        nullptr,               "detector_slot_highlight", nullptr,            true },
@@ -233,6 +234,7 @@ void CUIActorMenu::InitializeUniversal(CUIXml& uiXml)
         if (!list)
             continue;
 
+        //m_pLists[id]->SetIOwner(m_pActorInvOwner);
         if (conditionIndicator)
         {
             m_pLists[id]->SetConditionIndicator(UIHelper::CreateProgressBar(uiXml, conditionIndicator, this, false));
@@ -524,6 +526,7 @@ void CUIActorMenu::InitCallbacks()
     BindDragDropListEvents(m_pLists[eInventoryBackpackList]);
     BindDragDropListEvents(m_pLists[eInventoryOutfitList]);
     BindDragDropListEvents(m_pLists[eInventoryHelmetList]);
+    BindDragDropListEvents(m_pLists[eInventoryActorBeltList]);
 
     BindDragDropListEvents(m_pLists[eInventoryBeltList]);
     BindDragDropListEvents(m_pLists[eInventoryDetectorList]);

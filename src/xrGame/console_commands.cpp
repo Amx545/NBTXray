@@ -649,7 +649,13 @@ public:
 #endif
         if (!xr_strlen(S))
         {
-            strconcat(sizeof(S), S, Core.UserName, " - ", "quicksave");
+            if (Actor()->GetSaveCount() <= 0)
+                Actor()->SetSaveCount(1);
+            string16 _buff;
+            xr_sprintf(_buff, "%d", Actor()->GetSaveCount());
+            strconcat(sizeof(S), S, Core.UserName, " - ", "quicksave", " ", _buff);
+            (Actor()->GetSaveCount()<10?
+            Actor()->SetSaveCount(1+Actor()->GetSaveCount()):Actor()->SetSaveCount(1));
             NET_Packet net_packet;
             net_packet.w_begin(M_SAVE_GAME);
             net_packet.w_stringZ(S);

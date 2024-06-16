@@ -27,6 +27,7 @@ class CSpecificCharacter;
 class CTradeParameters;
 class CPurchaseList;
 class CWeapon;
+class CActorBelt;
 class CCustomOutfit;
 
 class CInventoryOwner : public CAttachmentOwner
@@ -153,6 +154,9 @@ public:
 
     CCustomOutfit* GetOutfit() const;
     CBackpack* GetBackpack() const;
+    template <typename T>
+    T* GetItemFromSlot(u16 slot) const;
+    //CActorBelt* GetActorBelt() const;
 
     bool CanPlayShHdRldSounds() const { return m_play_show_hide_reload_sounds; };
     void SetPlayShHdRldSounds(bool play) { m_play_show_hide_reload_sounds = play; };
@@ -247,3 +251,9 @@ public:
 };
 
 #include "inventory_owner_inline.h"
+
+template <typename T>
+inline T* CInventoryOwner::GetItemFromSlot(u16 slot) const
+{
+    return smart_cast<T*>(inventory().ItemFromSlot(slot));
+}
