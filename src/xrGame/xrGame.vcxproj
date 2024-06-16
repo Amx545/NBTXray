@@ -1382,6 +1382,7 @@
     <ClInclude Include="ui\UIScriptWnd.h" />
     <ClInclude Include="ui\UISecondTaskWnd.h" />
     <ClInclude Include="ui\UIServerInfo.h" />
+    <ClInclude Include="ui\UISkillPdaWnd.h" />
     <ClInclude Include="ui\UISkinSelector.h" />
     <ClInclude Include="ui\UISleepStatic.h" />
     <ClInclude Include="ui\UISpawnWnd.h" />
@@ -3362,6 +3363,7 @@
     </ClCompile>
     <ClCompile Include="ui\UISecondTaskWnd.cpp" />
     <ClCompile Include="ui\UIServerInfo.cpp" />
+    <ClCompile Include="ui\UISkillPdaWnd.cpp" />
     <ClCompile Include="ui\UISkinSelector.cpp" />
     <ClCompile Include="ui\UISleepStatic.cpp" />
     <ClCompile Include="ui\UISpawnWnd.cpp" />

@@ -188,9 +188,24 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
     string256 str;
     if (UIName)
     {
+        u32 color = UIName->GetTextColor();
+        switch (pInvItem->RarityItem())
+        {
+        case 0: color = color_argb(255, 180, 180, 180); break;
+        case 1: color = color_argb(255, 0, 255, 128); break;
+        case 2: color = color_argb(255, 0, 38, 255); break;
+        case 3: color = color_argb(255, 128, 0, 128); break;
+        case 4: color = color_argb(255, 255, 255, 0); break;
+        case 5: color = color_argb(255, 255, 128, 0); break;
+        case 6: color = color_argb(255, 255, 0, 0); break;
+        case 7: color = color_argb(255, 0, 255, 0); break;
+        default: break;
+        }
+        UIName->SetTextColor(color);
         UIName->SetText(pInvItem->NameItem());
         UIName->AdjustHeightToText();
         pos.y = UIName->GetWndPos().y + UIName->GetHeight() + 4.0f;
+
     }
     if (UIWeight)
     {

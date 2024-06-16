@@ -1861,9 +1861,6 @@
     <Filter Include="UI\Common\InventoryWnd">
       <UniqueIdentifier>{08e827a5-49f1-49b3-97a5-ff3413993b36}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UI\Common\InventoryWnd\InventoryUpgrade">
-      <UniqueIdentifier>{76bab9d1-1438-407c-829b-154c9329cc09}</UniqueIdentifier>
-    </Filter>
     <Filter Include="UI\Common\PDA">
       <UniqueIdentifier>{5a644b47-d0ae-4612-af01-666f45ecdb92}</UniqueIdentifier>
     </Filter>
@@ -1890,9 +1887,6 @@
     </Filter>
     <Filter Include="UI\Common\TALK">
       <UniqueIdentifier>{6219607c-2f9a-4cdb-a116-8dc19268d4fb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="UI\Common\MainIngame">
-      <UniqueIdentifier>{bfd4c1f4-faf7-45fc-855e-1fd70023ad4c}</UniqueIdentifier>
     </Filter>
     <Filter Include="UI\Common\OptionsConsoleCommands">
       <UniqueIdentifier>{519f65e1-f943-4b85-928f-462419d21ec0}</UniqueIdentifier>
@@ -2247,6 +2241,12 @@
     </Filter>
     <Filter Include="AI\AMonsters\common\monster states\Rest\Squad\Rest">
       <UniqueIdentifier>{4946196d-1f2b-4e07-9207-f0789b2528fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\Common\MainIngame">
+      <UniqueIdentifier>{bfd4c1f4-faf7-45fc-855e-1fd70023ad4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\Common\InventoryWnd\InventoryUpgrade">
+      <UniqueIdentifier>{76bab9d1-1438-407c-829b-154c9329cc09}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -6504,6 +6504,9 @@
     <ClInclude Include="ui\UIBoostStatesWnd.h">
       <Filter>UI\Common\MainIngame</Filter>
     </ClInclude>
+    <ClInclude Include="ui\UISkillPdaWnd.h">
+      <Filter>UI\Common\PDA\Statistics &amp; Rankings</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
@@ -9868,6 +9871,9 @@
     <ClCompile Include="WeaponUSP45.cpp" />
     <ClCompile Include="ui\UIBoostStatesWnd.cpp">
       <Filter>UI\Common\MainIngame</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UISkillPdaWnd.cpp">
+      <Filter>UI\Common\PDA\Statistics &amp; Rankings</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

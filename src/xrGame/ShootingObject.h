@@ -63,6 +63,7 @@ protected:
 
     float fOneShotTime{};
     float modeShotTime;
+    u8 rarity_amplifier;
     bool cycleDown;
     Fvector4 fvHitPower{};
     Fvector4 fvHitPowerCritical{};

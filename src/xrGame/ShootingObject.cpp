@@ -25,6 +25,7 @@ CShootingObject::CShootingObject()
 {
     // fHitPower						= 0.0f;
     m_fStartBulletSpeed = 1000.f;
+    rarity_amplifier = 0;
 
     reinit();
 }
@@ -43,6 +44,7 @@ void CShootingObject::Load(LPCSTR section)
     fOneShotTime = pSettings->r_float(section, "rpm");
     //Alundaio: Two-shot burst rpm; used for Abakan/AN-94
     modeShotTime = READ_IF_EXISTS(pSettings, r_float, section, "rpm_mode_2", fOneShotTime);
+    rarity_amplifier = READ_IF_EXISTS(pSettings, r_u8, section, "rarity", 0);
 
     VERIFY(fOneShotTime > 0.f);
     fOneShotTime = 60.f / fOneShotTime;
@@ -136,6 +138,12 @@ void CShootingObject::LoadFireParams(LPCSTR section)
     if (m_bUseAimBullet)
     {
         m_fTimeToAim = pSettings->r_float(section, "time_to_aim");
+    }
+    if (rarity_amplifier > 0)
+    {
+        fvHitPower[egdMaster] +=
+            fvHitPower[egdMaster] * 0.10f * rarity_amplifier + fvHitPower[egdMaster] * 0.05f * (rarity_amplifier - 1);
+        fvHitPower[egdNovice] = fvHitPower[egdStalker] = fvHitPower[egdVeteran] = fvHitPower[egdMaster];
     }
 }
 
@@ -496,6 +504,7 @@ void CShootingObject::FireBullet(const Fvector& pos, const Fvector& shot_dir, fl
             if (pActor)
             {
                 l_fHitPower = fvHitPower[g_SingleGameDifficulty] * pActor->conditions().GetDamagePerk();
+                Log("HitPower", l_fHitPower);
             }
         }
         else

@@ -1,3 +1,11 @@
+////////////////////////////////////////////////////////////////////////////
+//	Module 		: UIBoostStatesWnd.h
+//	Created 	: 11.05.2019
+//	Author		: AMX545(NBreak)
+//	Description : UI booster indicator class
+//  Rework      : 10.06.2024
+////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 #include "xrUICore/Windows/UIWindow.h"
 #include "EntityCondition.h"
@@ -13,6 +21,7 @@ public:
     void InitFromXml(CUIXml& xml, LPCSTR path);
     void DrawBoosterIndicators();
     void UpdateBoosterIndicators(const CEntityCondition::BOOSTER_MAP& influences);
+    void UpdateBoosterPosition(const CEntityCondition::BOOSTER_MAP& influences);
 
 private:
     bool bHorizontal, bInverse;

@@ -35,6 +35,15 @@ BOOL GodMode()
 
 CActorCondition::CActorCondition(CActor* object) : inherited(object)
 {
+    m_iActorLevel = 1;
+    m_iActorPoint = 5;
+    m_iActorVitality = 0;
+    m_iActorStrength = 0;
+    m_iActorIntelligence = 0;
+    m_iActorDexterity = 0;
+    m_fActorExperience = 0;
+    m_fActorRequiredExperience = 0;
+
     m_fJumpPower = 0.f;
     m_fStandPower = 0.f;
     m_fWalkPower = 0.f;
@@ -134,6 +143,7 @@ void CActorCondition::LoadCondition(LPCSTR entity_section)
     VERIFY(!fis_zero(m_zone_max_power[ALife::infl_psi]));
     VERIFY(!fis_zero(m_zone_max_power[ALife::infl_electra]));
     VERIFY(!fis_zero(m_max_power_restore_speed));
+    GetActorLevelUp();
 }
 
 float CActorCondition::GetZoneMaxPower(ALife::EInfluenceType type) const
@@ -289,7 +299,7 @@ void CActorCondition::UpdateCondition()
         if (!m_death_effector->IsActual())
             m_death_effector->Stop();
     }
-
+    UpdateStats();
     AffectDamage_InjuriousMaterialAndMonstersInfluence();
 }
 
@@ -438,6 +448,42 @@ float CActorCondition::GetZoneDanger() const
 }
 
 void CActorCondition::UpdateRadiation() { inherited::UpdateRadiation(); }
+
+void CActorCondition::UpdateStats() 
+{
+    u32 exp = m_fActorExperience;
+    luabind::functor<u32> funct;
+    R_ASSERT(GEnv.ScriptEngine->functor("actor_states.get_stat_full_xp_float", funct));
+    m_fActorExperience = funct();
+    if (exp != m_fActorExperience)
+    {
+        GetActorLevelUp();
+    }
+    if (m_fActorExperience>m_fActorRequiredExperience)
+    {
+        m_fActorExperience = m_fActorExperience - m_fActorRequiredExperience;
+        luabind::functor<void> funct1;
+        R_ASSERT(GEnv.ScriptEngine->functor("actor_states.set_stat_full_xp", funct1));
+        funct1(m_fActorExperience);
+        m_iActorLevel += 1;
+        m_iActorPoint += 1;
+        GetActorLevelUp();
+    }
+}
+
+void CActorCondition::GetActorLevelUp() 
+{ 
+    if (m_iActorLevel <= 13)
+    {
+        m_fActorRequiredExperience = (u32)(0.0068f * m_iActorLevel * m_iActorLevel * m_iActorLevel -
+            0.06f * m_iActorLevel * m_iActorLevel + 17.1f * m_iActorLevel + 639.0f);
+    }
+    else
+    {
+        m_fActorRequiredExperience = (u32)(0.02f * m_iActorLevel * m_iActorLevel * m_iActorLevel +
+            3.06f * m_iActorLevel * m_iActorLevel + 105.6f * m_iActorLevel - 895.0f);
+    }
+}
 void CActorCondition::UpdateSatiety()
 {
     if (!IsGameTypeSingle())
@@ -565,6 +611,14 @@ void CActorCondition::save(NET_Packet& output_packet)
         output_packet.w_float(b->second.fBoostValue);
         output_packet.w_float(b->second.fBoostTime);
     }
+    save_data(m_iActorLevel, output_packet);
+    save_data(m_iActorPoint, output_packet);
+    save_data(m_iActorVitality, output_packet);
+    save_data(m_iActorStrength, output_packet);
+    save_data(m_iActorIntelligence, output_packet);
+    save_data(m_iActorDexterity, output_packet);
+    save_data(m_fActorExperience, output_packet);
+    save_data(m_fActorRequiredExperience, output_packet);
 }
 
 void CActorCondition::load(IReader& input_packet)
@@ -594,6 +648,14 @@ void CActorCondition::load(IReader& input_packet)
         m_booster_influences[B.m_type] = B;
         BoostParameters(B);
     }
+    load_data(m_iActorLevel, input_packet);
+    load_data(m_iActorPoint, input_packet);
+    load_data(m_iActorVitality, input_packet);
+    load_data(m_iActorStrength, input_packet);
+    load_data(m_iActorIntelligence, input_packet);
+    load_data(m_iActorDexterity, input_packet);
+    load_data(m_fActorExperience, input_packet);
+    load_data(m_fActorRequiredExperience, input_packet);
 }
 
 void CActorCondition::reinit()

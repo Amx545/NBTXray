@@ -55,6 +55,7 @@ CInventoryItem::CInventoryItem()
     m_flags.set(FCanTrade, m_can_trade);
     m_flags.set(FUsingCondition, FALSE);
     m_fCondition = 1.0f;
+    m_rarity = 0;
 
     m_ItemCurrPlace.value = 0;
     m_ItemCurrPlace.type = eItemPlaceUndefined;
@@ -102,6 +103,7 @@ void CInventoryItem::Load(LPCSTR section)
 
     m_cost = pSettings->r_u32(section, "cost");
     u32 sl = pSettings->read_if_exists<u32>(section, "slot", NO_ACTIVE_SLOT);
+    m_rarity = pSettings->read_if_exists<u8>(section, "rarity", 0);
     m_ItemCurrPlace.base_slot_id = (sl == u32(-1)) ? 0 : (sl + 1);
 
     // Description

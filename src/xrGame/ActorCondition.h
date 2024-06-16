@@ -35,6 +35,7 @@ private:
     void UpdateTutorialThresholds();
     void UpdateSatiety();
     virtual void UpdateRadiation();
+    void UpdateStats();
 
 public:
     CActorCondition(CActor* object);
@@ -159,9 +160,36 @@ protected:
     float m_fOverweightJumpK;
     float m_fAccelK;
     float m_fSprintK;
-
+    //--stats--
+    u32 m_iActorLevel;
+    u32 m_iActorPoint;
+    u32 m_iActorVitality;
+    u32 m_iActorStrength;
+    u32 m_iActorIntelligence;
+    u32 m_iActorDexterity;
+    u32 m_fActorExperience;
+    u32 m_fActorRequiredExperience;
+    //--stats--
 public:
     float m_MaxWalkWeight;
+    //--stats--
+    void SetActorPointLevel(u32 val) { m_iActorPoint = val; }
+    void SetActorVitality(u32 val) { m_iActorVitality = val; }
+    void SetActorStrength(u32 val) { m_iActorStrength = val; }
+    void SetActorIntelligence(u32 val) { m_iActorIntelligence = val; }
+    void SetActorDexterity(u32 val) { m_iActorDexterity = val; }
+
+    u32 GetActorLevel() { return m_iActorLevel; }
+    u32 GetActorPointLevel() { return m_iActorPoint; }
+    u32 GetActorVitality() { return m_iActorVitality; }
+    u32 GetActorStrength() { return m_iActorStrength; }
+    u32 GetActorIntelligence() { return m_iActorIntelligence; }
+    u32 GetActorDexterity() { return m_iActorDexterity; }
+    u32 GetActorExperience() { return m_fActorExperience; }
+    u32 GetActorRequiredExp() { return m_fActorRequiredExperience; }
+
+    void GetActorLevelUp();
+    //--stats--
 
 protected:
     float m_zone_max_power[ALife::infl_max_count];
