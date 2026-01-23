@@ -501,6 +501,7 @@ CSE_ALifeItemWeapon::CSE_ALifeItemWeapon(LPCSTR caSection) : CSE_ALifeItem(caSec
         set_visual(pSettings->r_string(caSection, "visual"));
 
     m_addon_flags.zero();
+    m_scope_section = 0;
 
     m_scope_status = (EWeaponAddonStatus)pSettings->r_s32(s_name, "scope_status");
     m_silencer_status = (EWeaponAddonStatus)pSettings->r_s32(s_name, "silencer_status");
@@ -532,6 +533,7 @@ void CSE_ALifeItemWeapon::UPDATE_Read(NET_Packet& tNetPacket)
     tNetPacket.r_u8(m_addon_flags.flags);
     tNetPacket.r_u8(ammo_type);
     tNetPacket.r_u8(wpn_state);
+    tNetPacket.r_u8(m_scope_section);
     tNetPacket.r_u8(m_bZoom);
 }
 
@@ -546,6 +548,7 @@ void CSE_ALifeItemWeapon::UPDATE_Write(NET_Packet& tNetPacket)
     tNetPacket.w_u8(m_addon_flags.get());
     tNetPacket.w_u8(ammo_type);
     tNetPacket.w_u8(wpn_state);
+    tNetPacket.w_u8(m_scope_section);
     tNetPacket.w_u8(m_bZoom);
 }
 
@@ -555,6 +558,7 @@ void CSE_ALifeItemWeapon::STATE_Read(NET_Packet& tNetPacket, u16 size)
     tNetPacket.r_u16(a_current);
     tNetPacket.r_u16(a_elapsed);
     tNetPacket.r_u8(wpn_state);
+    tNetPacket.r_u8(m_scope_section);
 
     if (m_wVersion > 40)
         tNetPacket.r_u8(m_addon_flags.flags);
@@ -572,6 +576,7 @@ void CSE_ALifeItemWeapon::STATE_Write(NET_Packet& tNetPacket)
     tNetPacket.w_u16(a_current);
     tNetPacket.w_u16(a_elapsed);
     tNetPacket.w_u8(wpn_state);
+    tNetPacket.w_u8(m_scope_section);
     tNetPacket.w_u8(m_addon_flags.get());
     tNetPacket.w_u8(ammo_type);
     tNetPacket.w_u8(a_elapsed_grenades.pack_to_byte());

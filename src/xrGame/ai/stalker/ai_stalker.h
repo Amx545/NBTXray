@@ -114,7 +114,10 @@ private:
     float m_fRankDisperison;
     float m_fRankVisibility;
     float m_fRankImmunity;
+    float m_stalker_level;
 
+public:
+    float GetStalkerLevel() { return m_stalker_level; }
     // best item/ammo selection members
 public:
     bool m_item_actuality;
@@ -159,6 +162,8 @@ public:
     virtual CAI_Stalker* cast_stalker() { return this; }
     virtual CCustomMonster* cast_custom_monster() { return this; }
     virtual CScriptEntity* cast_script_entity() { return this; }
+    virtual float GetHitFraction();
+
 public:
     void init();
     virtual void Load(LPCSTR section);

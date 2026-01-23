@@ -346,20 +346,35 @@ void CBulletManager::DynamicObjectHit(CBulletManager::_event& E)
                 AddStatistic = true;
             };
         };
+        SHit Hit;
+        for (auto [type, hit] : hit_param.power_by_type)
+        {
+            if (fis_zero(hit))
+                continue;
 
-        SHit Hit = SHit(hit_param.power, original_dir, NULL, u16(E.R.element), position_in_bone_space,
-            hit_param.impulse, E.bullet.hit_type, E.bullet.armor_piercing, E.bullet.flags.aim_bullet);
+            if (type == ALife::eHitTypeExplosion)
+                continue;
 
-        Hit.GenHeader(u16((AddStatistic) ? GE_HIT_STATISTIC : GE_HIT) & 0xffff, E.R.O->ID());
-        Hit.whoID = E.bullet.parent_id;
-        Hit.weaponID = E.bullet.weapon_id;
-        Hit.BulletID = E.bullet.m_dwID;
+            float fhP = hit;
+            if (type == ALife::eHitTypeFireWound)
+            {
+                fhP = hit_param.power;
+            }
+            Hit = SHit(fhP, original_dir, NULL, u16(E.R.element), position_in_bone_space, hit_param.impulse, type,
+                E.bullet.armor_piercing, E.bullet.flags.aim_bullet);
 
-        NET_Packet np;
-        Hit.Write_Packet(np);
+            Hit.GenHeader(u16((AddStatistic) ? GE_HIT_STATISTIC : GE_HIT) & 0xffff, E.R.O->ID());
+            Hit.whoID = E.bullet.parent_id;
+            Hit.weaponID = E.bullet.weapon_id;
+            Hit.BulletID = E.bullet.m_dwID;
+
+            NET_Packet np;
+            Hit.Write_Packet(np);
+            Msg("Hit sended: Type %s, Power %f,Bullet id %d ", g_cafHitType2String(type), fhP, Hit.BulletID);
+            CGameObject::u_EventSend(np);
+        }
 
         //		Msg("Hit sended: %d[%d,%d]", Hit.whoID, Hit.weaponID, Hit.BulletID);
-        CGameObject::u_EventSend(np);
     }
 }
 

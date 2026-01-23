@@ -14,6 +14,7 @@ class CCartridge;
 class CParticlesObject;
 class IRender_Sector;
 class CActor;
+class CEntityAlive;
 
 extern const Fvector zero_vel;
 
@@ -57,18 +58,36 @@ public:
     IC BOOL IsWorking() const { return bWorking; }
     virtual BOOL ParentMayHaveAimBullet() { return FALSE; }
     virtual BOOL ParentIsActor() { return FALSE; }
+    virtual CEntityAlive* GetAliveOwner() { return nullptr; }
+
 protected:
     // Weapon fires now
     bool bWorking{};
 
     float fOneShotTime{};
     float modeShotTime;
+    float modeOneShotTime;
+    float modeThreeShotTime;
+    ALife::EHitType m_eShotHitType;
     u8 rarity_amplifier;
     bool cycleDown;
     Fvector4 fvHitPower{};
     Fvector4 fvHitPowerCritical{};
+    xr_map<ALife::EHitType, float> fHitPowerByType;
+    xr_map<ALife::EHitType, float> fHitPowerByTypeScale;
+    xr_map<ALife::EHitType, float> fHitPowerByTypeConfig;
     float fHitImpulse;
+    bool bDoubleShotMode;
+    float fArmorIgnoreMode;
 
+    // для нестандартных пуль
+    float m_fGravity{9.81f};
+    float m_fBulletTimeFactor{1.f};
+    float m_fParticleLifeTime{1.f};
+    float m_fBulletSize{0.08f};
+    shared_str m_sTracerParticle;
+    bool m_bUseTracer;
+    // --
     //скорость вылета пули из ствола
     float m_fStartBulletSpeed;
     //максимальное расстояние стрельбы

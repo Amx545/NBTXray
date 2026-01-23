@@ -13,6 +13,8 @@ public:
     virtual bool net_Spawn(CSE_Abstract* DC);
     virtual void Load(LPCSTR section);
     virtual void OnEvent(NET_Packet& P, u16 type);
+    virtual void UnloadMagazine(bool spawn_ammo = true);
+    virtual void PlayAnimAddOneCartridgeWeapon();
 
 protected:
     virtual void FireStart();

@@ -16,6 +16,8 @@
 #include "Include/xrRender/UIRender.h"
 #include "Include/xrRender/Kinematics.h"
 
+#include "PhysicsShellHolder.h"
+
 #ifdef DEBUG
 #include "debug_renderer.h"
 #endif
@@ -34,8 +36,9 @@ static float const air_resistance_epsilon = .1f;
 float g_bullet_time_factor = 1.f;
 
 SBullet::SBullet(const Fvector& position, const Fvector& direction, float starting_speed, float power,
-    /*float power_critical,*/ float impulse, u16 sender_id, u16 sendersweapon_id, ALife::EHitType e_hit_type,
-    float maximum_distance, const CCartridge& cartridge, float const air_resistance_factor, bool SendHit)
+    xr_map<ALife::EHitType, float>& hit_by_type, float impulse, u16 sender_id, u16 sendersweapon_id,
+    ALife::EHitType e_hit_type, float maximum_distance, const CCartridge& cartridge, float const air_resistance_factor,
+    bool SendHit, float power_boost)
 {
     bullet_pos = position;
     speed = max_speed = starting_speed;
@@ -48,9 +51,13 @@ SBullet::SBullet(const Fvector& position, const Fvector& direction, float starti
     VERIFY(direction.magnitude() > 0.f);
     dir.normalize(direction);
 
-    hit_param.power = power * cartridge.param_s.kHit;
+    hit_param.power = power * power_boost * cartridge.param_s.kHit;
     hit_param.impulse = impulse * cartridge.param_s.kImpulse;
-
+    //elemental damage
+    for (auto &[type, power] : hit_by_type)
+    {
+        hit_param.power_by_type.emplace(type, power * power_boost);
+    }
     max_dist = maximum_distance * cartridge.param_s.kDist;
     tracer_start_position = bullet_pos;
 
@@ -90,6 +97,7 @@ CBulletManager::CBulletManager()
 {
     m_Bullets.clear();
     m_Bullets.reserve(100);
+    m_PartLifeTime.clear();
 }
 
 CBulletManager::~CBulletManager()
@@ -97,6 +105,7 @@ CBulletManager::~CBulletManager()
     m_Bullets.clear();
     m_WhineSounds.clear();
     m_Events.clear();
+    m_PartLifeTime.clear();
 }
 
 void CBulletManager::Load()
@@ -171,12 +180,14 @@ void CBulletManager::Clear()
 {
     m_Bullets.clear();
     m_Events.clear();
+    m_PartLifeTime.clear();
 }
 
 void CBulletManager::AddBullet(const Fvector& position, const Fvector& direction, float starting_speed, float power,
-    //.							   float power_critical,
-    float impulse, u16 sender_id, u16 sendersweapon_id, ALife::EHitType e_hit_type, float maximum_distance,
-    const CCartridge& cartridge, float const air_resistance_factor, bool SendHit, bool AimBullet)
+    xr_map<ALife::EHitType, float>& hit_by_type, float impulse, u16 sender_id, u16 sendersweapon_id,
+    ALife::EHitType e_hit_type, float maximum_distance,
+    const CCartridge& cartridge, float const air_resistance_factor,
+    bool SendHit, bool AimBullet, float power_boost)
 {
     // Always called in Primary thread
     // Uncomment below if you will change the behaviour
@@ -188,10 +199,14 @@ void CBulletManager::AddBullet(const Fvector& position, const Fvector& direction
     VERIFY(u16(-1) != cartridge.bullet_material_idx);
     //	u32 CurID					= Level().CurrentControlEntity()->ID();
     //	u32 OwnerID					= sender_id;
-    SBullet& bullet = m_Bullets.emplace_back(position, direction, starting_speed, power, /*power_critical,*/ impulse, sender_id,
-        sendersweapon_id, e_hit_type, maximum_distance, cartridge, air_resistance_factor, SendHit);
+    SBullet& bullet = m_Bullets.emplace_back(position, direction, starting_speed, power, hit_by_type, impulse, sender_id,
+            sendersweapon_id, e_hit_type, maximum_distance, cartridge, air_resistance_factor, SendHit, power_boost);
     //	bullet.frame_num			= Device.dwFrame;
     bullet.flags.aim_bullet = AimBullet;
+    bullet.m_fBulletTimeFactor = g_bullet_time_factor;
+    bullet.m_fGravity = m_fGravityConst;
+    bullet.m_bUseTracer = false;
+    bullet.m_fBulletSize = m_fTracerWidth;
     if (!IsGameTypeSingle())
     {
         if (SendHit)
@@ -202,14 +217,40 @@ void CBulletManager::AddBullet(const Fvector& position, const Fvector& direction
     }
 }
 
-void CBulletManager::UpdateWorkload()
+void CBulletManager::AddNonStandartBullet(const Fvector& position, const Fvector& direction, float starting_speed,
+    float power,
+    xr_map<ALife::EHitType, float>& hit_by_type, float impulse, u16 sender_id, u16 sendersweapon_id,
+    ALife::EHitType e_hit_type, float maximum_distance,
+    const CCartridge& cartridge, float const air_resistance_factor,
+    bool SendHit, bool AimBullet, bool use_trace, float bullet_gravity, float bullet_time_factor,
+    float tracer_time_factor, float bullet_size, float power_boost, shared_str bullet_particle)
+{
+#ifdef DEBUG
+    VERIFY(m_thread_id == std::this_thread::get_id());
+#endif
+
+    VERIFY(u16(-1) != cartridge.bullet_material_idx);
+
+    SBullet& bullet = m_Bullets.emplace_back(position, direction, starting_speed, power, hit_by_type, impulse,
+        sender_id, sendersweapon_id, e_hit_type, maximum_distance, cartridge, air_resistance_factor, SendHit,
+        power_boost);
+    bullet.flags.aim_bullet = AimBullet;
+    bullet.m_bUseTracer = use_trace;
+    bullet.m_sTracerParticle = bullet_particle;
+    bullet.m_fBulletTimeFactor = bullet_time_factor;
+    bullet.m_fGravity = bullet_gravity;
+    bullet.m_fParticleLifeTime = tracer_time_factor;
+    bullet.m_fBulletSize = bullet_size;
+}
+
+    void CBulletManager::UpdateWorkload()
 {
     ZoneScoped;
 
 #ifdef DEBUG
     VERIFY(g_mt_config.test(mtBullets) || m_thread_id == std::this_thread::get_id());
 #endif
-
+    RegisterExplosionEvent();
     rq_storage.r_clear();
 
     u32 const time_delta = Device.dwTimeDelta;
@@ -226,7 +267,7 @@ void CBulletManager::UpdateWorkload()
     const auto e = m_Bullets.rend();
     for (u16 j = u16(e - i); i != e; ++i, --j)
     {
-        if (process_bullet(rq_storage, *i, time_delta * g_bullet_time_factor))
+        if (process_bullet(rq_storage, *i, time_delta * i->m_fBulletTimeFactor /** g_bullet_time_factor */))
             continue;
 
         VERIFY(j > 0);
@@ -577,14 +618,41 @@ bool CBulletManager::firetrace_callback(collide::rq_result& result, LPVOID param
         (GameID() == eGameIDSingle) ? Level().BulletManager().m_fAirResistanceK : bullet.air_resistance;
 
     CBulletManager& bullet_manager = Level().BulletManager();
-    Fvector const gravity = {0.f, -bullet_manager.m_fGravityConst, 0.f};
+    Fvector const gravity = {0.f, -bullet.m_fGravity, 0.f};
     update_bullet(bullet, data, gravity, air_resistance);
     if (fis_zero(bullet.speed))
         return (FALSE);
 
     if (fis_zero(data.collide_time))
         return (TRUE);
+    float t_exp_hit = bullet.hit_param.power_by_type[ALife::eHitTypeExplosion];
+    if (t_exp_hit > 0.01f)
+    {
+        float t_exp_radius = 2 * t_exp_hit;
+        xr_vector<ISpatial*> ISpatialResult;
+        g_pGamePersistent->SpatialSpace.q_sphere(ISpatialResult, 0, STYPE_COLLIDEABLE, collide_position, t_exp_radius);
+        bullet_manager.m_BulletExplosionTargets.clear();
 
+        SBullet_Explosion bullet_explosion;
+        bullet_explosion.power = t_exp_hit;
+        bullet_explosion.impulse = bullet.hit_param.impulse * t_exp_hit;
+        bullet_explosion.radius = t_exp_radius;
+        bullet_explosion.parent_id = bullet.parent_id;
+        bullet_explosion.weapon_id = bullet.weapon_id;
+        bullet_explosion.position = collide_position;
+        bullet_explosion.throw_factor = 1.2 * t_exp_hit;
+        for (u32 o_it = 0; o_it < ISpatialResult.size(); o_it++)
+        {
+            ISpatial* spatial = ISpatialResult[o_it];
+
+            CPhysicsShellHolder* pGameObject = smart_cast<CPhysicsShellHolder*>(spatial->dcast_GameObject());
+            if (pGameObject)
+            {
+                bullet_explosion.pHolder = pGameObject;
+                bullet_manager.m_BulletExplosionTargets.push_back(bullet_explosion);
+            }
+        }
+    }
     //статический объект
     if (!result.O)
     {
@@ -684,7 +752,7 @@ static bool try_update_bullet(SBullet& bullet, Fvector const& gravity, float con
 bool CBulletManager::process_bullet(collide::rq_results& storage, SBullet& bullet, float delta_time)
 {
     float const time_delta = delta_time / 1000.f;
-    Fvector const gravity = Fvector().set(0.f, -m_fGravityConst, 0.f);
+    Fvector const gravity = Fvector().set(0.f, -bullet.m_fGravity, 0.f);
 
     float const air_resistance = (GameID() == eGameIDSingle) ? m_fAirResistanceK : bullet.air_resistance;
     bullet.tracer_start_position = bullet.bullet_pos;
@@ -868,16 +936,15 @@ void CBulletManager::Render()
         if (length > m_fTracerLengthMax)
             length = m_fTracerLengthMax;
 
-        float width = m_fTracerWidth;
+        float width = bullet->m_fBulletSize;
         float dist2segSqr = SqrDistancePointToSegment(Device.vCameraPosition, bullet->bullet_pos, tracer);
         //---------------------------------------------
         float MaxDistSqr = 1.0f;
         float MinDistSqr = 0.09f;
-        if (dist2segSqr < MaxDistSqr)
+        if ((dist2segSqr < MaxDistSqr) && (!bullet->m_bUseTracer))
         {
             if (dist2segSqr < MinDistSqr)
                 dist2segSqr = MinDistSqr;
-
             width *= _sqrt(dist2segSqr / MaxDistSqr);
         }
         if (Device.vCameraPosition.distance_to_sqr(bullet->bullet_pos) < (length * length))
@@ -895,7 +962,24 @@ void CBulletManager::Render()
         tracers.Render(
             bullet->bullet_pos, center, tracer_direction, length, width, bullet->m_u8ColorID, bullet->speed, bActor);
     }
-
+    for (auto it = m_Bullets.begin(); it != m_Bullets.end(); it++)
+    {
+        if (!it->m_bUseTracer)
+            continue;
+        Fmatrix particles_pos;
+        particles_pos.set(Fidentity);
+        particles_pos.c.set(it->bullet_pos);
+        if (!it->m_pTracerParticle)
+        {
+            it->m_pTracerParticle = CParticlesObject::Create(it->m_sTracerParticle.c_str(), false);
+            it->m_pTracerParticle->UpdateParent(particles_pos, zero_vel);
+            it->m_pTracerParticle->Play(false);
+        }
+        else
+        {
+            it->m_pTracerParticle->UpdateParent(particles_pos, zero_vel);
+        }
+    }
     GEnv.UIRender->CacheSetCullMode(IUIRender::cmNONE);
     GEnv.UIRender->CacheSetXformWorld(Fidentity);
     GEnv.UIRender->SetShader(*tracers.sh_Tracer);
@@ -939,10 +1023,29 @@ void CBulletManager::CommitEvents() // @ the start of frame
         {
             if (E.bullet.flags.allow_sendhit && GameID() != eGameIDSingle)
                 Game().m_WeaponUsageStatistic->OnBullet_Remove(&E.bullet);
+            if (m_Bullets[E.tgt_material].m_pTracerParticle && m_Bullets[E.tgt_material].m_bUseTracer)
+            {
+                SParticleLife pt;
+                pt.m_pParticle = m_Bullets[E.tgt_material].m_pTracerParticle;
+                pt.time = Device.fTimeGlobal + m_Bullets[E.tgt_material].m_fParticleLifeTime;
+                m_PartLifeTime.push_back(pt);
+            }
             m_Bullets[E.tgt_material] = m_Bullets.back();
             m_Bullets.pop_back();
             break;
         }
+        }
+    }
+    if (!m_PartLifeTime.empty())
+    {
+        for (int i = 0; i < m_PartLifeTime.size(); i++)
+        {
+            if ((Device.fTimeGlobal > m_PartLifeTime[i].time) && (m_PartLifeTime[i].m_pParticle))
+            {
+                CParticlesObject::Destroy(m_PartLifeTime[i].m_pParticle);
+                m_PartLifeTime[i] = m_PartLifeTime.back();
+                m_PartLifeTime.pop_back();
+            }
         }
     }
     m_Events.clear();
@@ -1000,5 +1103,60 @@ void CBulletManager::RegisterEvent(
         E.tgt_material = tgt_material;
         break;
     }
+    }
+}
+
+void CBulletManager::RegisterExplosionEvent()
+{
+    auto I = std::remove_if(m_BulletExplosionTargets.begin(), m_BulletExplosionTargets.end(), 
+        [](SBullet_Explosion exp) { return !!exp.pHolder->getDestroy();});
+    m_BulletExplosionTargets.erase(I, m_BulletExplosionTargets.end());
+    u16 i = 3;
+    while (m_BulletExplosionTargets.size() && 0 != i)
+    {
+        SendExplosionEvent(m_BulletExplosionTargets.back());
+        m_BulletExplosionTargets.pop_back();
+        --i;
+    }
+}
+
+void CBulletManager::SendExplosionEvent(SBullet_Explosion bullet)
+{
+    CPhysicsShellHolder* l_Holder = bullet.pHolder;
+    Fvector l_HolderPos;
+    if (!l_Holder->Visual())
+        return;
+
+    l_Holder->Center(l_HolderPos);
+
+    //float l_effect = ExplosionEffect(storage, this, pHolder, m_vExplodePos, m_fBlastRadius);
+    float l_hit = bullet.power;
+    float l_impuls = bullet.impulse;
+    float l_throw_up = bullet.throw_factor;
+
+    if (l_impuls > .001f || l_hit > 0.001)
+    {
+        Fvector l_dir;
+        l_dir.sub(l_HolderPos, bullet.position);
+
+        float rmag = _sqrt(l_throw_up * l_throw_up + 1.f + 2.f * l_throw_up * l_dir.y);
+        l_dir.y += l_throw_up;
+        // rmag -модуль l_dir после l_dir.y += m_fUpThrowFactor,
+        // модуль=_sqrt(l_dir^2+y^2+2.*(l_dir,y)),y=(0,m_fUpThrowFactor,0) (до этого модуль l_dir =1)
+        l_dir.mul(1.f / rmag); // перенормировка
+        NET_Packet P;
+        SHit HS;
+        HS.GenHeader(GE_HIT, l_Holder->ID());
+        HS.whoID = bullet.parent_id;
+        HS.weaponID = bullet.weapon_id;
+        HS.dir = l_dir;
+        HS.power = l_hit;
+        HS.p_in_bone_space = l_HolderPos;
+        HS.impulse = l_impuls;
+        HS.hit_type = ALife::eHitTypeExplosion;
+        HS.boneID = 0;
+        HS.Write_Packet(P);
+        CGameObject::u_EventSend(P);
+        Msg("Hit sended: Type EXPLOSION, Power %f", l_hit);
     }
 }

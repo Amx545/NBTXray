@@ -17,6 +17,8 @@ CUIBoostStatesWnd::CUIBoostStatesWnd()
     bInverse = false;
     dx = 0.f;
     dy = 0.f;
+    dx_time = 0.f;
+    dy_time = 0.f;
     max_item = 8;
 }
 
@@ -32,6 +34,8 @@ void CUIBoostStatesWnd::InitFromXml(CUIXml& xml, LPCSTR path)
 
     dx = xml.ReadAttribFlt("settings", 0, "dx", GetWidth());
     dy = xml.ReadAttribFlt("settings", 0, "dy", GetHeight());
+    dy_time = xml.ReadAttribFlt("settings", 0, "dy_time");
+    dx_time = xml.ReadAttribFlt("settings", 0, "dx_time");
     bHorizontal = (xml.ReadAttribInt("settings", 0, "horz_align", 1) == 1);
     bInverse = (xml.ReadAttribInt("settings", 0, "inverse", 0) == 1);
     max_item = xml.ReadAttribInt("settings", 0, "max_item", 8);
@@ -58,6 +62,9 @@ void CUIBoostStatesWnd::InitFromXml(CUIXml& xml, LPCSTR path)
     {
         CUIStatic* booster;
         booster = UIHelper::CreateStatic(xml, tpath, this, false);
+        booster->SetTextAlignment(ETextAlignment::alCenter);
+        booster->SetTextOffset(0.f, dy_time);
+        booster->SetFont(GEnv.UI->Font().pFontArial14);
         m_ind_boost_state.emplace(type, booster);
     }
     xml.SetLocalRoot(stored_root);
@@ -84,6 +91,7 @@ void CUIBoostStatesWnd::UpdateBoosterIndicators(const CEntityCondition::BOOSTER_
     flags |= LA_CYCLIC;
     flags |= LA_ONLYALPHA;
     flags |= LA_TEXTURECOLOR;
+    string32 _buff;
 
     for (const auto& [type, Item] : m_ind_boost_state)
     {
@@ -100,6 +108,8 @@ void CUIBoostStatesWnd::UpdateBoosterIndicators(const CEntityCondition::BOOSTER_
                 m_ind_boost_pos.push_back(type);
                 Item->Show(true);
             }
+            xr_sprintf(_buff, "%.0f", It->second.fBoostTime);
+            Item->SetText(_buff);
             if (It->second.fBoostTime <= 3.0f)
             {
                 Item->SetColorAnimation(str_flag, flags);

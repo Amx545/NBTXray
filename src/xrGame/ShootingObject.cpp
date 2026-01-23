@@ -12,6 +12,7 @@
 
 #include "Actor.h"
 #include "ActorCondition.h"
+#include "ai\stalker\ai_stalker.h"
 #include "Spectator.h"
 #include "game_cl_base.h"
 #include "Level.h"
@@ -43,12 +44,19 @@ void CShootingObject::Load(LPCSTR section)
     //время затрачиваемое на выстрел
     fOneShotTime = pSettings->r_float(section, "rpm");
     //Alundaio: Two-shot burst rpm; used for Abakan/AN-94
+    modeOneShotTime = READ_IF_EXISTS(pSettings, r_float, section, "rpm_mode_1", fOneShotTime);
     modeShotTime = READ_IF_EXISTS(pSettings, r_float, section, "rpm_mode_2", fOneShotTime);
+    modeThreeShotTime = READ_IF_EXISTS(pSettings, r_float, section, "rpm_mode_3", fOneShotTime);
     rarity_amplifier = READ_IF_EXISTS(pSettings, r_u8, section, "rarity", 0);
+    (pSettings->line_exist(section, "double_shot")) ? 
+        bDoubleShotMode = !!pSettings->r_bool(section, "double_shot") : bDoubleShotMode = false;
+    fArmorIgnoreMode = READ_IF_EXISTS(pSettings, r_float, section, "ap_mode", 0.f);
 
     VERIFY(fOneShotTime > 0.f);
     fOneShotTime = 60.f / fOneShotTime;
+    modeOneShotTime = 60.f / modeOneShotTime;
     modeShotTime = 60.f / modeShotTime;
+    modeThreeShotTime = 60.f / modeThreeShotTime;
 
     //Cycle down RPM after first 2 shots; used for Abakan/AN-94
     if (pSettings->line_exist(section, "cycle_down"))
@@ -56,6 +64,17 @@ void CShootingObject::Load(LPCSTR section)
     else
         cycleDown = false;
     //Alundaio: END
+
+    (pSettings->line_exist(section, "non_standart_bullet")) ? m_bUseTracer = !!pSettings->r_bool(section, "non_standart_bullet") :
+                                                      m_bUseTracer = false;
+    if (m_bUseTracer)
+    {
+        m_fGravity = READ_IF_EXISTS(pSettings, r_float, section, "non_standart_gravity", 9.81f);
+        m_fBulletTimeFactor = READ_IF_EXISTS(pSettings, r_float, section, "non_standart_time_factor", 1.f);
+        m_fParticleLifeTime = READ_IF_EXISTS(pSettings, r_float, section, "non_standart_life_time", 1.f);
+        m_fBulletSize = READ_IF_EXISTS(pSettings, r_float, section, "non_standart_size", 0.08f);
+        m_sTracerParticle = pSettings->r_string(section, "non_standart_particles");
+    }
 
     LoadFireParams(section);
     LoadLights(section, "");
@@ -82,6 +101,9 @@ void CShootingObject::LoadFireParams(LPCSTR section)
     shared_str s_sHitPower;
     shared_str s_sHitPowerCritical;
 
+    //тип урона оружия
+    m_eShotHitType = ALife::eHitTypeFireWound; 
+    // ALife::g_tfString2HitType(READ_IF_EXISTS(pSettings, r_string, section, "hit_type", "fire_wound"));
     //базовая дисперсия оружия
     fireDispersionBase = deg2rad(pSettings->r_float(section, "fire_dispersion_base"));
 
@@ -139,11 +161,22 @@ void CShootingObject::LoadFireParams(LPCSTR section)
     {
         m_fTimeToAim = pSettings->r_float(section, "time_to_aim");
     }
-    if (rarity_amplifier > 0)
+    const std::tuple<ALife::EHitType, float> hit_list[] = {
+        {ALife::eHitTypeBurn, READ_IF_EXISTS(pSettings, r_float, section, "hit_power_burn", 0.f)},
+        {ALife::eHitTypeLightBurn, READ_IF_EXISTS(pSettings, r_float, section, "hit_power_lightburn", 0.f)},
+        {ALife::eHitTypeShock, READ_IF_EXISTS(pSettings, r_float, section, "hit_power_lightning", 0.f)},
+        {ALife::eHitTypeChemicalBurn, READ_IF_EXISTS(pSettings, r_float, section, "hit_power_acid", 0.f)},
+        {ALife::eHitTypeRadiation, 0.f}, 
+        {ALife::eHitTypeTelepatic, 0.f},
+        {ALife::eHitTypeWound, READ_IF_EXISTS(pSettings, r_float, section, "hit_power_wound", 0.f)},
+        {ALife::eHitTypeStrike, READ_IF_EXISTS(pSettings, r_float, section, "hit_power_strike", 0.f)},
+        {ALife::eHitTypeExplosion, READ_IF_EXISTS(pSettings, r_float, section, "hit_power_explosion", 0.f)},
+        {ALife::eHitTypeFireWound, fvHitPower[egdMaster]}};
+    for (auto [type, power] : hit_list)
     {
-        fvHitPower[egdMaster] +=
-            fvHitPower[egdMaster] * 0.10f * rarity_amplifier + fvHitPower[egdMaster] * 0.05f * (rarity_amplifier - 1);
-        fvHitPower[egdNovice] = fvHitPower[egdStalker] = fvHitPower[egdVeteran] = fvHitPower[egdMaster];
+        fHitPowerByType.emplace(type, power);
+        fHitPowerByTypeConfig.emplace(type, power);
+        fHitPowerByTypeScale.emplace(type, 0.f);
     }
 }
 
@@ -495,31 +528,50 @@ void CShootingObject::FireBullet(const Fvector& pos, const Fvector& shot_dir, fl
     m_fPredBulletTime = Device.fTimeGlobal;
 
     float l_fHitPower = 0.0f;
-    if (ParentIsActor()) //если из оружия стреляет актёр(игрок)
+    float l_power_boost = 1.f;
+    if (ParentIsActor() && GameID() == eGameIDSingle) // если из оружия стреляет актёр(игрок)
     {
-        if (GameID() == eGameIDSingle)
+        CActor* pActor = smart_cast<CActor*>(Level().CurrentControlEntity());
+        if (pActor)
         {
-            l_fHitPower = fvHitPower[g_SingleGameDifficulty];
-            CActor* pActor = smart_cast<CActor*>(Level().CurrentControlEntity());
-            if (pActor)
-            {
-                l_fHitPower = fvHitPower[g_SingleGameDifficulty] * pActor->conditions().GetDamagePerk();
-                Log("HitPower", l_fHitPower);
-            }
-        }
-        else
-        {
-            l_fHitPower = fvHitPower[egdMaster];
+            l_power_boost = pActor->conditions().GetDamagePerk();
+            l_fHitPower = fHitPowerByTypeScale.at(ALife::eHitTypeFireWound);
+            if (m_bUseTracer)
+                Level().BulletManager().AddNonStandartBullet(pos, dir,
+                    m_fStartBulletSpeed * cur_silencer_koef.bullet_speed, l_fHitPower * cur_silencer_koef.hit_power,
+                    fHitPowerByTypeScale, fHitImpulse * cur_silencer_koef.hit_impulse, parent_id, weapon_id, m_eShotHitType,
+                    fireDistance, cartridge, m_air_resistance_factor, send_hit, aim_bullet, m_bUseTracer, m_fGravity,
+                    m_fBulletTimeFactor, m_fParticleLifeTime, m_fBulletSize, l_power_boost, m_sTracerParticle);
+            else
+                Level().BulletManager().AddBullet(pos, dir, m_fStartBulletSpeed * cur_silencer_koef.bullet_speed,
+                    l_fHitPower * cur_silencer_koef.hit_power, fHitPowerByTypeScale,
+                    fHitImpulse * cur_silencer_koef.hit_impulse, parent_id, weapon_id, m_eShotHitType, fireDistance,
+                    cartridge, m_air_resistance_factor, send_hit, aim_bullet, l_power_boost);
         }
     }
     else
     {
-        l_fHitPower = fvHitPower[egdMaster];
+        l_fHitPower = fHitPowerByType.at(ALife::eHitTypeFireWound);
+        if (GetAliveOwner())
+        {
+            CAI_Stalker* stalker_owner = smart_cast<CAI_Stalker*>(GetAliveOwner());
+            if (stalker_owner)
+            {
+                l_power_boost = (stalker_owner->GetStalkerLevel() * .01f) + 1.f;
+            }
+        }
+        if (m_bUseTracer)
+            Level().BulletManager().AddNonStandartBullet(pos, dir, m_fStartBulletSpeed * cur_silencer_koef.bullet_speed,
+                l_fHitPower * cur_silencer_koef.hit_power, fHitPowerByType, fHitImpulse * cur_silencer_koef.hit_impulse,
+                parent_id, weapon_id, m_eShotHitType, fireDistance, cartridge, m_air_resistance_factor, send_hit,
+                aim_bullet, m_bUseTracer, m_fGravity, m_fBulletTimeFactor, m_fParticleLifeTime, m_fBulletSize,
+                l_power_boost, m_sTracerParticle);
+        else
+            Level().BulletManager().AddBullet(pos, dir, m_fStartBulletSpeed * cur_silencer_koef.bullet_speed,
+                l_fHitPower * cur_silencer_koef.hit_power, fHitPowerByType, fHitImpulse * cur_silencer_koef.hit_impulse,
+                parent_id, weapon_id, m_eShotHitType, fireDistance, cartridge, m_air_resistance_factor, send_hit,
+                aim_bullet, l_power_boost);
     }
-
-    Level().BulletManager().AddBullet(pos, dir, m_fStartBulletSpeed * cur_silencer_koef.bullet_speed,
-        l_fHitPower * cur_silencer_koef.hit_power, fHitImpulse * cur_silencer_koef.hit_impulse, parent_id, weapon_id,
-        ALife::eHitTypeFireWound, fireDistance, cartridge, m_air_resistance_factor, send_hit, aim_bullet);
 }
 void CShootingObject::FireStart() { bWorking = true; }
 void CShootingObject::FireEnd() { bWorking = false; }

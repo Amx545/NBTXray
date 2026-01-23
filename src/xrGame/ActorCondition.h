@@ -35,6 +35,7 @@ private:
     void UpdateTutorialThresholds();
     void UpdateSatiety();
     virtual void UpdateRadiation();
+    virtual void UpdatePsyHealth();
     void UpdateStats();
 
 public:
@@ -83,8 +84,6 @@ public:
     void BoostSpeedReload(const float value);
     void BoostMoveSpeedIncrease(const float value);
     void BoostJumpIncrease(const float value);
-    void BoostHealthMinus(const float value);
-    void BoostStaminaMinus(const float value);
     void BoostMoveSpeedMinus(const float value);
     void BoostJumpMinus(const float value);
     const auto& GetCurBoosterInfluences() const { return m_booster_influences; }
@@ -149,7 +148,20 @@ protected:
     float m_fV_SatietyHealth;
     float m_fSatietyCritical;
     //--
+    //--perks--
+    float m_fBoostAdditionalWeight{0.f};
+    float m_fBoostGraveImmunity{0.f};
+    float m_fBoostHealthIncrease{0.f};
+    float m_fBoostPowerIncrease{0.f};
+    float m_fBoostSniper{1.f};
+    float m_fBoostDoubleShot{1.f};
+    float m_fBoostSpeedShot{1.f};
+    float m_fBoostSpeedReload{1.f};
+    float m_fBoostMoveSpeedIncrease{0.f};
+    float m_fBoostJumpIncrease{0.f};
+    //--perks--
     float m_fPowerLeakSpeed;
+    xr_array<u16,100> HPLeveling;
 
     float m_fJumpPower;
     float m_fStandPower;
@@ -169,28 +181,108 @@ protected:
     u32 m_iActorDexterity;
     u32 m_fActorExperience;
     u32 m_fActorRequiredExperience;
+    u32 m_iActorAbilityPoint;
+
+    u32 m_iActorVitalityTemp;
+    u32 m_iActorStrengthTemp;
+    u32 m_iActorIntelligenceTemp;
+    u32 m_iActorDexterityTemp;
     //--stats--
+    float stored_MaxWalkWeight{60.f};
+
+    float m_fHealthLevel{0.f};
+    float m_fPowerLevel{0.f};
+    float m_fWeightLevel{0.f};
+    float m_fPsyHealthLevel{0.f};
+    float m_fStrScaleLevel{0.f};
+    float m_fDexScaleLevel{0.f};
+    float m_fIntScaleLevel{0.f};
+
+    float m_fItemHealth{0.f};
+    float m_fItemPower{0.f};
+    float m_fItemPsyHealth{0.f};
+    float m_fStrScaleItem{0.f};
+    float m_fDexScaleItem{0.f};
+    float m_fIntScaleItem{0.f};
+
+    float m_fLvlUpHeal{0.f};
+    float m_fLvlUpPower{0.f};
+    float m_fLvlUpPsyHeal{0.f};
+
 public:
     float m_MaxWalkWeight;
     //--stats--
     void SetActorPointLevel(u32 val) { m_iActorPoint = val; }
+    void SetActorLevel(u8 val);
     void SetActorVitality(u32 val) { m_iActorVitality = val; }
     void SetActorStrength(u32 val) { m_iActorStrength = val; }
     void SetActorIntelligence(u32 val) { m_iActorIntelligence = val; }
     void SetActorDexterity(u32 val) { m_iActorDexterity = val; }
+    void SetAbilityPoint(u32 val) { m_iActorAbilityPoint = val; }
 
-    u32 GetActorLevel() { return m_iActorLevel; }
-    u32 GetActorPointLevel() { return m_iActorPoint; }
-    u32 GetActorVitality() { return m_iActorVitality; }
-    u32 GetActorStrength() { return m_iActorStrength; }
-    u32 GetActorIntelligence() { return m_iActorIntelligence; }
-    u32 GetActorDexterity() { return m_iActorDexterity; }
-    u32 GetActorExperience() { return m_fActorExperience; }
-    u32 GetActorRequiredExp() { return m_fActorRequiredExperience; }
+    u32 GetActorLevel() const { return m_iActorLevel; }
+    u32 GetActorPointLevel() const { return m_iActorPoint; }
+    u32 GetActorVitality() const { return m_iActorVitality; }
+    u32 GetActorStrength() const { return m_iActorStrength; }
+    u32 GetActorIntelligence() const { return m_iActorIntelligence; }
+    u32 GetActorDexterity() const { return m_iActorDexterity; }
+    u32 GetActorExperience() const { return m_fActorExperience; }
+    u32 GetActorRequiredExp() const { return m_fActorRequiredExperience; }
+    u32 GetAbilityPoint() const { return m_iActorAbilityPoint; }
+
+    u32 GetActorVitalityTemp() const { return m_iActorVitalityTemp; }
+    u32 GetActorIntelligenceTemp() const { return m_iActorIntelligenceTemp; }
+    u32 GetActorStrengthTemp() const { return m_iActorStrengthTemp; }
+    u32 GetActorDexterityTemp() const { return m_iActorDexterityTemp; }
+
+    u16 GetHealthPerLevel(u8 current_level);
+    float GetWeightPerLevel(u8 current_level);
+    u16 GetPsyHealthPerLevel(u8 current_level);
+    u16 GetPowerPerLevel(u8 current_level);
+
+    float GetStrScalePerLevel(u8 current_level);
+    float GetDexScalePerLevel(u8 current_level);
+    float GetIntScalePerLevel(u8 current_level);
+
+    float GetActorHTProtection(ALife::EHitType hit_type);
+    float GetActorHTProtection(bool head);
 
     void GetActorLevelUp();
-    //--stats--
 
+    float GetActorHealthLevel() const { return m_fHealthLevel; }
+    float GetActorPowerLevel() const { return m_fPowerLevel; }
+    float GetActorWeightLevel() const { return m_fWeightLevel; }
+    float GetActorPsyHealthLevel() const { return m_fPsyHealthLevel; }
+    float GetActorStrScaleLevel() const { return m_fStrScaleLevel; }
+    float GetActorDexScaleLevel() const { return m_fDexScaleLevel; }
+    float GetActorIntScaleLevel() const { return m_fIntScaleLevel; }
+
+    float GetActorItemHealth() const { return m_fItemHealth; }
+    float GetActorItemPower() const { return m_fItemPower; }
+    float GetActorItemPsyHealth() const { return m_fItemPsyHealth; }
+    float GetActorItemStrScale() const { return m_fStrScaleItem; }
+    float GetActorItemDexScale() const { return m_fDexScaleItem; }
+    float GetActorItemIntScale() const { return m_fIntScaleItem; }
+
+    void SetActorHealthLevel(float val) { m_fHealthLevel = val; }
+    void SetActorPowerLevel(float val) { m_fPowerLevel = val; }
+    void SetActorWeightLevel(float val) { m_fWeightLevel = val; }
+    void SetActorPsyHealthLevel(float val) { m_fPsyHealthLevel = val; }
+
+    void SetActorItemHealth(float val) { m_fItemHealth = val; }
+    void SetActorItemPower(float val) { m_fItemPower = val; }
+    void SetActorItemPsyHealth(float val) { m_fItemPsyHealth = val; }
+
+    void ChangeStatsVitality(u8 val, bool add, bool permanent);
+    void ChangeStatsStrength(u8 val, bool add, bool permanent);
+    void ChangeStatsIntelligence(u8 val, bool add, bool permanent);
+    void ChangeStatsDexterity(u8 val, bool add, bool permanent);
+
+    void ChangeStatsHealth(float val, bool add);
+    void ChangeStatsPsyHealth(float val, bool add);
+    void ChangeStatsPower(float val, bool add);
+
+    //--stats--
 protected:
     float m_zone_max_power[ALife::infl_max_count];
     float m_zone_danger[ALife::infl_max_count];

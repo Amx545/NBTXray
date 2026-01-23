@@ -75,6 +75,7 @@ public:
     virtual float CalcCondition(float hit);
 
     // Visibility related
+    virtual float GetHitFraction() { return 0.f; }
     virtual float ffGetFov() const = 0;
     virtual float ffGetRange() const = 0;
 

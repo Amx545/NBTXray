@@ -22,6 +22,7 @@ enum
     HELMET_SLOT,
     BACKPACK_SLOT, // backpack
     ACTORBELT_SLOT,
+    ACTORGLOVE_SLOT,
     SLOTS_COUNT
 };
 

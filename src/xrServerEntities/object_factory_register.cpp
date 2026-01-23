@@ -25,6 +25,7 @@
 #include "ai/monsters/chimera/chimera.h"
 #include "ai/monsters/dog/dog.h"
 #include "ai/stalker/ai_stalker.h"
+#include "ai/stalker/ai_phantom_stalker.h"
 #include "ai/monsters/bloodsucker/bloodsucker.h"
 #include "ai/monsters/boar/boar.h"
 #include "ai/monsters/pseudodog/pseudodog.h"
@@ -92,6 +93,9 @@
 #include "weaponBM16.h"
 #include "WeaponRG6.h"
 #include "WeaponStatMgun.h"
+#include "WeaponProtecta.h"
+#include "WeaponRAIK84.h"
+#include "WeaponGauss.h"
 
 #include "Scope.h"
 #include "Silencer.h"
@@ -114,6 +118,7 @@
 #include "ActorHelmet.h"
 #include "ActorBelt.h"
 #include "ActorBackpack.h"
+#include "ActorGlove.h"
 
 #include "F1.h"
 #include "RGD5.h"
@@ -235,6 +240,8 @@ void CObjectFactory::register_classes()
     ADD(CAI_PseudoDog, CSE_ALifeMonsterBase, CLSID_AI_DOG_BLACK, "dog_black");
     ADD(CPsyDog, CSE_ALifeMonsterBase, CLSID_AI_DOG_PSY, "psy_dog");
     ADD(CPsyDogPhantom, CSE_ALifePsyDogPhantom, CLSID_AI_DOG_PSY_PHANTOM, "psy_dog_phantom");
+    ADD(CAI_PsyStalker, CSE_ALifeHumanStalker, CLSID_AI_PSY_STALKER, "psy_stalker");
+    ADD(CAI_PsyStalkerPhantom, CSE_ALifeHumanStalker, CLSID_AI_PSY_STALKER_PHANTOM, "psy_stalker_phantom");
     ADD(CBurer, CSE_ALifeMonsterBase, CLSID_AI_BURER, "burer");
     ADD(CPseudoGigant, CSE_ALifeMonsterBase, CLSID_AI_GIANT, "pseudo_gigant");
     ADD(CController, CSE_ALifeMonsterBase, CLSID_AI_CONTROLLER, "controller");
@@ -297,6 +304,9 @@ void CObjectFactory::register_classes()
     ADD(CWeaponKnife, CSE_ALifeItemWeapon, CLSID_OBJECT_W_KNIFE, "wpn_knife");
     ADD(CWeaponBM16, CSE_ALifeItemWeaponShotGun, CLSID_OBJECT_W_BM16, "wpn_bm16");
     ADD(CWeaponRG6, CSE_ALifeItemWeaponShotGun, CLSID_OBJECT_W_RG6, "wpn_rg6");
+    ADD(CWeaponProtecta, CSE_ALifeItemWeaponAutoShotGun, CLSID_OBJECT_W_PROTECTA, "wpn_protecta");
+    ADD(CWeaponRAIK84, CSE_ALifeItemWeaponMagazinedWGL, CLSID_OBJECT_W_RAIK84, "wpn_raik84");
+    ADD(CWeaponGauss, CSE_ALifeItemWeaponMagazined, CLSID_OBJECT_W_GAUSS, "wpn_gauss");
     //-----------------------------------------------------------------------------------------------------
     ADD(CWeaponAmmo, CSE_ALifeItemAmmo, CLSID_OBJECT_AMMO, "wpn_ammo");
     ADD(CWeaponAmmo, CSE_ALifeItemAmmo, CLSID_OBJECT_A_VOG25, "wpn_ammo_vog25");
@@ -329,6 +339,7 @@ void CObjectFactory::register_classes()
     ADD(CExoOutfit, CSE_ALifeItemCustomOutfit, CLSID_EQUIPMENT_EXO, "equ_exo");
     ADD(CHelmet, CSE_ALifeItem, CLSID_EQUIPMENT_HELMET, "helmet");
     ADD(CActorBelt, CSE_ALifeItem, CLSID_EQUIPMENT_ACTORBELT, "equ_actor_belt");
+    ADD(CActorGlove, CSE_ALifeItem, CLSID_EQUIPMENT_GLOVE, "equ_glove");
     ADD(CBackpack, CSE_ALifeItem, CLSID_EQUIPMENT_BACKPACK, "equ_backpack");
 
     // Grenades
@@ -410,17 +421,21 @@ void CObjectFactory::register_classes()
         return;
 
     ADD(CElectricBall, CSE_ALifeItemArtefact, TEXT2CLSID("SCRPTART"), "artefact_s");
+    ADD(CBlackDrops, CSE_ALifeItemArtefact, TEXT2CLSID("SHARDART"), "shard_s");
+//    ADD(CActorGlove, CSE_ALifeItem, TEXT2CLSID("EQ_AGLV"), "equ_glove_s");
     //	ADD(CtaGameArtefact			,CSE_ALifeItemArtefact			,TEXT2CLSID("AF_CTA")			,"ctaartefact_s");
     ADD(CTorch, CSE_ALifeItemTorch, TEXT2CLSID("TORCH_S"), "device_torch_s");
     ADD(CHangingLamp, CSE_ALifeObjectHangingLamp, TEXT2CLSID("SO_HLAMP"), "hlamp_s");
     ADD(CStalkerOutfit, CSE_ALifeItemCustomOutfit, TEXT2CLSID("E_STLK"), "equ_stalker_s");
     ADD(CScope, CSE_ALifeItem, TEXT2CLSID("WP_SCOPE"), "wpn_scope_s");
     ADD(CWeaponAK74, CSE_ALifeItemWeaponMagazinedWGL, TEXT2CLSID("WP_AK74"), "wpn_ak74_s");
+    ADD(CWeaponRAIK84, CSE_ALifeItemWeaponMagazinedWGL, TEXT2CLSID("WP_RAIK"), "wpn_raik84_s");
     ADD(CWeaponLR300, CSE_ALifeItemWeaponMagazined, TEXT2CLSID("WP_LR300"), "wpn_lr300_s");
     ADD(CWeaponBinoculars, CSE_ALifeItemWeaponMagazined, TEXT2CLSID("WP_BINOC"), "wpn_binocular_s");
     ADD(CWeaponBM16, CSE_ALifeItemWeaponShotGun, TEXT2CLSID("WP_BM16"), "wpn_bm16_s");
     ADD(CWeaponGroza, CSE_ALifeItemWeaponMagazinedWGL, TEXT2CLSID("WP_GROZA"), "wpn_groza_s");
     ADD(CWeaponSVD, CSE_ALifeItemWeaponMagazined, TEXT2CLSID("WP_SVD"), "wpn_svd_s");
+    //ADD(CWeaponGauss, CSE_ALifeItemWeaponMagazined, TEXT2CLSID("WP_GAUSS"), "wpn_gauss_s");
     ADD(CWeaponHPSA, CSE_ALifeItemWeaponMagazined, TEXT2CLSID("WP_HPSA"), "wpn_hpsa_s");
     ADD(CWeaponKnife, CSE_ALifeItemWeapon, TEXT2CLSID("WP_KNIFE"), "wpn_knife_s");
     ADD(CWeaponPM, CSE_ALifeItemWeaponMagazined, TEXT2CLSID("WP_PM"), "wpn_pm_s");
@@ -432,6 +447,7 @@ void CObjectFactory::register_classes()
     ADD(CWeaponVal, CSE_ALifeItemWeaponMagazined, TEXT2CLSID("WP_VAL"), "wpn_val_s");
     ADD(CWeaponVintorez, CSE_ALifeItemWeaponMagazined, TEXT2CLSID("WP_VINT"), "wpn_vintorez_s");
     ADD(CWeaponWalther, CSE_ALifeItemWeaponMagazined, TEXT2CLSID("WP_WALTH"), "wpn_walther_s");
+    ADD(CWeaponProtecta, CSE_ALifeItemWeaponAutoShotGun, TEXT2CLSID("WP_PROTK"), "wpn_protecta_s");
     ADD(CHairsZone, CSE_ALifeZoneVisual, TEXT2CLSID("ZS_BFUZZ"), "zone_bfuzz_s");
     ADD(CMosquitoBald, CSE_ALifeAnomalousZone, TEXT2CLSID("ZS_MBALD"), "zone_mbald_s");
     ADD(CMincer, CSE_ALifeAnomalousZone, TEXT2CLSID("ZS_GALAN"), "zone_galant_s");

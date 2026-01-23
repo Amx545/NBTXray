@@ -6,9 +6,14 @@
 #include "Common/object_broker.h"
 #include "UIXmlInit.h"
 #include "UIHelper.h"
+#include "UIItemInfo.h"
 
 u32 const red_clr = color_argb(255, 210, 50, 50);
 u32 const green_clr = color_argb(255, 170, 170, 170);
+
+CUIArtefactParams::CUIArtefactParams() : CUIWindow("Artefact Params") 
+{ 
+}
 
 CUIArtefactParams::~CUIArtefactParams()
 {
@@ -26,10 +31,10 @@ constexpr std::tuple<ALife::EInfluenceType, cpcstr, cpcstr, float, bool, cpcstr>
     { ALife::infl_acid,         "chemical_burn_immunity",   "ui_inv_outfit_chemical_burn_protection",   1.0f,      false,        "%" },
     { ALife::infl_psi,          "telepatic_immunity",       "ui_inv_outfit_telepatic_protection",       1.0f,      false,        "%" },
     { ALife::infl_electra,      "shock_immunity",           "ui_inv_outfit_shock_protection",           1.0f,      false,        "%" },
-    //{ ALife::infl_strike,     "strike_immunity",          "ui_inv_outfit_strike_protection",          1.0f,      false,        "%" }
-    //{ ALife::infl_wound,      "wound_immunity",           "ui_inv_outfit_wound_protection",           1.0f,      false,        "%" }
-    //{ ALife::infl_explosion,  "explosion_immunity",       "ui_inv_outfit_explosion_protection",       1.0f,      false,        "%" }
-    //{ ALife::infl_fire_wound, "fire_wound_immunity",      "ui_inv_outfit_fire_wound_protection",      1.0f,      false,        "%" }
+    { ALife::infl_strike,     	"strike_immunity",          "ui_inv_outfit_strike_protection",          1.0f,      false,        "%" },
+    { ALife::infl_wound,      	"wound_immunity",           "ui_inv_outfit_wound_protection",           1.0f,      false,        "%" },
+    { ALife::infl_explosion,  	"explosion_immunity",       "ui_inv_outfit_explosion_protection",       1.0f,      false,        "%" },
+    { ALife::infl_fire_wound, 	"fire_wound_immunity",      "ui_inv_outfit_fire_wound_protection",      1.0f,      false,        "%" }
 };
 static_assert(std::size(af_immunity) == ALife::infl_max_count,
     "All influences should be listed in the tuple above.");
@@ -41,6 +46,7 @@ constexpr std::tuple<ALife::EConditionRestoreType, cpcstr, cpcstr, float, bool, 
     { ALife::eSatietyRestoreSpeed,      "satiety_restore_speed",    "ui_inv_satiety",   1.0f,      false,        "%" },
     { ALife::ePowerRestoreSpeed,        "power_restore_speed",      "ui_inv_power",     1.0f,      false,        nullptr },
     { ALife::eBleedingRestoreSpeed,     "bleeding_restore_speed",   "ui_inv_bleeding", -1.0f,      true,         "%" },
+    { ALife::ePsyHealthRestoreSpeed,    "psy_health_restore_speed", "ui_inv_psy_health",1.0f,      false,        "%" },
     { ALife::eRadiationRestoreSpeed,    "radiation_restore_speed",  "ui_inv_radiation", 1.0f,      true,         nullptr },
 };
 static_assert(std::size(af_restore) == ALife::eRestoreTypeMax,
@@ -82,6 +88,18 @@ bool CUIArtefactParams::InitFromXml(CUIXml& xml)
         m_restore_item[id] = CreateItem(xml, section, magnitude, sign_inverse, unit, caption);
     }
     m_additional_weight = CreateItem(xml, "additional_weight", "ui_inv_weight", "ui_inv_outfit_additional_weight");
+    m_additional_health = CreateItem(xml, "additional_health", "ui_inv_add_health", 
+        "ui_inv_outfit_additional_health");
+    m_additional_power = CreateItem(xml, "additional_power", "ui_inv_add_power", "ui_inv_outfit_additional_power");
+    m_additional_psy_health = CreateItem(xml, "additional_psy_health", "ui_inv_add_psy_health", 
+        "ui_inv_outfit_additional_psy_health");
+    m_additional_vitality = CreateItem(xml, "additional_vitality", "ui_inv_add_vitality", 
+        "ui_inv_outfit_additional_vitality");
+    m_additional_vigor = CreateItem(xml, "additional_vigor", "ui_inv_add_vigor", "ui_inv_outfit_additional_vigor");
+    m_additional_intelligence =CreateItem(xml, "additional_intelligence", "ui_inv_add_intelligence", 
+        "ui_inv_outfit_additional_intelligence");
+    m_additional_dexterity = CreateItem(xml, "additional_dexterity", "ui_inv_add_dexterity", 
+        "ui_inv_outfit_additional_dexterity");
 
     xml.SetLocalRoot(stored_root);
     return true;
@@ -172,15 +190,6 @@ void CUIArtefactParams::SetInfo(shared_str const& af_section)
         setValue(m_immunity_item[id]);
     }
 
-    if (m_additional_weight)
-    {
-        val = pSettings->r_float(af_section, "additional_inventory_weight");
-        if (!fis_zero(val))
-        {
-            setValue(m_additional_weight);
-        }
-    }
-
     for (auto [id, restore_section, restore_caption, magnitude, sign_inverse, unit] : af_restore)
     {
         if (!m_restore_item[id])
@@ -193,6 +202,70 @@ void CUIArtefactParams::SetInfo(shared_str const& af_section)
         setValue(m_restore_item[id]);
     }
 
+    if (m_additional_weight)
+    {
+        val = pSettings->r_float(af_section, "additional_inventory_weight");
+        if (!fis_zero(val))
+        {
+            setValue(m_additional_weight);
+        }
+    }
+    if (m_additional_health)
+    {
+        val = pSettings->r_float(af_section, "additional_health");
+        if (!fis_zero(val))
+        {
+            setValue(m_additional_health);
+        }
+    }
+    if (m_additional_power)
+    {
+        val = pSettings->r_float(af_section, "additional_power");
+        if (!fis_zero(val))
+        {
+            setValue(m_additional_power);
+        }
+    }
+    if (m_additional_psy_health)
+    {
+        val = pSettings->r_float(af_section, "additional_psy_health");
+        if (!fis_zero(val))
+        {
+            setValue(m_additional_psy_health);
+        }
+    }
+    if (m_additional_vitality)
+    {
+        val = pSettings->r_float(af_section, "additional_vitality");
+        if (!fis_zero(val))
+        {
+            setValue(m_additional_vitality);
+        }
+    }
+    if (m_additional_vigor)
+    {
+        val = pSettings->r_float(af_section, "additional_vigor");
+        if (!fis_zero(val))
+        {
+            setValue(m_additional_vigor);
+        }
+    }
+    if (m_additional_intelligence)
+    {
+        val = pSettings->r_float(af_section, "additional_mind");
+        if (!fis_zero(val))
+        {
+            setValue(m_additional_intelligence);
+        }
+    }
+    if (m_additional_dexterity)
+    {
+        val = pSettings->r_float(af_section, "additional_skill");
+        if (!fis_zero(val))
+        {
+            setValue(m_additional_dexterity);
+        }
+    }
     SetHeight(h);
 }
 

@@ -57,6 +57,7 @@ private:
     Fvector2 m_highlighter_spacing;
     bool m_bConditionProgBarVisible;
     bool bHelm;
+    bool bGlove;
     u32 af_count;
 
 protected:
@@ -104,6 +105,8 @@ public:
     u32 GetAFCount() { return af_count; }
     void SetHelmStatus(bool val) { bHelm = val; }
     bool GetHelmStatus() { return bHelm; }
+    void SetGloveStatus(bool val) { bGlove = val; }
+    bool GetGloveStatus() { return bGlove; }
     const Ivector2& CellsCapacity();
     void SetCellsCapacity(const Ivector2 c);
     void SetStartCellsCapacity(const Ivector2 c)
@@ -217,6 +220,7 @@ class CUICellContainer final : public CUIWindow
 {
     friend class CUIDragDropListEx;
     friend class CUIDragDropReferenceList;
+    friend class CUIDragDropCustomList;
 
 private:
     typedef CUIWindow inherited;

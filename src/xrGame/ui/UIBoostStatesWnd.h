@@ -25,7 +25,7 @@ public:
 
 private:
     bool bHorizontal, bInverse;
-    float dx, dy;
+    float dx, dy, dy_time, dx_time;
     u8 max_item;
     xr_vector<EBoostParams> m_ind_boost_pos;
     xr_map<EBoostParams, CUIStatic*> m_ind_boost_state;

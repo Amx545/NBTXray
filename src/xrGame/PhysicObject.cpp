@@ -328,9 +328,12 @@ void CPhysicObject::UpdateCL()
 
     //Если наш физический объект анимированный, то
     //двигаем объект за анимацией
-    if (m_pPhysicsShell->PPhysicsShellAnimator())
+    if (m_pPhysicsShell)
     {
-        m_pPhysicsShell->AnimatorOnFrame();
+        if (m_pPhysicsShell->PPhysicsShellAnimator())
+        {
+            m_pPhysicsShell->AnimatorOnFrame();
+        }
     }
 
     if (!IsGameTypeSingle())

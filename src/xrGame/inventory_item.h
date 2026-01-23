@@ -100,6 +100,11 @@ public:
     LPCSTR NameItem(); // remove <virtual> by sea
     LPCSTR NameShort();
     u8 RarityItem() { return m_rarity; }
+    void SetRarityItem(u8 val)
+    {
+        m_rarity = val;
+        RarityUpdate();
+    }
     shared_str ItemDescription() { return m_Description; }
     virtual bool GetBriefInfo(II_BriefInfo& info)
     {
@@ -144,10 +149,11 @@ public:
     BOOL IsInvalid() const;
 
     BOOL IsQuestItem() const { return m_flags.test(FIsQuestItem); }
-    virtual u32 Cost() const { return m_cost; }
+    virtual u32 Cost() const { return m_cost * (1+m_rarity); }
     //			u32					Cost				()	const	{ return m_cost; }
     virtual float Weight() const { return m_weight; }
     void SetWeight(float w) { m_weight = w; }
+    virtual void RarityUpdate();
 
 public:
     CInventory* m_pInventory;
@@ -186,12 +192,15 @@ public:
     void DenyTrade() { m_flags.set(FCanTrade, FALSE); };
     virtual bool IsNecessaryItem(CInventoryItem* item);
     virtual bool IsNecessaryItem(const shared_str& item_sect) { return false; };
+    LPCSTR GetIItemType() const { return m_sIItemType; }
+
 protected:
     u32 m_cost;
     u8 m_rarity;
     float m_weight;
     float m_fCondition;
     shared_str m_Description;
+    LPCSTR m_sIItemType;
 
 protected:
     ALife::_TIME_ID m_dwItemIndependencyTime;

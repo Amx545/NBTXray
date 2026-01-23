@@ -127,6 +127,7 @@ bool CInventoryOwner::net_Spawn(CSE_Abstract* DC)
         {
             dialog_manager->SetStartDialog(CharacterInfo().StartDialog());
             dialog_manager->SetDefaultStartDialog(CharacterInfo().StartDialog());
+            dialog_manager->SetStartDialogs(CharacterInfo().StartDialogs());
         }
         m_game_name = pTrader->m_character_name;
 

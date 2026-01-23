@@ -37,6 +37,7 @@ CPHElement::CPHElement() // aux
     m_l_limit = default_l_limit;
     m_l_scale = default_l_scale;
     m_w_scale = default_w_scale;
+    Tracer_parent = false;
 
     // push_untill=0;
 
@@ -1354,6 +1355,7 @@ void CPHElement::CreateSimulBase()
 void CPHElement::ReAdjustMassPositions(const Fmatrix& shift_pivot, float density)
 {
     GEOM_I i = m_geoms.begin(), e = m_geoms.end();
+
     for (; i != e; ++i)
     {
         (*i)->move_local_basis(shift_pivot);

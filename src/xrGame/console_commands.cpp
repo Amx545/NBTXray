@@ -1639,7 +1639,6 @@ struct CCC_DbgBullets : public CCC_Integer
         CCC_Integer::Execute(args);
     }
 };
-
 #include "attachable_item.h"
 #include "attachment_owner.h"
 #include "InventoryOwner.h"

@@ -18,6 +18,7 @@ class CUIActorInfoWnd;
 class CUIRankingWnd;
 class CUILogsWnd;
 class CUISkillPdaWnd;
+class CUIAbilityPdaWnd;
 class CUIAnimatedStatic;
 class UIHint;
 
@@ -51,6 +52,7 @@ public:
     CUIRankingWnd* pUIRankingWnd;
     CUILogsWnd* pUILogsWnd;
     CUISkillPdaWnd* pUISkillPdaWnd;
+    CUIAbilityPdaWnd* pUIAbilityPdaWnd;
 
     virtual void Reset();
 

@@ -20,6 +20,7 @@
 #include "WeaponAmmo.h"
 #include "CustomOutfit.h"
 #include "ActorHelmet.h"
+#include "ActorGlove.h"
 #include "eatable_item.h"
 #include "UICellItem.h"
 #include "xrGame/game_type.h"
@@ -95,6 +96,8 @@ bool CUIItemInfo::InitItemInfo(cpcstr xml_name)
     UIWeight = UIHelper::CreateStatic(uiXml, "static_weight", this, false);
     UICost = UIHelper::CreateStatic(uiXml, "static_cost", this, false);
     UITradeTip = UIHelper::CreateStatic(uiXml, "static_no_trade", this, false);
+    UIItemType = UIHelper::CreateStatic(uiXml, "static_type", this, false);
+    UIArtefactRank = UIHelper::CreateStatic(uiXml, "static_rank", this, false);
 
     if (uiXml.NavigateToNode("descr_list", 0))
     {
@@ -177,7 +180,12 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
     }
 
     PIItem pInvItem = static_cast<PIItem>(pCellItem->m_pData);
-
+    u8 iAfRank = 0;
+    CArtefact* artefactItem = smart_cast<CArtefact*>(pInvItem);
+    if (artefactItem)
+    {
+        iAfRank = artefactItem->GetAfRank();
+    }
     m_pInvItem = pInvItem;
     Enable(NULL != m_pInvItem);
     if (!m_pInvItem)
@@ -248,7 +256,7 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
             }
             UICost->Show(true);
         }
-        else if (m_pInvItem->Cost() > 0 && !m_pInvItem->IsQuestItem())
+        else if (m_pInvItem->Cost() > 0 && !m_pInvItem->IsQuestItem() && trade_tip == NULL)
         {
             xr_sprintf(str, "%d RU", m_pInvItem->Cost()); // will be owerwritten in multiplayer
             UICost->SetText(str);
@@ -263,6 +271,58 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
             UICost->Show(false);
     }
 
+    // Тип предмета
+    if (UIItemType && IsGameTypeSingle())
+    {
+        pos = UIItemType->GetWndPos();
+        if (UIWeight && m_complex_desc)
+        {
+            pos.y = UIWeight->GetWndPos().y + UIWeight->GetHeight() + 4.0f;
+        }
+        if (!xr_strcmp(pInvItem->GetIItemType(), "no_type"))
+            UIItemType->Show(false);
+        else
+        {
+            string64 _ultraBuff;
+            xr_strcpy(_ultraBuff, StringTable().translate("ui_inv_item_type").c_str());
+            xr_strcat(_ultraBuff, " ");
+            xr_strcat(_ultraBuff, StringTable().translate(pInvItem->GetIItemType()).c_str());
+            UIItemType->SetText(_ultraBuff);
+            UIItemType->AdjustHeightToText();
+            UIItemType->SetWndPos(pos);
+            UIItemType->Show(true);
+        }
+    }
+    // Ранг артефакта
+    if (UIArtefactRank && IsGameTypeSingle())
+    {
+        pos = UIArtefactRank->GetWndPos();
+        if (UIItemType && UIItemType->IsShown())
+        {
+            pos.y = UIItemType->GetWndPos().y + UIItemType->GetHeight() + 4.0f;
+        }
+        else if (UIWeight && m_complex_desc)
+        {
+            pos.y = UIWeight->GetWndPos().y + UIWeight->GetHeight() + 4.0f;
+        }
+        if (iAfRank == 0)
+        {
+            UIArtefactRank->Show(false);
+        }
+        else
+        {
+            string64 _buf;
+            string64 _ultraBuff;
+            xr_sprintf(_buf, "%d", iAfRank);
+            xr_strcpy(_ultraBuff, StringTable().translate("ui_inv_af_rank").c_str());
+            xr_strcat(_ultraBuff, " ");
+            xr_strcat(_ultraBuff, _buf);
+            UIArtefactRank->SetText(_ultraBuff);
+            UIArtefactRank->AdjustHeightToText();
+            UIArtefactRank->SetWndPos(pos);
+            UIArtefactRank->Show(true);
+        }
+    }
     //	CActor* actor = smart_cast<CActor*>( Level().CurrentViewEntity() );
     //	if ( g_pGameLevel && Level().game && actor )
     //	{
@@ -274,9 +334,13 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
     {
         pos.y = UITradeTip->GetWndPos().y;
         if (UIWeight && m_complex_desc)
-        {
             pos.y = UIWeight->GetWndPos().y + UIWeight->GetHeight() + 4.0f;
-        }
+
+        if (UIItemType && UIItemType->IsShown())
+            pos.y = UIItemType->GetWndPos().y + UIItemType->GetHeight() + 4.0f;
+
+        if (UIArtefactRank && iAfRank != 0)
+            pos.y = UIArtefactRank->GetWndPos().y + UIArtefactRank->GetHeight() + 4.0f;
 
         if (trade_tip == NULL)
             UITradeTip->Show(false);
@@ -288,12 +352,18 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
             UITradeTip->Show(true);
         }
     }
-
+    // Описание предмета
     if (UIDesc)
     {
         pos = UIDesc->GetWndPos();
         if (UIWeight)
             pos.y = UIWeight->GetWndPos().y + UIWeight->GetHeight() + 4.0f;
+
+        if (UIItemType && UIItemType->IsShown())
+            pos.y = UIItemType->GetWndPos().y + UIItemType->GetHeight() + 4.0f;
+
+        if (UIArtefactRank && iAfRank != 0)
+            pos.y = UIArtefactRank->GetWndPos().y + UIArtefactRank->GetHeight() + 4.0f;
 
         if (UITradeTip && trade_tip != NULL)
             pos.y = UITradeTip->GetWndPos().y + UITradeTip->GetHeight() + 4.0f;
@@ -404,6 +474,7 @@ void CUIItemInfo::TryAddOutfitInfo(CInventoryItem& pInvItem, CInventoryItem* pCo
 
     CCustomOutfit* outfit = smart_cast<CCustomOutfit*>(&pInvItem);
     CHelmet* helmet = smart_cast<CHelmet*>(&pInvItem);
+    CActorGlove* glove = smart_cast<CActorGlove*>(&pInvItem);
     if (outfit)
     {
         CCustomOutfit* comp_outfit = smart_cast<CCustomOutfit*>(pCompareItem);
@@ -414,6 +485,12 @@ void CUIItemInfo::TryAddOutfitInfo(CInventoryItem& pInvItem, CInventoryItem* pCo
     {
         CHelmet* comp_helmet = smart_cast<CHelmet*>(pCompareItem);
         UIOutfitInfo->UpdateInfo(helmet, comp_helmet);
+        UIDesc->AddWindow(UIOutfitInfo, false);
+    }
+    if (glove)
+    {
+        CActorGlove* comp_glove = smart_cast<CActorGlove*>(pCompareItem);
+        UIOutfitInfo->UpdateInfo(glove, comp_glove);
         UIDesc->AddWindow(UIOutfitInfo, false);
     }
 }

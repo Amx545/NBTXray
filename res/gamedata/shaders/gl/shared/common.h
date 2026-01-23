@@ -120,6 +120,7 @@ void	sincos(float x, out float s, out float c) { s = sin(x); c = cos(x); }
 
 	uniform float4		parallax;
 //	uniform float4		screen_res;		// Screen resolution (x-Width,y-Height, zw - 1/resolution)
+//	uniform float4		minscreen_res;		// Screen resolution (x-Width,y-Height, zw - 1/resolution)
 //}
 
 float 	calc_cyclic 	(float x)				

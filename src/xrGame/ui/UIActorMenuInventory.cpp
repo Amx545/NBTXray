@@ -35,6 +35,8 @@
 #include "CustomDetector.h"
 #include "PDA.h"
 #include "actor_defs.h"
+#include "BlackDrops.h"
+#include "game_news.h"
 
 void move_item_from_to(u16 from_id, u16 to_id, u16 what_id);
 
@@ -46,6 +48,7 @@ void CUIActorMenu::InitInventoryMode()
     m_pLists[eInventoryOutfitList]->Show(true);
     ShowIfExist(m_pLists[eInventoryHelmetList], true);
     ShowIfExist(m_pLists[eInventoryActorBeltList], true);
+    ShowIfExist(m_pLists[eInventoryActorGloveList], true);
     ShowIfExist(m_pLists[eInventoryDetectorList], true);
     ShowIfExist(m_pLists[eInventoryBackpackList], true);
     ShowIfExist(m_pLists[eInventoryKnifeList], true);
@@ -246,10 +249,19 @@ void CUIActorMenu::OnInventoryAction(PIItem pItem, u16 action_type)
 {
     CUIDragDropListEx* all_lists[] =
     {
-        m_pLists[eInventoryBeltList], m_pLists[eInventoryKnifeList], m_pLists[eInventoryPistolList], m_pLists[eInventoryAutomaticList], m_pLists[eInventoryBackpackList],
-        m_pLists[eInventoryOutfitList], m_pLists[eInventoryActorBeltList], m_pLists[eInventoryHelmetList],
+        m_pLists[eInventoryBeltList], 
+        m_pLists[eInventoryKnifeList], 
+        m_pLists[eInventoryPistolList], 
+        m_pLists[eInventoryAutomaticList], 
+        m_pLists[eInventoryBackpackList],
+        m_pLists[eInventoryOutfitList], 
+        m_pLists[eInventoryActorGloveList], 
+        m_pLists[eInventoryActorBeltList],
+        m_pLists[eInventoryHelmetList],
         m_pLists[eInventoryDetectorList],
-        m_pLists[eInventoryBagList], m_pLists[eTradeActorBagList], m_pLists[eTradeActorList]
+        m_pLists[eInventoryBagList], 
+        m_pLists[eTradeActorBagList], 
+        m_pLists[eTradeActorList]
     };
 
     switch (action_type)
@@ -460,6 +472,7 @@ void CUIActorMenu::InitInventoryContents(CUIDragDropListEx* pBagList, bool onlyB
     InitCellForSlot(HELMET_SLOT);
     InitCellForSlot(ACTORBELT_SLOT);
     InitCellForSlot(BACKPACK_SLOT);
+    InitCellForSlot(ACTORGLOVE_SLOT);
 
     //Alundaio
     if (!m_pActorInvOwner->inventory().SlotIsPersistent(KNIFE_SLOT))
@@ -523,6 +536,12 @@ bool CUIActorMenu::ToSlot(CUICellItem* itm, bool force_place, u16 slot_id)
         if (pOutfit && !pOutfit->bIsHelmetAvaliable)
             return false;
     }
+    if (slot_id == ACTORGLOVE_SLOT)
+    {
+        CCustomOutfit* pOutfit = m_pActorInvOwner->GetOutfit();
+        if (pOutfit && !pOutfit->bIsGlovesAvaliable)
+            return false;
+    }
 
     if (m_pActorInvOwner->inventory().CanPutInSlot(iitem, slot_id))
     {
@@ -546,6 +565,15 @@ bool CUIActorMenu::ToSlot(CUICellItem* itm, bool force_place, u16 slot_id)
                 {
                     CUICellItem* helmet_cell = helmet_list->GetItemIdx(0);
                     ToBag(helmet_cell, false);
+                }
+            }
+            if (pOutfit && !pOutfit->bIsGlovesAvaliable)
+            {
+                CUIDragDropListEx* glove_list = GetSlotList(ACTORGLOVE_SLOT);
+                if (glove_list && glove_list->ItemsCount() == 1)
+                {
+                    CUICellItem* glove_cell = glove_list->GetItemIdx(0);
+                    ToBag(glove_cell, false);
                 }
             }
         }
@@ -692,6 +720,18 @@ bool CUIActorMenu::ToBelt(CUICellItem* itm, bool b_use_cursor_pos)
     PIItem iitem = (PIItem)itm->m_pData;
     bool b_own_item = (iitem->parent_id() == m_pActorInvOwner->object_id());
 
+    if (!m_pActorInvOwner->inventory().CanPutArtefactInBelt(iitem))
+    {
+        GAME_NEWS_DATA news_data;
+        news_data.m_type = GAME_NEWS_DATA::eNews;
+        news_data.news_caption = StringTable().translate("st_af_overflowing_name");
+        news_data.news_text = StringTable().translate("st_af_overflowing_text");
+        news_data.texture_name = "ui_inGame2_D_gonets_pravosudiya";
+
+        Actor()->AddGameNews(news_data);
+        return false;
+    }
+
     if (m_pActorInvOwner->inventory().CanPutInBelt(iitem))
     {
         CUIDragDropListEx* old_owner = itm->OwnerList();
@@ -723,7 +763,6 @@ bool CUIActorMenu::ToBelt(CUICellItem* itm, bool b_use_cursor_pos)
     { // in case belt slot is busy
         if (!iitem->Belt() || m_pActorInvOwner->inventory().BeltWidth() == 0)
             return false;
-
         CUIDragDropListEx* belt_list = NULL;
         if (b_use_cursor_pos)
             belt_list = CUIDragDropListEx::m_drag_item->BackList();
@@ -768,6 +807,8 @@ CUIDragDropListEx* CUIActorMenu::GetSlotList(u16 slot_idx)
 
     case ACTORBELT_SLOT: return m_pLists[eInventoryActorBeltList]; break;
 
+    case ACTORGLOVE_SLOT: return m_pLists[eInventoryActorGloveList]; break;
+
     case DETECTOR_SLOT: return m_pLists[eInventoryDetectorList]; break;
 
     case PDA_SLOT:
@@ -798,8 +839,9 @@ bool CUIActorMenu::TryUseItem(CUICellItem* cell_itm)
     CMedkit* pMedkit = smart_cast<CMedkit*>(item);
     CAntirad* pAntirad = smart_cast<CAntirad*>(item);
     CEatableItem* pEatableItem = smart_cast<CEatableItem*>(item);
+    CBlackDrops* pShardArt = smart_cast<CBlackDrops*>(item);
 
-    if (!(pMedkit || pAntirad || pEatableItem || pBottleItem))
+    if (!(pMedkit || pAntirad || pEatableItem || pBottleItem || pShardArt))
     {
         return false;
     }
@@ -1158,8 +1200,9 @@ void CUIActorMenu::PropertiesBoxForUsing(PIItem item, bool& b_show)
         CAntirad* pAntirad = smart_cast<CAntirad*>(item);
         CEatableItem * pEatableItem = smart_cast<CEatableItem*>(item);
         CBottleItem* pBottleItem = smart_cast<CBottleItem*>(item);
+        CBlackDrops* pShardArt = smart_cast<CBlackDrops*>(item);
 
-        if (pMedkit || pAntirad)
+        if (pMedkit || pAntirad || pShardArt)
             act_str = "st_use";
         else if (pBottleItem)
             act_str = "st_drink";
@@ -1468,6 +1511,13 @@ void CUIActorMenu::UpdateOutfit()
             m_pLists[eInventoryHelmetList]->SetHelmStatus(true);
         else
             m_pLists[eInventoryHelmetList]->SetHelmStatus(false);
+    }
+    if (m_pLists[eInventoryActorGloveList])
+    {
+        if (outfit && !outfit->bIsGlovesAvaliable)
+            m_pLists[eInventoryActorGloveList]->SetHelmStatus(true);
+        else
+            m_pLists[eInventoryActorGloveList]->SetHelmStatus(false);
     }
 
     if (ShadowOfChernobylMode)

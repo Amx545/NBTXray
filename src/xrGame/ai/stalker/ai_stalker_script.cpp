@@ -8,6 +8,7 @@
 
 #include "pch_script.h"
 #include "ai_stalker.h"
+#include "ai_phantom_stalker.h"
 #include "stalker_decision_space.h"
 #include "ai_stalker_space.h"
 #include "script_game_object.h"
@@ -175,6 +176,28 @@ SCRIPT_EXPORT(CAI_Stalker, (CGameObject),
     module(luaState)
     [
         class_<CAI_Stalker, CGameObject>("CAI_Stalker")
+            .def(constructor<>())
+    ];
+});
+
+SCRIPT_EXPORT(CAI_PsyStalker, (CGameObject),
+{
+    using namespace luabind;
+
+    module(luaState)
+    [
+        class_<CAI_PsyStalker, CGameObject>("CAI_PsyStalker")
+            .def(constructor<>())
+    ];
+});
+
+SCRIPT_EXPORT(CAI_PsyStalkerPhantom, (CGameObject),
+{
+    using namespace luabind;
+
+    module(luaState)
+    [
+        class_<CAI_PsyStalkerPhantom, CGameObject>("CAI_PsyStalkerPhantom")
             .def(constructor<>())
     ];
 });

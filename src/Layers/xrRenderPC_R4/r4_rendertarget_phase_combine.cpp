@@ -288,7 +288,7 @@ void CRenderTarget::phase_combine()
     if (RImplementation.o.new_shader_support)
     {
         //(Anomaly) Compute blur textures
-        phase_blur();
+            phase_blur();
 
         //(Anomaly) Compute depth of field effect
         if (ps_r2_ls_flags.test(R2FLAG_DOF))

@@ -286,6 +286,8 @@ public: //
     virtual ~CPHElement(); // aux
 private:
     virtual iphysics_scripted& get_scripted() { return *this; }
+    bool Tracer_parent;
+
 public:
 };
 

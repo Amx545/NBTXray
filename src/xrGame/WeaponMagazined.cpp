@@ -22,6 +22,8 @@
 #include "xrScriptEngine/script_callback_ex.h"
 #include "script_game_object.h"
 #include "HudSound.h"
+#include "player_hud.h"
+#include "GamePersistent.h"
 
 CWeaponMagazined::CWeaponMagazined(ESoundTypes eSoundType) : CWeapon(), m_bStopedAfterQueueFired(false)
 {
@@ -78,6 +80,8 @@ void CWeaponMagazined::Load(LPCSTR section)
 
     //Alundaio: LAYERED_SND_SHOOT
     m_layered_sounds.LoadSound(section, "snd_shoot", "sndShot", false, m_eSoundShot);
+    if (WeaponSoundExist(section, "snd_shot_actor"))
+        m_layered_sounds.LoadSound(section, "snd_shot_actor", "sndShotActor", false, m_eSoundShot);
     //-Alundaio
 
     m_sounds.LoadSound(section, "snd_empty", "sndEmptyClick", false, m_eSoundEmptyClick);
@@ -325,7 +329,11 @@ void CWeaponMagazined::ReloadMagazine()
 
     //устранить осечку при перезарядке
     if (IsMisfire())
+    {
         bMisfire = false;
+        if (iAmmoElapsed)
+            return;
+    }
 
     if (!m_bLockType)
     {
@@ -537,41 +545,76 @@ void CWeaponMagazined::state_Fire(float dt)
         };
 
         VERIFY(!m_magazine.empty());
-
-        while (!m_magazine.empty() && fShotTimeCounter < 0 && (IsWorking() || m_bFireSingleShot) &&
-            (m_iQueueSize < 0 || m_iShotNum < m_iQueueSize))
+        if (GetCurrentFireMode() == 3 && ParentIsActor())
         {
-            if (CheckForMisfire())
-            {
-                StopShooting();
-                return;
-            }
-
-            m_bFireSingleShot = false;
             CActor* actor = smart_cast<CActor*>(H_Parent());
-            if (ParentIsActor())
+            if (!m_magazine.empty() && fShotTimeCounter < 0 && (m_bFireSingleShot || m_bQueueProcessed) &&
+                m_iShotNum < m_iQueueSize)
             {
-                // Alundaio: Use modeShotTime instead of fOneShotTime if current fire mode is 2-shot burst
-                // Alundaio: Cycle down RPM after two shots; used for Abakan/AN-94
-                if (GetCurrentFireMode() == 2 || (cycleDown == true && m_iShotNum <= 1))
-                    fShotTimeCounter = modeShotTime / actor->conditions().GetSpeedShotPerk();
-                else
-                    fShotTimeCounter = fOneShotTime / actor->conditions().GetSpeedShotPerk();
-                // Alundaio: END
-            }
-            else
-            {
-                fShotTimeCounter = fOneShotTime;
-            }
-
-            ++m_iShotNum;
-
-            OnShot();
-
-            if (m_iShotNum > m_iBaseDispersionedBulletsCount)
-                FireTrace(p1, d);
-            else
+                if (CheckForMisfire() || CheckForIntDeg())
+                {
+                    StopShooting();
+                    m_bQueueProcessed = false;
+                    return;
+                }
+                fShotTimeCounter = modeThreeShotTime / actor->conditions().GetSpeedShotPerk();
+                m_bQueueProcessed = true;
+                m_bFireSingleShot = false;
+                ++m_iShotNum;
+                OnShot();
                 FireTrace(m_vStartPos, m_vStartDir);
+            }
+            if (m_iShotNum >= m_iQueueSize)
+            {
+                fShotTimeCounter = modeOneShotTime / actor->conditions().GetSpeedShotPerk();
+                m_bQueueProcessed = false;
+            }
+        }
+        else
+        {
+            while (!m_magazine.empty() && fShotTimeCounter < 0 && (IsWorking() || m_bFireSingleShot) &&
+                (m_iQueueSize < 0 || m_iShotNum < m_iQueueSize))
+            {
+                if (CheckForMisfire())
+                {
+                    StopShooting();
+                    return;
+                }
+
+                m_bFireSingleShot = false;
+                CActor* actor = smart_cast<CActor*>(H_Parent());
+                if (ParentIsActor())
+                {
+                    // Alundaio: Use modeShotTime instead of fOneShotTime if current fire mode is 2-shot burst
+                    // Alundaio: Cycle down RPM after two shots; used for Abakan/AN-94
+                    switch (GetCurrentFireMode())
+                    {
+                    case 1: fShotTimeCounter = modeOneShotTime / actor->conditions().GetSpeedShotPerk(); break;
+                    // case 2: fShotTimeCounter = modeShotTime / actor->conditions().GetSpeedShotPerk(); break;
+                    // case 3: fShotTimeCounter = modeThreeShotTime / actor->conditions().GetSpeedShotPerk(); break;
+                    default:
+                        (cycleDown && m_iShotNum < 1) ?
+                            fShotTimeCounter = modeShotTime / actor->conditions().GetSpeedShotPerk() :
+                            fShotTimeCounter = fOneShotTime / actor->conditions().GetSpeedShotPerk();
+                        break;
+                    }
+                    // Alundaio: END
+                }
+                else
+                {
+                    fShotTimeCounter = fOneShotTime;
+                }
+                if (ParentIsActor() && CheckForIntDeg())
+                    continue;
+                ++m_iShotNum;
+
+                OnShot();
+
+                if (m_iShotNum > m_iBaseDispersionedBulletsCount)
+                    FireTrace(p1, d);
+                else
+                    FireTrace(m_vStartPos, m_vStartDir);
+            }
         }
 
         if (m_iShotNum == m_iQueueSize)
@@ -620,6 +663,10 @@ void CWeaponMagazined::SetDefaults() { CWeapon::SetDefaults(); }
 void CWeaponMagazined::OnShot()
 {
     // Sound
+    if (IsSilencerAttached())
+        ParentIsActor() ? m_sSndShotCurrent = "sndSilencerShotActor" : m_sSndShotCurrent = "sndSilencerShot";
+    else
+        ParentIsActor() ? m_sSndShotCurrent = "sndShotActor" : m_sSndShotCurrent = "sndShot";
     //Alundaio: LAYERED_SND_SHOOT
     m_layered_sounds.PlaySound(m_sSndShotCurrent.c_str(), get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
     //-Alundaio
@@ -630,15 +677,16 @@ void CWeaponMagazined::OnShot()
     // Animation
     PlayAnimShoot();
 
+    if (IsZoomed() && IsScopeAttached())
+        return;
     // Shell Drop
     Fvector vel;
     PHGetLinearVell(vel);
     OnShellDrop(get_LastSP(), vel);
-
     // Огонь из ствола
     StartFlameParticles();
 
-    //дым из ствола
+    // дым из ствола
     ForceUpdateFireParticles();
     StartSmokeParticles(get_LastFP(), vel);
 }
@@ -721,10 +769,10 @@ void CWeaponMagazined::switch2_Fire()
     //			H_Parent() ? *H_Parent()->cName() : "no_parent"
     //		)
     //	);
-
+    if (!m_bQueueProcessed)
+        m_iShotNum = 0;
     m_bStopedAfterQueueFired = false;
     m_bFireSingleShot = true;
-    m_iShotNum = 0;
 
     if ((OnClient() || Level().IsDemoPlay()) && !IsWorking())
         FireStart();
@@ -915,6 +963,7 @@ bool CWeaponMagazined::Attach(PIItem pIItem, bool b_send_event)
         }
         m_flagsAddOnState |= CSE_ALifeItemWeapon::eWeaponAddonScope;
         result = true;
+        bScopeAction = TRUE;
     }
     else if (pSilencer && m_eSilencerStatus == ALife::eAddonAttachable &&
         (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonSilencer) == 0 &&
@@ -960,6 +1009,7 @@ bool CWeaponMagazined::DetachScope(const char* item_section_name, bool b_spawn_i
         {
             m_cur_scope = 0;
             detached = true;
+            bScopeAction = TRUE;
         }
     }
     return detached;
@@ -1026,7 +1076,7 @@ void CWeaponMagazined::InitAddons()
     if (IsScopeAttached())
     {
         shared_str scope_tex_name;
-        if (m_eScopeStatus == ALife::eAddonAttachable)
+        if (m_eScopeStatus == ALife::eAddonAttachable && !IsCollimator())
         {
             // m_scopes[cur_scope]->m_sScopeName = pSettings->r_string(cNameSect(), "scope_name");
             // m_scopes[cur_scope]->m_iScopeX	 = pSettings->r_s32(cNameSect(),"scope_x");
@@ -1063,6 +1113,7 @@ void CWeaponMagazined::InitAddons()
         if (IsZoomEnabled())
         {
             m_zoom_params.m_fIronSightZoomFactor = pSettings->r_float(cNameSect(), "scope_zoom_factor");
+            m_zoom_params.m_bUseDynamicZoom = false;
         }
     }
 
@@ -1070,7 +1121,7 @@ void CWeaponMagazined::InitAddons()
     {
         m_sFlameParticlesCurrent = m_sSilencerFlameParticles;
         m_sSmokeParticlesCurrent = m_sSilencerSmokeParticles;
-        m_sSndShotCurrent = "sndSilencerShot";
+            //m_sSndShotCurrent = "sndSilencerShot";
 
         //подсветка от выстрела
         LoadLights(*cNameSect(), "silencer_");
@@ -1080,7 +1131,7 @@ void CWeaponMagazined::InitAddons()
     {
         m_sFlameParticlesCurrent = m_sFlameParticles;
         m_sSmokeParticlesCurrent = m_sSmokeParticles;
-        m_sSndShotCurrent = "sndShot";
+            //m_sSndShotCurrent = "sndShot";
 
         //подсветка от выстрела
         LoadLights(*cNameSect(), "");
@@ -1291,7 +1342,14 @@ float CWeaponMagazined::GetWeaponDeterioration()
     // u32(m_iPrefferedFireMode))
     //		return inherited::GetWeaponDeterioration();
     //	return m_iShotNum*conditionDecreasePerShot;
-    return (m_iShotNum == 1) ? conditionDecreasePerShot : conditionDecreasePerQueueShot;
+    float cound = (m_iShotNum == 1) ? conditionDecreasePerShot : conditionDecreasePerQueueShot;
+    float ampl = 0.f;
+    for (int i = 0; i < RarityItem(); i++)
+    {
+        ampl += 0.1 + 0.03 * (i + 1);
+    }
+    cound /= (1.f + ampl);
+    return cound;
 };
 
 void CWeaponMagazined::save(NET_Packet& output_packet)
@@ -1514,6 +1572,11 @@ bool CWeaponMagazined::install_upgrade_impl(LPCSTR section, bool test)
         if (result2 && !test)
         {
             m_layered_sounds.LoadSound(section, "snd_silncer_shot", "sndSilencerShot", false, m_eSoundShot);
+        }
+        result2 = process_if_exists_set(section, "snd_silncer_shot_actor", &CInifile::r_string, str, test);
+        if (result2 && !test)
+        {
+            m_layered_sounds.LoadSound(section, "snd_silncer_shot_actor", "sndSilencerShotActor", false, m_eSoundShot);
         }
         result |= result2;
     }

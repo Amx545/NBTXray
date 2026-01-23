@@ -93,7 +93,11 @@ void CPhysicItem::UpdateCL()
 {
     //	if (!xr_strcmp("bolt",cName()))
     //		Log					("--- B - CBolt",renderable.xform);
-    if (!H_Parent() && m_pPhysicsShell && m_pPhysicsShell->isActive())
+    CMissile* mis = smart_cast<CMissile*>(this);
+    bool stick_missile = false;
+    if (mis)
+        stick_missile = mis->m_bSticky;
+    if (!H_Parent() && m_pPhysicsShell && m_pPhysicsShell->isActive() && !stick_missile)
         m_pPhysicsShell->InterpolateGlobalTransform(&XFORM());
     //	if (!xr_strcmp("bolt",cName()))
     //		Log						("--- C - CBolt",renderable.xform);

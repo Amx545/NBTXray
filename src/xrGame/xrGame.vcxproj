@@ -125,6 +125,7 @@
     </ClInclude>
     <ClInclude Include="ActorCondition.h" />
     <ClInclude Include="ActorEffector.h" />
+    <ClInclude Include="ActorGlove.h" />
     <ClInclude Include="ActorHelmet.h" />
     <ClInclude Include="ActorBackpack.h" />
     <ClInclude Include="actor_anim_defs.h" />
@@ -491,6 +492,7 @@
     <ClInclude Include="ai\Monsters\Zombie\zombie_state_manager.h" />
     <ClInclude Include="ai\phantom\phantom.h" />
     <ClInclude Include="ai\position_prediction.h" />
+    <ClInclude Include="ai\stalker\ai_phantom_stalker.h" />
     <ClInclude Include="Ai\Stalker\ai_stalker.h" />
     <ClInclude Include="ai\stalker\ai_stalker_impl.h" />
     <ClInclude Include="ai\stalker\ai_stalker_inline.h" />
@@ -1304,7 +1306,9 @@
     <ClInclude Include="ui\Restrictions.h" />
     <ClInclude Include="ui\ServerList.h" />
     <ClInclude Include="ui\TeamInfo.h" />
+    <ClInclude Include="ui\UIAbilityPdaWnd.h" />
     <ClInclude Include="ui\UIAchievements.h" />
+    <ClInclude Include="ui\UIActorClassSelector.h" />
     <ClInclude Include="ui\UIActorInfo.h" />
     <ClInclude Include="ui\UIActorMenu.h" />
     <ClInclude Include="ui\UIActorStateInfo.h" />
@@ -1329,6 +1333,7 @@
     <ClInclude Include="ui\UIDebugFonts.h" />
     <ClInclude Include="ui\UIDemoPlayControl.h" />
     <ClInclude Include="ui\UIDialogWnd.h" />
+    <ClInclude Include="ui\UIDragDropCustomList.h" />
     <ClInclude Include="ui\UIDragDropListEx.h" />
     <ClInclude Include="ui\UIDragDropReferenceList.h" />
     <ClInclude Include="ui\UIEditKeyBind.h" />
@@ -1403,6 +1408,7 @@
     <ClInclude Include="ui\UIVoteStatusWnd.h" />
     <ClInclude Include="ui\UIVotingCategory.h" />
     <ClInclude Include="ui\UIWarState.h" />
+    <ClInclude Include="ui\UIWeaponGauss.h" />
     <ClInclude Include="ui\UIWeightBar.h" />
     <ClInclude Include="ui\UIWpnParams.h" />
     <ClInclude Include="ui\UIXmlInit.h" />
@@ -1425,6 +1431,7 @@
     <ClInclude Include="WeaponCustomPistol.h" />
     <ClInclude Include="WeaponFN2000.h" />
     <ClInclude Include="WeaponFORT.h" />
+    <ClInclude Include="WeaponGauss.h" />
     <ClInclude Include="WeaponGroza.h" />
     <ClInclude Include="WeaponHPSA.h" />
     <ClInclude Include="WeaponHUD.h" />
@@ -1434,9 +1441,11 @@
     <ClInclude Include="WeaponMagazinedWGrenade.h" />
     <ClInclude Include="WeaponPistol.h" />
     <ClInclude Include="WeaponPM.h" />
+    <ClInclude Include="WeaponProtecta.h" />
     <ClInclude Include="WeaponRevolver.h" />
     <ClInclude Include="WeaponRG6.h" />
     <ClInclude Include="WeaponRPG7.h" />
+    <ClInclude Include="WeaponRAIK84.h" />
     <ClInclude Include="WeaponShotgun.h" />
     <ClInclude Include="WeaponStatMgun.h" />
     <ClInclude Include="WeaponSVD.h" />
@@ -1632,6 +1641,7 @@
       <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
+    <ClCompile Include="ActorGlove.cpp" />
     <ClCompile Include="ActorHelmet.cpp" />
     <ClCompile Include="ActorBackpack.cpp" />
     <ClCompile Include="ActorInput.cpp" />
@@ -1907,6 +1917,7 @@
     </ClCompile>
     <ClCompile Include="ai\Monsters\Zombie\zombie_state_manager.cpp" />
     <ClCompile Include="ai\phantom\phantom.cpp" />
+    <ClCompile Include="ai\stalker\ai_phantom_stalker.cpp" />
     <ClCompile Include="Ai\Stalker\ai_stalker.cpp">
       <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
@@ -3205,6 +3216,7 @@
     <ClCompile Include="UITimeDilator.cpp" />
     <ClCompile Include="UIZoneMap.cpp" />
     <ClCompile Include="ui\ArtefactDetectorUI.cpp" />
+    <ClCompile Include="ui\UIWeaponGauss.cpp" />
     <ClCompile Include="ui\FactionState.cpp" />
     <ClCompile Include="ui\FractionState.cpp" />
     <ClCompile Include="ui\map_hint.cpp" />
@@ -3213,10 +3225,12 @@
     <ClCompile Include="ui\ServerList.cpp" />
     <ClCompile Include="ui\ServerList_GameSpy_func.cpp" />
     <ClCompile Include="ui\TeamInfo.cpp" />
+    <ClCompile Include="ui\UIAbilityPdaWnd.cpp" />
     <ClCompile Include="ui\UIAchievements.cpp">
       <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
+    <ClCompile Include="ui\UIActorClassSelector.cpp" />
     <ClCompile Include="ui\UIActorInfo.cpp" />
     <ClCompile Include="ui\UIActorMenu.cpp" />
     <ClCompile Include="ui\UIActorMenuDeadBodySearch.cpp" />
@@ -3257,6 +3271,7 @@
     </ClCompile>
     <ClCompile Include="ui\UIDemoPlayControl.cpp" />
     <ClCompile Include="ui\UIDialogWnd.cpp" />
+    <ClCompile Include="ui\UIDragDropCustomList.cpp" />
     <ClCompile Include="ui\UIDragDropListEx.cpp" />
     <ClCompile Include="ui\UIDragDropReferenceList.cpp" />
     <ClCompile Include="ui\UIEditKeyBind.cpp" />
@@ -3419,6 +3434,7 @@
     <ClCompile Include="WeaponDispersion.cpp" />
     <ClCompile Include="WeaponFire.cpp" />
     <ClCompile Include="WeaponFN2000.cpp" />
+    <ClCompile Include="WeaponGauss.cpp" />
     <ClCompile Include="WeaponGroza.cpp" />
     <ClCompile Include="WeaponHPSA.cpp" />
     <ClCompile Include="WeaponKnife.cpp" />
@@ -3430,9 +3446,11 @@
     <ClCompile Include="WeaponMagazinedWGrenade.cpp" />
     <ClCompile Include="WeaponPistol.cpp" />
     <ClCompile Include="WeaponPM.cpp" />
+    <ClCompile Include="WeaponProtecta.cpp" />
     <ClCompile Include="WeaponRevolver.cpp" />
     <ClCompile Include="WeaponRG6.cpp" />
     <ClCompile Include="WeaponRPG7.cpp" />
+    <ClCompile Include="WeaponRAIK84.cpp" />
     <ClCompile Include="WeaponScript.cpp">
       <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>

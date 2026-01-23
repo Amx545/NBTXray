@@ -120,6 +120,7 @@ class CEntityCondition : public CEntityConditionSimple, public CHitImmunity
 private:
     bool m_use_limping_state;
     CEntityAlive* m_object;
+    float m_fConfigHealthMax;
 
 public:
     CEntityCondition(CEntityAlive* object);
@@ -136,9 +137,11 @@ public:
     IC void  SetPower(float value) { m_fPower = value; clamp(m_fPower, 0.f, m_fPowerMax); }
     IC float GetRadiation() const { return m_fRadiation; }
     IC float GetPsyHealth() const { return m_fPsyHealth; }
+    IC float GetPsyHealthMax() const { return m_fPsyHealthMax; }
     IC float GetSatiety() const { return 1.0f; }
     IC float GetEntityMorale() const { return m_fEntityMorale; }
     IC float GetHealthLost() const { return m_fHealthLost; }
+    float GetOutfitHF();
     virtual bool IsLimping() const;
 
     virtual void ChangeSatiety(const float value){};
@@ -148,11 +151,14 @@ public:
     void ChangePsyHealth(const float value);
     virtual void ChangeAlcohol(const float value){};
 
+    
+    IC void SetPsyHealthMax(const float value) { m_fPsyHealthMax = value; }
+
     IC void MaxPower() { m_fPower = m_fPowerMax; };
     IC void SetMaxPower(const float val)
     {
         m_fPowerMax = val;
-        clamp(m_fPowerMax, 0.1f, 100.0f);
+        //clamp(m_fPowerMax, 0.1f, 100.0f);
     };
     IC float GetMaxPower() const { return m_fPowerMax; };
     void ChangeBleeding(const float percent);
@@ -186,16 +192,26 @@ protected:
     void UpdateHealth();
     void UpdatePower();
     virtual void UpdateRadiation();
-    void UpdatePsyHealth();
+    virtual void UpdatePsyHealth();
 
     void UpdateEntityMorale();
 
+    // Апдейт негативных статус эффектов
+    // на случай расширения пусть будет виртуальной
+    virtual void UpdateFireBurn();
+    void SetFireBurn(SHit* pHDS);
+    virtual void UpdateCorrosion();
+    void SetCorrosion(float power);
+    virtual void UpdateShock();
+    void SetShockHit(float power);
     //изменение силы хита в зависимости от надетого костюма
     //(только для InventoryOwner)
-    float HitOutfitEffect(float hit_power, ALife::EHitType hit_type, s16 element, float ap, bool& add_wound);
+    float HitOutfitEffect(
+        float hit_power, ALife::EHitType hit_type, s16 element, float ap, bool& add_wound, float& hit_frac);
     //изменение потери сил в зависимости от надетого костюма
     float HitPowerEffect(float power_loss);
 
+    void PlayHitParticle(LPCSTR effect);
     //для подсчета состояния открытых ран,
     //запоминается кость куда был нанесен хит
     //и скорость потери крови из раны
@@ -260,15 +276,6 @@ protected:
     float m_fBoostRadiationProtection;
     float m_fBoostTelepaticProtection;
     float m_fBoostChemicalBurnProtection;
-    float m_fBoostGraveImmunity;
-    float m_fBoostHealthIncrease;
-    float m_fBoostPowerIncrease;
-    float m_fBoostSniper;
-    float m_fBoostDoubleShot;
-    float m_fBoostSpeedShot;
-    float m_fBoostSpeedReload;
-    float m_fBoostMoveSpeedIncrease;
-    float m_fBoostJumpIncrease;
 
     //потеря здоровья от последнего хита
     float m_fHealthLost;
@@ -293,6 +300,23 @@ protected:
     bool m_bTimeValid;
     bool m_bCanBeHarmed;
     BOOSTER_MAP m_booster_influences;
+    // Ожёг
+    SHit SBurnHitTick;
+    bool bBurnHitEnable{false};
+    float fBurnHitTime{0.f};
+    float fBurnHitDelay{0.f};
+    // Шок
+    bool bShockEnable{false};
+    float fShockDelta{0.f};
+    float fShockMax{1.f};
+    float fShockCurrent{0.f};
+    float fShockIncarnatione{0.f};
+    float fShockDamage{0.f};
+    float fShockDelay{0.f};
+    // Кислота
+    bool bCorrosionEnable{false};
+    float fCorrosion{1.f};
+    float fCorrosionTime{0.f};
 
 public:
     virtual void reinit();

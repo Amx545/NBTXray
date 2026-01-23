@@ -12,6 +12,7 @@ SSpecificCharacterData::SSpecificCharacterData()
     m_sNpcConfigSect.clear();
 
     m_ActorDialogs.clear();
+    m_sStartDialogs.clear();
 }
 
 SSpecificCharacterData::~SSpecificCharacterData() {}
@@ -75,8 +76,15 @@ void CSpecificCharacter::load_shared(LPCSTR)
     }
     else
         data()->m_StartDialog = nullptr;
+    data()->m_sStartDialogs.clear();
+    int dialogs_num = pXML->GetNodesNum(pXML->GetLocalRoot(), "start_dialog");
+    for (int i = 0; i < dialogs_num; ++i)
+    {
+        shared_str dialog_name = pXML->Read(pXML->GetLocalRoot(), "start_dialog", i, "");
+        data()->m_sStartDialogs.push_back(dialog_name);
+    }
 
-    int dialogs_num = pXML->GetNodesNum(pXML->GetLocalRoot(), "actor_dialog");
+    dialogs_num = pXML->GetNodesNum(pXML->GetLocalRoot(), "actor_dialog");
     data()->m_ActorDialogs.clear();
     for (int i = 0; i < dialogs_num; ++i)
     {
@@ -155,7 +163,16 @@ void CSpecificCharacter::load_shared(LPCSTR)
     data()->m_Reputation = pXML->ReadInt("reputation", 0, NO_REPUTATION);
     R_ASSERT3(
         data()->m_Reputation != NO_REPUTATION, "'reputation' field not fulfiled for specific character", *m_OwnId);
-
+    if (pXML->NavigateToNode(pXML->GetLocalRoot(), "level", 0))
+    {
+        GetLevelDef().min_level = pXML->ReadAttribInt("level", 0, "min", 0);
+        GetLevelDef().max_level = pXML->ReadAttribInt("level", 0, "max", 0);
+    }
+    else
+    {
+        GetLevelDef().min_level = 0;
+        GetLevelDef().max_level = 0;
+    }
     if (pXML->NavigateToNode(pXML->GetLocalRoot(), "money", 0))
     {
         MoneyDef().min_money = pXML->ReadAttribInt("money", 0, "min");

@@ -41,6 +41,7 @@ void CHudItem::Load(cpcstr section)
 {
     //загрузить hud, если он нужен
     hud_sect = pSettings->read_if_exists<pcstr>(section, "hud", nullptr);
+    sCurrentHudSect = hud_sect;
 
     if (m_animation_slot != u32(-1)) // if it has default hardcoded slot, then don't crash
         pSettings->read_if_exists(m_animation_slot, section, "animation_slot");
@@ -151,7 +152,14 @@ void CHudItem::OnAnimationEnd(u32 state)
     }
 }
 
-void CHudItem::PlayAnimBore() { PlayHUDMotion("anm_bore", "anim_idle", TRUE, this, GetState()); }
+void CHudItem::PlayAnimBore() 
+{ 
+    if (isHUDAnimationExist("anm_bore"))
+        PlayHUDMotion("anm_bore", "anim_idle", TRUE, this, GetState()); 
+    else
+        PlayHUDMotion("anm_show", TRUE, this, GetState()); 
+
+}
 bool CHudItem::ActivateItem()
 {
     OnActiveItem();
@@ -357,12 +365,12 @@ bool CHudItem::TryPlayAnimIdle()
             }
             if (pActor->AnyMove())
             {
-                if (!st.bCrouch && isHUDAnimationExist("anm_idle_moving"))
+                if (!st.bCrouch)
                 {
                     PlayAnimIdleMoving();
                     return true;
                 }
-                if (st.bCrouch && isHUDAnimationExist("anm_idle_moving_crouch"))
+                if (st.bCrouch)
                 {
                     PlayAnimIdleMovingCrouch();
                     return true;
@@ -408,8 +416,20 @@ pcstr CHudItem::WhichHUDAnimationExist(pcstr anim_name, pcstr anim_name2) const
     return nullptr;
 }
 
-void CHudItem::PlayAnimIdleMovingCrouch() { PlayHUDMotion("anm_idle_moving_crouch", "anim_idle", true, nullptr, GetState()); }
-void CHudItem::PlayAnimIdleMoving() { PlayHUDMotion("anm_idle_moving", "anim_idle", true, nullptr, GetState()); }
+void CHudItem::PlayAnimIdleMovingCrouch() 
+{ 
+    if (isHUDAnimationExist("anm_idle_moving_crouch"))
+        PlayHUDMotion("anm_idle_moving_crouch", "anim_idle", true, nullptr, GetState()); 
+    else
+        PlayHUDMotion("anm_idle", "anim_idle", TRUE, NULL, GetState());
+}
+void CHudItem::PlayAnimIdleMoving()
+{
+    if (isHUDAnimationExist("anm_idle_moving"))
+        PlayHUDMotion("anm_idle_moving", "anim_idle", true, nullptr, GetState());
+    else
+        PlayAnimIdleMovingCrouch();
+}
 
 void CHudItem::PlayAnimIdleSprint()
 {

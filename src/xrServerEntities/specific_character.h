@@ -53,6 +53,8 @@ struct SSpecificCharacterData : CSharedResource
 
     //начальный диалог
     shared_str m_StartDialog;
+    // Начальные диалоги
+    DIALOG_ID_VECTOR m_sStartDialogs;
     //диалоги актера, которые будут доступны только при встрече с данным персонажем
     DIALOG_ID_VECTOR m_ActorDialogs;
 
@@ -66,6 +68,15 @@ struct SSpecificCharacterData : CSharedResource
     CHARACTER_RANK_VALUE m_Rank{ NO_RANK };
     //репутация
     CHARACTER_REPUTATION_VALUE m_Reputation{ NO_REPUTATION };
+    //Уровень
+#ifdef XRGAME_EXPORTS
+    struct SCharacterLevel
+    {
+        u16 min_level;
+        u16 max_level;
+    };
+    SCharacterLevel SLevelDef;
+#endif
 
     //классы персонажа (военные-ветераны, ученые и т.д.)
     //к которым он принадлежит
@@ -133,6 +144,7 @@ public:
     shared_str Bio() const;
     const CHARACTER_COMMUNITY& Community() const;
     SSpecificCharacterData::SMoneyDef& MoneyDef() { return data()->money_def; }
+    SSpecificCharacterData::SCharacterLevel& GetLevelDef() { return data()->SLevelDef; }
 #endif
 
     CHARACTER_RANK_VALUE Rank() const;

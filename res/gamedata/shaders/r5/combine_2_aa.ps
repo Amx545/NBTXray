@@ -1,5 +1,7 @@
 #include "common.h"
 #include "mblur.h"
+#include "cgim.h"
+
 /*
 struct 	v2p
 {
@@ -118,8 +120,13 @@ float4 main ( v_aa_AA I ) : SV_Target
 	float4	s2 	=  s_image.Sample( smp_rtlinear, offset + I.Tex3*w);
 	float4	s3 	=  s_image.Sample( smp_rtlinear, offset + I.Tex4*w);
 
-	float3 	final	=  mblur( center, dc, (s0+s1+s2+s3)/4.h );
+	float3 color = mblur( center, dc, (s0+s1+s2+s3)/4.h );
+	float4 bloom = s_bloom.Sample( smp_rtlinear, I.Tex0);
+	
+	bloom = BrokeBloom(bloom);
+	
+	float4 final = combine_bloom(color, bloom);
+	final.rgb = Uncharted2Tonemap(final.rgb);
 
-//	return combine_bloom(final,tex2D	(s_bloom, I.tc0));
-	return combine_bloom( final, s_bloom.Sample( smp_rtlinear, I.Tex0));
+	return final;
 }

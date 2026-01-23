@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "Missile.h"
 #include "xrPhysics/PhysicsShell.h"
+#include "xrPhysics/PHElement.h"
 #include "Actor.h"
 #include "xrEngine/CameraBase.h"
 #include "xrServer_Objects_ALife.h"
@@ -38,7 +39,16 @@ void create_force_progress()
     CUIXmlInit::InitProgressShape(uiXml, "progress", 0, g_MissileForceShape);
 }
 
-CMissile::CMissile(void) { m_dwStateTime = 0; }
+CMissile::CMissile(void)
+{
+    m_dwStateTime = 0;
+    m_bReadyToDestroy = true;
+    m_bSticky = false;
+    m_iDestroyMode = 0;
+    m_pOverEntity = nullptr;
+    m_transform.identity();
+    m_bone_id = 0;
+}
 CMissile::~CMissile(void) {}
 void CMissile::reinit()
 {
@@ -67,6 +77,13 @@ void CMissile::Load(LPCSTR section)
     m_vThrowDir = pSettings->r_fvector3(section, "throw_dir");
 
     m_ef_weapon_type = READ_IF_EXISTS(pSettings, r_u32, section, "ef_weapon_type", u32(-1));
+
+    if (pSettings->line_exist(section, "destroy_mode"))
+    {
+        m_iDestroyMode = pSettings->r_u8(section, "destroy_mode");
+    }
+    if (m_iDestroyMode > 0)
+        m_bReadyToDestroy = false;
 }
 
 bool CMissile::net_Spawn(CSE_Abstract* DC)
@@ -111,6 +128,56 @@ void CMissile::PH_A_CrPr()
         K->CalculateBones(TRUE);
         obj.spatial_move();
         m_just_after_spawn = false;
+    }
+}
+
+void CMissile::OnMissileOverlap()
+{
+    switch (m_iDestroyMode)
+    {
+    case 1: {
+        if (m_bReadyToDestroy)
+            break;
+        m_bReadyToDestroy = true;
+        set_destroy_time(m_dwDestroyTimeMax);
+        break;
+    }
+    case 2: {
+        if (m_bReadyToDestroy)
+            break;
+        m_bReadyToDestroy = true;
+        m_dwDestroyTime = Level().timeServer();
+        break;
+    }
+    case 3: {
+        m_pPhysicsShell->set_LinearVel({0, 0, 0});
+        m_pPhysicsShell->set_AngularVel({0, 0, 0});
+        if (m_bReadyToDestroy)
+            break;
+        if (m_pOverEntity)
+        {
+            double dist = FLT_MAX;
+            for (u16 i = 0; i < m_pOverEntity->Visual()->dcast_PKinematics()->LL_BoneCount(); i++)
+            {
+                Fmatrix global_transform;
+                global_transform.mul(
+                    m_pOverEntity->XFORM(), m_pOverEntity->Visual()->dcast_PKinematics()->LL_GetTransform(i));
+                Fvector bone_pos = global_transform.c;
+                double new_dist =
+                    sqrt(pow(m_pos.x - bone_pos.x, 2) + pow(m_pos.y - bone_pos.y, 2) + pow(m_pos.z - bone_pos.z, 2));
+                if (new_dist < dist)
+                {
+                    dist = new_dist;
+                    m_bone_id = i;
+                }
+            }
+        }
+        m_bReadyToDestroy = true;
+        m_pPhysicsShell->set_ApplyByGravity(FALSE);
+        set_destroy_time(m_dwDestroyTimeMax);
+        break;
+    }
+    default: break;
     }
 }
 
@@ -192,7 +259,18 @@ void CMissile::OnH_B_Independent(bool just_before_destroy)
 void CMissile::UpdateCL()
 {
     m_dwStateTime += Device.dwTimeDelta;
-
+    if (!H_Parent() && getVisible() && m_pPhysicsShell && m_bReadyToDestroy)
+    {
+        if (m_iDestroyMode == 3 && m_pOverEntity)
+        {
+            Fmatrix tr44;
+            tr44.mul(m_pOverEntity->XFORM(), m_pOverEntity->Visual()->dcast_PKinematics()->LL_GetTransform(m_bone_id));
+            m_pPhysicsShell->SetTransform(tr44, mh_clear);
+            m_bSticky = true;
+            m_pPhysicsShell->InterpolateGlobalTransform(&XFORM());
+            //m_pPhysicsShell->DisableCollision();
+        }
+    }
     inherited::UpdateCL();
 
     CActor* pActor = smart_cast<CActor*>(H_Parent());
@@ -225,6 +303,8 @@ void CMissile::UpdateCL()
 void CMissile::shedule_Update(u32 dt)
 {
     inherited::shedule_Update(dt);
+    if (!m_bReadyToDestroy)
+        return;
     if (!H_Parent() && getVisible() && m_pPhysicsShell)
     {
         if (m_dwDestroyTime <= Level().timeServer())
@@ -394,7 +474,8 @@ void CMissile::UpdateXForm()
         V->CalculateBones();
         Fmatrix& mL = V->LL_GetTransform(u16(boneL));
         Fmatrix& mR = V->LL_GetTransform(u16(boneR));
-
+        //if (m_iDestroyMode == 3 && m_bReadyToDestroy)
+        //    return;
         // Calculate
         Fmatrix mRes;
         Fvector R, D, N;
@@ -517,7 +598,7 @@ void CMissile::OnEvent(NET_Packet& P, u16 type)
             break;
         }
         missile->H_SetParent(0, !P.r_eof() && P.r_u8());
-        if (IsFakeMissile && OnClient())
+        if (IsFakeMissile && OnClient() && m_iDestroyMode == 0)
             missile->set_destroy_time(m_dwDestroyTimeMax);
         break;
     }
@@ -725,7 +806,7 @@ void CMissile::render_item_ui()
 }
 
 void CMissile::ExitContactCallback(
-    bool& do_colide, bool bo1, dContact& c, SGameMtl* /*material_1*/, SGameMtl* /*material_2*/)
+    bool& do_colide, bool bo1, dContact& c, SGameMtl* material_1, SGameMtl* material_2)
 {
     dxGeomUserData *gd1 = NULL, *gd2 = NULL;
     if (bo1)
@@ -740,6 +821,45 @@ void CMissile::ExitContactCallback(
     }
     if (gd1 && gd2 && (CPhysicsShellHolder*)gd1->callback_data == gd2->ph_ref_object)
         do_colide = false;
+    if (!do_colide)
+        return;
+    dxGeomUserData* overlap_terget = nullptr;
+    CMissile* overlap_owner = nullptr;
+    SGameMtl* overlap_material = material_1;
+    gd1 = PHRetrieveGeomUserData(c.geom.g1);
+    gd2 = PHRetrieveGeomUserData(c.geom.g2);
+    CMissile* l_s_o1 = gd1 ? smart_cast<CMissile*>(gd1->ph_ref_object) : NULL;
+    CMissile* l_s_o2 = gd2 ? smart_cast<CMissile*>(gd2->ph_ref_object) : NULL;
+    if (l_s_o1)
+    {
+        overlap_terget = gd2;
+        overlap_material = material_2;
+        overlap_owner = l_s_o1;
+    }
+    else if (l_s_o2)
+    {
+        overlap_terget = gd1;
+        overlap_owner = l_s_o2;
+    }
+    else
+        return;
+    VERIFY(overlap_material);
+    if (overlap_material->Flags.test(SGameMtl::flPassable))
+        return;
+    if (overlap_owner->m_bSticky)
+        return;
+    if (overlap_terget && overlap_owner->parent_id() == overlap_terget->ph_ref_object->ObjectID())
+        return;
+    if (overlap_terget)
+    {
+        CEntity* E = smart_cast<CEntity*>(overlap_terget->ph_ref_object);
+        if (E)
+            overlap_owner->m_pOverEntity = E;
+        else
+            return;
+    }
+    overlap_owner->m_pos = {c.geom.pos[0], c.geom.pos[1], c.geom.pos[2]};
+    overlap_owner->OnMissileOverlap();
 }
 
 bool CMissile::GetBriefInfo(II_BriefInfo& info)

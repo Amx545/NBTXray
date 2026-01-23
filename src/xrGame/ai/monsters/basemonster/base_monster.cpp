@@ -433,9 +433,18 @@ void CBaseMonster::Hit(SHit* pHDS)
     if (pHDS->hit_type == ALife::eHitTypeFireWound && copOrHigher)
     {
         float& hit_power = pHDS->power;
+        float hit_power_org = pHDS->power;
         float ap = pHDS->armor_piercing;
+        // пуля НЕ пробила шкуру
+        if (m_fSkinArmor >= ap)
+        {
+            hit_power *= m_fHitFracMonster;
+            pHDS->add_wound = false;
+        }
+        Msg("Monster have hit on monster base start[end] = %f[%f], HF = %f, AP = %f, SA = % f", 
+            hit_power_org, hit_power, m_fHitFracMonster, ap, m_fSkinArmor);
         // пуля пробила шкуру
-        if (!fis_zero(m_fSkinArmor, EPS) && ap > m_fSkinArmor)
+        /** if (!fis_zero(m_fSkinArmor, EPS) && ap > m_fSkinArmor)
         {
             float d_hit_power = (ap - m_fSkinArmor) / ap;
             if (d_hit_power < m_fHitFracMonster)
@@ -444,12 +453,12 @@ void CBaseMonster::Hit(SHit* pHDS)
             hit_power *= d_hit_power;
             VERIFY(hit_power >= 0.0f);
         }
-        // пуля НЕ пробила шкуру
         else
         {
+        // пуля НЕ пробила шкуру
             hit_power *= m_fHitFracMonster;
             pHDS->add_wound = false; //раны нет
-        }
+        }*/
     }
     inherited::Hit(pHDS);
 }

@@ -59,6 +59,8 @@ class CActorStatisticMgr;
 
 class CLocationManager;
 
+class CUIActorClassSelector;
+
 class CActor : public CEntityAlive,
                public IInputReceiver,
                public Feel::Touch,
@@ -93,6 +95,7 @@ public:
     CHolderCustom* Holder() { return m_holder; }
 public:
     virtual void Load(LPCSTR section);
+    void legs_shift_callback(CBoneInstance* K);
 
     virtual void shedule_Update(u32 T);
     virtual void UpdateCL();
@@ -265,6 +268,8 @@ protected:
     bool use_Vehicle(CHolderCustom* object);
     void ActorUse();
 
+    CUIActorClassSelector* m_pUISelector;
+
 protected:
     BOOL m_bAnimTorsoPlayed;
     static void AnimTorsoPlayCallBack(CBlend* B);
@@ -278,6 +283,7 @@ protected:
     //ориентация модели
     float r_model_yaw_dest;
     float r_model_yaw; // orientation of model
+    float r_model_yaw_turn; // orientation of model
     float r_model_yaw_delta; // effect on multiple "strafe"+"something"
 
 public:
@@ -310,6 +316,7 @@ public:
     BOOL HUDview() const;
 
     // visiblity
+    virtual float GetHitFraction();
     virtual float ffGetFov() const { return 90.f; }
     virtual float ffGetRange() const { return 500.f; }
 public:
@@ -782,6 +789,7 @@ public:
 public:
     virtual void On_SetEntity();
     virtual void On_LostEntity(){};
+    void ActorClassSelector();
 
     void DisableHitMarks(bool disable) { m_disabled_hitmarks = disable; };
     bool DisableHitMarks() { return m_disabled_hitmarks; };

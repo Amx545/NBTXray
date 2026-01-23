@@ -217,7 +217,6 @@ IC static int CollideIntoGroup(
         {
             usr_data_1->object_callbacks->Call(do_collide, true, c, material_1, material_2);
         }
-
         if (usr_data_2)
         {
             usr_data_2->pushing_b_neg = usr_data_2->pushing_b_neg &&

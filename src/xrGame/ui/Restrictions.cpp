@@ -12,6 +12,13 @@ shared_str g_ranks[_RANK_COUNT];
 
 u32 get_rank(const shared_str& section)
 {
+    if (IsGameTypeSingle())
+    {
+        //u8 l_rank = READ_IF_EXISTS(pSettings, r_u8, section, "rank", 0);
+        u8 l_rank = READ_IF_EXISTS(pSettings, r_u8, section, "rarity", 0);
+        return l_rank;
+    }
+    //Only for MP
     int res = -1;
     if (g_ranks[0].size() == 0)
     { // load

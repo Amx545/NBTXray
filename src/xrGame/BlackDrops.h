@@ -16,6 +16,9 @@ public:
     virtual ~CBlackDrops(void);
 
     virtual void Load(LPCSTR section);
+    void UseShard(CActor* actor);
 
 protected:
+    virtual void UpdateCLChild();
+    u8 m_iAbilityPoint;
 };

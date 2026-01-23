@@ -20,6 +20,7 @@
 #include "inventory_item.h"
 #include "Inventory.h"
 
+#include "ui/UIMainIngameWnd.h"
 #include "ai/monsters/poltergeist/poltergeist.h"
 
 namespace detail::hud_target
@@ -120,9 +121,6 @@ void CHUDTarget::Render()
 
     BOOL b_do_rendering = (psHUD_Flags.is(HUD_CROSSHAIR | HUD_CROSSHAIR_RT | HUD_CROSSHAIR_RT2));
 
-    if (!b_do_rendering)
-        return;
-
     VERIFY(g_bRendering);
 
     IGameObject* O = Level().CurrentEntity();
@@ -137,6 +135,8 @@ void CHUDTarget::Render()
 
     // Render cursor
     u32 C = C_DEFAULT;
+
+    //CurrentGameUI()->UIMainIngameWnd->ClearTargetHealth();
 
     Fvector p2;
     p2.mad(p1, dir, PP.RQ.range);
@@ -161,11 +161,15 @@ void CHUDTarget::Render()
             CEntityAlive* E = smart_cast<CEntityAlive*>(PP.RQ.O);
             CEntityAlive* pCurEnt = smart_cast<CEntityAlive*>(Level().CurrentEntity());
             PIItem l_pI = smart_cast<PIItem>(PP.RQ.O);
-
+            if (E && E->g_Alive())
+            {
+                CurrentGameUI()->UIMainIngameWnd->SetTargetHealth(E);
+            }
+            if (!b_do_rendering)
+                return;
             if (IsGameTypeSingle())
             {
                 CInventoryOwner* our_inv_owner = smart_cast<CInventoryOwner*>(pCurEnt);
-
                 if (E && E->g_Alive() && E->cast_base_monster())
                 {
                     C = C_ON_ENEMY;
@@ -250,6 +254,9 @@ void CHUDTarget::Render()
         }
         clamp(fuzzyShowInfo, 0.f, 1.f);
     }
+
+    if (!b_do_rendering)
+        return;
 
     if (psHUD_Flags.test(HUD_CROSSHAIR_DIST))
     {

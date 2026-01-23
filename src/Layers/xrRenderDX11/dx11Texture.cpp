@@ -344,11 +344,9 @@ _DDS:
         IMG.width = (IMG.width + 3u) & ~0x3u;
         IMG.height = (IMG.height + 3u) & ~0x3u;
     }
-
     R_CHK2(CreateTextureEx(HW.pDevice, texture.GetImages() + mip_lod, texture.GetImageCount(), IMG,
         D3D_USAGE_IMMUTABLE, D3D_BIND_SHADER_RESOURCE, 0, IMG.miscFlags, DirectX::CREATETEX_DEFAULT,
-        &pTexture2D), fn
-    );
+        &pTexture2D), fn);
     FS.r_close(S);
 
     // OK

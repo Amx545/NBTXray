@@ -69,6 +69,7 @@ void CArtefact::Load(LPCSTR section)
     m_fSatietyRestoreSpeed = pSettings->r_float(section, "satiety_restore_speed");
     m_fPowerRestoreSpeed = pSettings->r_float(section, "power_restore_speed");
     m_fBleedingRestoreSpeed = pSettings->r_float(section, "bleeding_restore_speed");
+    m_fPsyHealthRestoreSpeed = pSettings->r_float(section, "psy_health_restore_speed");
 
     if (pSettings->section_exist(pSettings->r_string(section, "hit_absorbation_sect")))
     {
@@ -77,6 +78,13 @@ void CArtefact::Load(LPCSTR section)
     m_bCanSpawnZone = !!pSettings->line_exist("artefact_spawn_zones", section);
     m_af_rank = pSettings->read_if_exists<u8>(section, "af_rank", 0);
     m_additional_weight = pSettings->read_if_exists<float>(section, "additional_inventory_weight", 0.0f);
+    m_additional_health = pSettings->read_if_exists<float>(section, "additional_health", 0.0f);
+    m_additional_power = pSettings->read_if_exists<float>(section, "additional_power", 0.0f);
+    m_additional_psy_health = pSettings->read_if_exists<float>(section, "additional_psy_health", 0.0f);
+    m_additional_vitality = pSettings->read_if_exists<u8>(section, "additional_vitality", 0);
+    m_additional_vigor = pSettings->read_if_exists<u8>(section, "additional_vigor", 0);
+    m_additional_intelligence = pSettings->read_if_exists<u8>(section, "additional_mind", 0);
+    m_additional_dexterity = pSettings->read_if_exists<u8>(section, "additional_skill", 0);
 }
 
 bool CArtefact::net_Spawn(CSE_Abstract* DC)

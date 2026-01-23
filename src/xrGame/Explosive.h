@@ -105,6 +105,9 @@ protected:
     //типы наносимых хитов
     ALife::EHitType m_eHitTypeBlast;
     ALife::EHitType m_eHitTypeFrag;
+    xr_map<ALife::EHitType, float> fHitPowerByType;
+    xr_map<ALife::EHitType, float> fHitPowerByTypeScale;
+    float m_power_boost;
 
     //фактор подпроса предмета вверх взрывной волной
     float m_fUpThrowFactor;

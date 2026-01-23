@@ -73,7 +73,7 @@ public:
     virtual CScriptEntity* cast_script_entity() { return this; }
     virtual CBaseMonster* cast_base_monster() { return this; }
     virtual CGameObject* cast_game_object() { return this; }
-    virtual CInventoryOwner* cast_inventory_owner() override { return CallOfPripyatMode ? nullptr : this; }
+    virtual CInventoryOwner* cast_inventory_owner() override { return this; }
 
 public:
     virtual void renderable_Render(u32 context_id, IRenderable* root) override { return inherited::renderable_Render(context_id, root); }
@@ -536,6 +536,7 @@ public:
     float get_psy_influence();
     float get_radiation_influence();
     float get_fire_influence();
+    virtual float GetHitFraction() { return m_fHitFracMonster; }
     void play_detector_sound();
 
 private:

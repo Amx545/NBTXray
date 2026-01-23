@@ -104,7 +104,7 @@ void CUIHudStatesWnd::InitFromXml(CUIXml& xml, LPCSTR path)
     m_back_over_arrow = UIHelper::CreateStatic(xml, "back_over_arrow", this, false);
     m_static_health = UIHelper::CreateStatic(xml, "static_health", this, false);
     m_static_armor = UIHelper::CreateStatic(xml, "static_armor", this, false);
-    m_static_weapon = UIHelper::CreateStatic(xml, "static_weapon", this, false);;
+    m_static_weapon = UIHelper::CreateStatic(xml, "static_weapon", this, false);
 
     CUIWindow* healthBarParent = this;
     CUIWindow* armorBarParent = this;
@@ -119,9 +119,12 @@ void CUIHudStatesWnd::InitFromXml(CUIXml& xml, LPCSTR path)
         weaponsParent = m_static_weapon;
     }
 
+    m_ui_actor_level = UIHelper::CreateStatic(xml, "static_level", this, false);
     m_ui_health_bar = UIHelper::CreateProgressBar(xml, "progress_bar_health", healthBarParent);
     m_ui_stamina_bar = UIHelper::CreateProgressBar(xml, "progress_bar_stamina", this, false);
     m_ui_armor_bar = UIHelper::CreateProgressBar(xml, "progress_bar_armor", armorBarParent, false);
+    m_ui_psyhealth_bar = UIHelper::CreateProgressBar(xml, "progress_bar_psyhealth", this, false);
+    m_ui_experience_bar = UIHelper::CreateProgressBar(xml, "progress_bar_experience", this, false);
 
     if (m_static_armor || m_ui_armor_bar)
     {
@@ -188,7 +191,7 @@ void CUIHudStatesWnd::InitFromXml(CUIXml& xml, LPCSTR path)
     */
 
     m_cur_state_LA.set();
-    for (int i = 0; i < it_max; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         SwitchLA(false, static_cast<ALife::EInfluenceType>(i));
     }
@@ -248,8 +251,19 @@ void CUIHudStatesWnd::Update()
     UpdateIndicators(actor);
 
     UpdateZones();
-
+    //m_back_v->Update();
     inherited::Update();
+}
+
+void CUIHudStatesWnd::Draw() 
+{
+    inherited::Draw();
+    m_ui_health_bar->Draw();
+    m_ui_stamina_bar->Draw();
+    m_ui_psyhealth_bar->Draw();
+    m_ui_experience_bar->Draw();
+    m_ui_actor_level->Draw();
+    m_back_v->Draw();
 }
 
 void CUIHudStatesWnd::UpdateHealth(CActor* actor)
@@ -285,6 +299,26 @@ void CUIHudStatesWnd::UpdateHealth(CActor* actor)
         {
             m_ui_stamina_bar->m_UIProgressItem.ResetColorAnimation();
         }
+    }
+    if (m_ui_psyhealth_bar)
+    {
+        const float cur_psyhealth = actor->conditions().GetPsyHealth();
+        const float cur_max_psyhealth = actor->conditions().GetPsyHealthMax() * 100.f;
+        m_ui_psyhealth_bar->SetProgressPos(iCeil(cur_psyhealth * 100.0f * 35.f) / 35.f);
+        m_ui_psyhealth_bar->SetRange(0.f, iCeil(cur_max_psyhealth * 35.f) / 35.f);
+    }
+    if (m_ui_experience_bar)
+    {
+        const float cur_experience = (float)actor->conditions().GetActorExperience();
+        const float cur_max_experience = (float)actor->conditions().GetActorRequiredExp();
+        m_ui_experience_bar->SetProgressPos(cur_experience);
+        m_ui_experience_bar->SetRange(0.f, cur_max_experience);
+    }
+    if (m_ui_actor_level)
+    {
+        string16 str;
+        xr_sprintf(str, sizeof(str), "%d", actor->conditions().GetActorLevel());
+        m_ui_actor_level->SetText(str);
     }
     if (m_ui_cur_st)
     {
@@ -714,7 +748,7 @@ void CUIHudStatesWnd::UpdateIndicators(CActor* actor)
     if (m_fake_indicators_update)
         return;
 
-    for (int i = 0; i < it_max; ++i) // it_max = ALife::infl_max_count-1
+    for (int i = 0; i < 4; ++i) // it_max = ALife::infl_max_count-1
     {
         UpdateIndicatorType(actor, (ALife::EInfluenceType)i);
     }
@@ -727,7 +761,6 @@ void CUIHudStatesWnd::UpdateIndicatorType(CActor* actor, ALife::EInfluenceType t
         VERIFY2(0, "Failed EIndicatorType for CStatic!");
         return;
     }
-
     constexpr u32 c_white = color_rgba(255, 255, 255, 255);
     constexpr u32 c_green = color_rgba(0, 255, 0, 255);
     constexpr u32 c_yellow = color_rgba(255, 255, 0, 255);

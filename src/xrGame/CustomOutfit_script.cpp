@@ -2,6 +2,7 @@
 #include "CustomOutfit.h"
 #include "ActorHelmet.h"
 #include "ActorBelt.h"
+#include "ActorGlove.h"
 #include "xrScriptEngine/ScriptExporter.hpp"
 
 void CCustomOutfit_Export(lua_State* luaState)
@@ -85,3 +86,28 @@ void CActorBelt_Export(lua_State* luaState)
 }
 
 SCRIPT_EXPORT_FUNC(CActorBelt, (CGameObject), CActorBelt_Export);
+
+void CActorGlove_Export(lua_State* luaState)
+{
+    using namespace luabind;
+
+    module(luaState)
+        [
+            class_<CActorGlove, CGameObject>("CActorGlove")
+                         .def(constructor<>())
+                         .def_readwrite("m_fHealthRestoreSpeed", &CActorGlove::m_fHealthRestoreSpeed)
+                         .def_readwrite("m_fRadiationRestoreSpeed", &CActorGlove::m_fRadiationRestoreSpeed)
+                         .def_readwrite("m_fSatietyRestoreSpeed", &CActorGlove::m_fSatietyRestoreSpeed)
+                         .def_readwrite("m_fPowerRestoreSpeed", &CActorGlove::m_fPowerRestoreSpeed)
+                         .def_readwrite("m_fBleedingRestoreSpeed", &CActorGlove::m_fBleedingRestoreSpeed)
+                         .def_readwrite("m_fPsyHealthRestoreSpeed", &CActorGlove::m_fPsyHealthRestoreSpeed)
+                         .def_readwrite("m_fReloadSpeed", &CActorGlove::m_fReloadSpeed)
+                         .def_readwrite("m_fHandling", &CActorGlove::m_fHandling)
+                         .def_readwrite("m_fRecoil", &CActorGlove::m_fRecoil)
+                         .def("GetDefHitTypeProtection", +[](CActorGlove* self, int hit_type) {
+                                 return self->GetDefHitTypeProtection(ALife::EHitType(hit_type));
+                             })
+        ];
+}
+
+SCRIPT_EXPORT_FUNC(CActorGlove, (CGameObject), CActorGlove_Export);

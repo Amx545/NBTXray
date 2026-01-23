@@ -110,6 +110,7 @@ CLevel::CLevel()
     pHUD = xr_new<CHUDManager>();
     g_player_hud = xr_new<player_hud>();
     g_player_hud->load_default();
+    g_player_hud->load_default_hand();
 }
 
 CLevel::~CLevel()

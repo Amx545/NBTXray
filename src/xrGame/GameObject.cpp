@@ -700,7 +700,90 @@ void CGameObject::spawn_supplies()
 {
     if (!spawn_ini() || ai().get_alife())
         return;
+    string32 buff;
+    u8 it = 1;
+    xr_sprintf(buff, "spawn_only_one_%d", it);
+    while (spawn_ini()->section_exist(buff))
+    {
+        u32 total = 0, p = 0, min = 1, max = 200;
+        s32 total_x = 0;
+        pcstr N, V;
+        xr_unordered_map<u32, u32> spawn_map;
+        for (u32 k = 0; spawn_ini()->r_line(buff, k, &N, &V); k++)
+        {
+            VERIFY(xr_strlen(N));
 
+            if (pSettings->section_exist(N))
+            {
+                if (V && xr_strlen(V) && (nullptr != strstr(V, "prob=")))
+                    p = atoi(strstr(V, "prob=") + 5);
+                else
+                    p = 10;
+                clamp(p, min, max);
+                total += p;
+                spawn_map.emplace(k, p);
+            }
+        }
+        total_x = ::Random.randI(total);
+        for (auto& [item, prob] : spawn_map)
+        {
+            total_x -= prob;
+            if (total_x <= 0)
+            {
+                if (spawn_ini()->r_line(buff, item, &N, &V))
+                {
+                    VERIFY(xr_strlen(N));
+                    if (pSettings->section_exist(N))
+                    {
+                        CSE_Abstract* E = Level().spawn_item(N, Position(), ai_location().level_vertex_id(), ID(), true);
+                        CSE_ALifeItemWeapon* W = smart_cast<CSE_ALifeItemWeapon*>(E);
+                        if (W)
+                        {
+                            bool bScope = false;
+                            bool bSilencer = false;
+                            bool bLauncher = false;
+                            u8 bScopeSect = 0;
+                            u8 iAmmoType = 0;
+                            if (V && xr_strlen(V))
+                            {
+                                bScope = nullptr != strstr(V, "scope");
+                                bSilencer = nullptr != strstr(V, "silencer");
+                                bLauncher = nullptr != strstr(V, "launcher");
+                                if (nullptr != strstr(V, "scope="))
+                                    bScopeSect = atoi(strstr(V, "scope=") + 6);
+                                if (nullptr != strstr(V, "ammo_type="))
+                                    iAmmoType = atoi(strstr(V, "ammo_type=") + 10);
+                            }
+                            if (W->m_scope_status == ALife::eAddonAttachable)
+                            {
+                                W->m_addon_flags.set(CSE_ALifeItemWeapon::eWeaponAddonScope, bScope);
+                                W->m_scope_section = bScopeSect;
+                            }
+                            if (W->m_silencer_status == ALife::eAddonAttachable)
+                                W->m_addon_flags.set(CSE_ALifeItemWeapon::eWeaponAddonSilencer, bSilencer);
+                            if (W->m_grenade_launcher_status == ALife::eAddonAttachable)
+                                W->m_addon_flags.set(CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher, bLauncher);
+                            if (pSettings->line_exist(N, "ammo_class"))
+                            {
+                                pcstr ammo_class = pSettings->r_string(N, "ammo_class");
+                                string128 ammoSec;
+                                if (_GetItemCount(ammo_class) > iAmmoType)
+                                    _GetItem(ammo_class, iAmmoType, ammoSec);
+                                else
+                                    _GetItem(ammo_class, 0, ammoSec);
+                                if (xr_strlen(ammoSec) && pSettings->section_exist(ammoSec))
+                                    Level().spawn_item(ammoSec, Position(), ai_location().level_vertex_id(), ID());
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        total = 0;
+        it++;
+        xr_sprintf(buff, "spawn_only_one_%d", it);
+    }
     if (!spawn_ini()->section_exist("spawn"))
         return;
 
@@ -717,6 +800,10 @@ void CGameObject::spawn_supplies()
         {
             j = 1;
             p = 1.f;
+            bool l_bRandom = false;
+            float f_min_cond = 1.f;
+            float f_max_cond = 1.f;
+            u8 bScopeSect = 0;
 
             float f_cond = 1.0f;
             if (V && xr_strlen(V))
@@ -734,7 +821,21 @@ void CGameObject::spawn_supplies()
                     j = 1;
                 if (NULL != strstr(V, "cond="))
                     f_cond = (float)atof(strstr(V, "cond=") + 5);
+                if (nullptr != strstr(V, "cond_min=") && nullptr != strstr(V, "cond_max="))
+                {
+                    f_min_cond = static_cast<float>(atof(strstr(V, "cond_min=") + 9));
+                    f_max_cond = static_cast<float>(atof(strstr(V, "cond_max=") + 9));
+                    if (f_min_cond > f_max_cond)
+                    {
+                        float f_temp_val = f_min_cond;
+                        f_min_cond = f_max_cond;
+                        f_max_cond = f_temp_val;
+                    }
+                    l_bRandom = true;
+                }
                 bScope = (NULL != strstr(V, "scope"));
+                if (nullptr != strstr(V, "scope="))
+                    bScopeSect = atoi(strstr(V, "scope=") + 6);
                 bSilencer = (NULL != strstr(V, "silencer"));
                 bLauncher = (NULL != strstr(V, "launcher"));
             }
@@ -746,13 +847,20 @@ void CGameObject::spawn_supplies()
 
                     CSE_ALifeInventoryItem* pSE_InventoryItem = smart_cast<CSE_ALifeInventoryItem*>(A);
                     if (pSE_InventoryItem)
+                    {
+                        if (l_bRandom)
+                            f_cond = floor(::Random.randF(f_min_cond, f_max_cond)*100)/100;
                         pSE_InventoryItem->m_fCondition = f_cond;
+                    }
 
                     CSE_ALifeItemWeapon* W = smart_cast<CSE_ALifeItemWeapon*>(A);
                     if (W)
                     {
                         if (W->m_scope_status == ALife::eAddonAttachable)
+                        {
                             W->m_addon_flags.set(CSE_ALifeItemWeapon::eWeaponAddonScope, bScope);
+                            W->m_scope_section = bScopeSect;
+                        }
                         if (W->m_silencer_status == ALife::eAddonAttachable)
                             W->m_addon_flags.set(CSE_ALifeItemWeapon::eWeaponAddonSilencer, bSilencer);
                         if (W->m_grenade_launcher_status == ALife::eAddonAttachable)

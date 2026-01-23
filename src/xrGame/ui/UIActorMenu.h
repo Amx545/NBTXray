@@ -91,6 +91,7 @@ protected:
         eInventoryOutfitList,
         eInventoryHelmetList,
         eInventoryActorBeltList,
+        eInventoryActorGloveList,
 
         eInventoryBeltList,
         eInventoryDetectorList,

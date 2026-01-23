@@ -66,6 +66,10 @@ protected:
     u32 m_dwStateTime;
     bool m_throw;
 
+    bool m_bReadyToDestroy;
+    // 0-default,1-on_overlap,2-on_overlap_insta
+    u8 m_iDestroyMode;
+
     //время уничтожения
     u32 m_dwDestroyTime;
     u32 m_dwDestroyTimeMax;
@@ -97,9 +101,15 @@ public:
     virtual void create_physic_shell();
     IC void set_destroy_time(u32 delta_destroy_time) { m_dwDestroyTime = delta_destroy_time + Device.dwTimeGlobal; }
     virtual void PH_A_CrPr();
+    virtual void OnMissileOverlap();
 
 protected:
     u32 m_ef_weapon_type;
+    u16 m_bone_id;
+    CEntity* m_pOverEntity;
+    Fmatrix m_transform;
+    Fvector m_pos{0.f,0.f,0.f};
+
 
 public:
     virtual u32 ef_weapon_type() const;
@@ -107,4 +117,5 @@ public:
     IC int time_from_begin_throw() const { return (Device.dwTimeGlobal + m_dwDestroyTimeMax - m_dwDestroyTime); }
     static void ExitContactCallback(
         bool& do_colide, bool bo1, dContact& c, SGameMtl* /*material_1*/, SGameMtl* /*material_2*/);
+    bool m_bSticky;
 };

@@ -18,6 +18,9 @@
 #include "WeaponSVU.h"
 #include "WeaponAK74.h"
 #include "WeaponAutomaticShotgun.h"
+#include "WeaponProtecta.h"
+#include "WeaponRAIK84.h"
+#include "WeaponGauss.h"
 #include "WeaponGroza.h"
 #include "WeaponRG6.h"
 #include "WeaponShotgun.h"
@@ -320,6 +323,40 @@ SCRIPT_EXPORT(CWeaponWalther, (CWeaponMagazined),
     module(luaState)
     [
         class_<CWeaponWalther, CWeaponMagazined>("CWeaponWalther")
+            .def(constructor<>())
+    ];
+});
+
+SCRIPT_EXPORT(CWeaponProtecta, (CWeaponAutomaticShotgun), {
+    using namespace luabind;
+
+    module(luaState)
+    [
+        class_<CWeaponProtecta, CWeaponAutomaticShotgun>("CWeaponProtecta")
+            .def(constructor<>())
+    ];
+});
+
+
+SCRIPT_EXPORT(CWeaponRAIK84, (CWeaponMagazinedWGrenade),
+{
+    using namespace luabind;
+
+    module(luaState)
+    [
+        class_<CWeaponRAIK84, CWeaponMagazinedWGrenade>("CWeaponRAIK84")
+            .def(constructor<>())
+    ];
+});
+
+
+SCRIPT_EXPORT(CWeaponGauss, (CWeaponMagazined),
+{
+    using namespace luabind;
+
+    module(luaState)
+    [
+        class_<CWeaponGauss, CWeaponMagazined>("CWeaponGauss")
             .def(constructor<>())
     ];
 });

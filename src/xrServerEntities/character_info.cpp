@@ -133,6 +133,12 @@ const shared_str& CCharacterInfo::IconName() const
 }
 
 shared_str CCharacterInfo::StartDialog() const { return m_StartDialog; }
+const DIALOG_ID_VECTOR& CCharacterInfo::StartDialogs() const
+{
+    R_ASSERT(m_SpecificCharacterId.size());
+    return m_SpecificCharacter.data()->m_sStartDialogs;
+}
+
 const DIALOG_ID_VECTOR& CCharacterInfo::ActorDialogs() const
 {
     R_ASSERT(m_SpecificCharacterId.size());

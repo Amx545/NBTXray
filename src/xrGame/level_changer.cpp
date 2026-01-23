@@ -39,7 +39,6 @@ bool CLevelChanger::net_Spawn(CSE_Abstract* DC)
 {
     m_entrance_time = 0;
     m_b_enabled = true;
-    m_invite_str = DEF_INVITATION;
     CCF_Shape* l_pShape = xr_new<CCF_Shape>(this);
     SetCForm(l_pShape);
 
@@ -51,6 +50,14 @@ bool CLevelChanger::net_Spawn(CSE_Abstract* DC)
     m_level_vertex_id = l_tpALifeLevelChanger->m_dwNextNodeID;
     m_position = l_tpALifeLevelChanger->m_tNextPosition;
     m_angles = l_tpALifeLevelChanger->m_tAngles;
+    string256 _buff;
+    shared_str _buff1 = StringTable().translate(l_tpALifeLevelChanger->m_caLevelToChange);
+    shared_str _buff2 = StringTable().translate(DEF_INVITATION);
+    strcpy(_buff, _buff2.c_str());
+    strcat(_buff, " ");
+    strcat(_buff, _buff1.c_str());
+    strcat(_buff, "?");
+    m_invite_str = _buff;
 
     m_bSilentMode = !!l_tpALifeLevelChanger->m_bSilentMode;
     if (ai().get_level_graph())

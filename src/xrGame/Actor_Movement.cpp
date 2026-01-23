@@ -419,7 +419,10 @@ void CActor::g_Orientate(u32 mstate_rl, float dt)
     }
 
     // lerp angle for "effect" and capture torso data from camera
-    angle_lerp(r_model_yaw_delta, calc_yaw, PI_MUL_4, dt);
+    float l_speed = 1.f;
+    if (cam_active == eacFirstEye)
+        l_speed = 0.15f;
+    angle_lerp(r_model_yaw_delta, calc_yaw * l_speed, PI_MUL_4 * l_speed, dt);
 
     // build matrix
     Fmatrix mXFORM;
@@ -522,7 +525,26 @@ void CActor::g_cl_Orientate(u32 mstate_rl, float dt)
     if (mstate_rl & mcAnyMove)
     {
         r_model_yaw = angle_normalize(r_torso.yaw);
+        r_model_yaw_turn = r_model_yaw;
         mstate_real &= ~mcTurn;
+        }
+    else if (cam_active == eacFirstEye)
+    {
+        float ty = angle_normalize(r_torso.yaw);
+        r_model_yaw = ty;
+        if (_abs(r_model_yaw_turn - ty) > PI_DIV_4)
+        {
+            r_model_yaw_dest = ty;
+            mstate_real |= mcTurn;
+        }
+        if (_abs(r_model_yaw_turn - r_model_yaw_dest) < EPS_L)
+        {
+            mstate_real &= ~mcTurn;
+        }
+        if (mstate_rl & mcTurn)
+        {
+            angle_lerp(r_model_yaw_turn, r_model_yaw_dest, PI_MUL_2, dt);
+        }
     }
     else
     {

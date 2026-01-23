@@ -17,6 +17,10 @@
 #include "Weapon.h"
 #include "Wound.h"
 
+#include "ActorHelmet.h"
+#include "CustomOutfit.h"
+#include "ActorGlove.h"
+
 #include "PDA.h"
 #include "ai/monsters/basemonster/base_monster.h"
 #include "UIGameCustom.h"
@@ -36,13 +40,19 @@ BOOL GodMode()
 CActorCondition::CActorCondition(CActor* object) : inherited(object)
 {
     m_iActorLevel = 1;
-    m_iActorPoint = 5;
+    m_iActorPoint = 0;
     m_iActorVitality = 0;
     m_iActorStrength = 0;
     m_iActorIntelligence = 0;
     m_iActorDexterity = 0;
     m_fActorExperience = 0;
     m_fActorRequiredExperience = 0;
+    m_iActorAbilityPoint = 0;
+
+    m_iActorVitalityTemp = 0;
+    m_iActorStrengthTemp = 0;
+    m_iActorIntelligenceTemp = 0;
+    m_iActorDexterityTemp = 0;
 
     m_fJumpPower = 0.f;
     m_fStandPower = 0.f;
@@ -55,6 +65,17 @@ CActorCondition::CActorCondition(CActor* object) : inherited(object)
     m_fSprintK = 0.f;
     m_fAlcohol = 0.f;
     m_fSatiety = 1.0f;
+    HPLeveling = {   0, 7, 9,11,12,11,11,14,15,15,//10
+                    13,14,14,17,18,20,23,24,27,28,//20
+                    31,33,30,27,25,24,23,19,19,18,//30
+                    18,18,17,16,16,16,15,14,14,13,//40
+                    13,12,11,11,9,9,7,7,5,8,//50
+                    10,5,9,9,9,7,15,14,14,12,//60
+                    12,3,8,10,7,7,6,6,6,5,//70
+                    5,5,6,7,7,7,9,9,10,8,//80
+                    7,9,9,8,6,4,4,3,3,3,//90
+                    3,2,2,1,35,24,24,20,23,40//100
+    };
 
     //	m_vecBoosts.clear();
 
@@ -125,8 +146,8 @@ void CActorCondition::LoadCondition(LPCSTR entity_section)
     m_fV_SatietyPower = pSettings->r_float(section, "satiety_power_v");
     m_fV_SatietyHealth = pSettings->r_float(section, "satiety_health_v");
 
-    m_MaxWalkWeight = pSettings->r_float(section, "max_walk_weight");
-
+    stored_MaxWalkWeight = pSettings->r_float(section, "max_walk_weight");
+    m_MaxWalkWeight = stored_MaxWalkWeight;
     m_zone_max_power[ALife::infl_rad] = pSettings->read_if_exists<float>(section, "radio_zone_max_power", 1.0f);
     m_zone_max_power[ALife::infl_fire] = pSettings->read_if_exists<float>(section, "fire_zone_max_power", 1.0f);
     m_zone_max_power[ALife::infl_acid] = pSettings->read_if_exists<float>(section, "acid_zone_max_power", 1.0f);
@@ -438,7 +459,7 @@ void CActorCondition::SetZoneDanger(float danger, ALife::EInfluenceType type)
 float CActorCondition::GetZoneDanger() const
 {
     float sum = 0.0f;
-    for (u8 i = 1; i < ALife::infl_max_count; ++i)
+    for (u8 i = 1; i < ALife::infl_strike; ++i)
     {
         sum += m_zone_danger[i];
     }
@@ -448,6 +469,13 @@ float CActorCondition::GetZoneDanger() const
 }
 
 void CActorCondition::UpdateRadiation() { inherited::UpdateRadiation(); }
+
+void CActorCondition::UpdatePsyHealth() 
+{ 
+    inherited::UpdatePsyHealth();
+    if (GetPsyHealth() < 0.0f || fis_zero(GetPsyHealth()))
+        object().Die(object().cast_game_object());
+}
 
 void CActorCondition::UpdateStats() 
 {
@@ -469,11 +497,42 @@ void CActorCondition::UpdateStats()
         m_iActorPoint += 1;
         GetActorLevelUp();
     }
+
+    float add_value = 0.5f + m_fBoostHealthIncrease + m_fHealthLevel + m_fItemHealth;
+    max_health() = add_value;
+    if (m_fLvlUpHeal > 0.01f)
+    {
+        SetHealth(GetHealth() + m_fLvlUpHeal);
+        m_fLvlUpHeal = 0.f;
+    }
+    add_value = 0.7f + m_fBoostPowerIncrease + m_fPowerLevel + m_fItemPower;
+    SetMaxPower(add_value);
+    if (m_fLvlUpPower > 0.01f)
+    {
+        SetPower(GetPower() + m_fLvlUpPower);
+        m_fLvlUpPower = 0.f;
+    }
+    add_value = 0.7f + m_fPsyHealthLevel + m_fItemPsyHealth;
+    SetPsyHealthMax(add_value);
+    if (m_fLvlUpPsyHeal > 0.01f)
+    {
+        m_fPsyHealth += m_fLvlUpPsyHeal;
+        m_fLvlUpPsyHeal = 0.f;
+    }
+    add_value = stored_MaxWalkWeight + m_fBoostAdditionalWeight + m_fWeightLevel;
+    m_MaxWalkWeight = add_value;
+    add_value = m_object->inventory().GetStoredWeight() + m_fBoostAdditionalWeight + m_fWeightLevel;
+    m_object->inventory().SetMaxWeight(add_value);
+}
+void CActorCondition::SetActorLevel(u8 val) 
+{
+    m_iActorLevel = val;
+    GetActorLevelUp();
 }
 
-void CActorCondition::GetActorLevelUp() 
+void CActorCondition::GetActorLevelUp()
 { 
-    if (m_iActorLevel <= 13)
+    if (m_iActorLevel < 13)
     {
         m_fActorRequiredExperience = (u32)(0.0068f * m_iActorLevel * m_iActorLevel * m_iActorLevel -
             0.06f * m_iActorLevel * m_iActorLevel + 17.1f * m_iActorLevel + 639.0f);
@@ -482,6 +541,254 @@ void CActorCondition::GetActorLevelUp()
     {
         m_fActorRequiredExperience = (u32)(0.02f * m_iActorLevel * m_iActorLevel * m_iActorLevel +
             3.06f * m_iActorLevel * m_iActorLevel + 105.6f * m_iActorLevel - 895.0f);
+    }
+}
+void CActorCondition::ChangeStatsVitality(u8 val, bool add, bool permanent)
+{
+    float counter = 0.f;
+    if (add)
+    {
+        u32 add_val = GetActorVitality() + val;
+        u32 i = GetActorVitality() + 1;
+        if (!permanent)
+        {
+            add_val = val;
+            i = 1;
+        }
+        if (add_val > 99)
+            add_val = 99;
+        for (i; i <= add_val; i++)
+        {
+            counter += HPLeveling[i];
+        }
+        if (permanent)
+        {
+            m_iActorVitality = add_val;
+            m_fHealthLevel += counter / 100.f;
+            m_fLvlUpHeal = counter / 100.f;
+        }
+        else
+        {
+            m_iActorVitalityTemp += val;
+            m_fItemHealth += counter / 100.f;
+        }
+    }
+    else
+    {
+        u32 add_val = GetActorVitality() - val;
+        u32 i = GetActorVitality();
+        if (!permanent)
+        {
+            i = m_iActorVitalityTemp;
+            add_val = m_iActorVitalityTemp - val;
+        }
+        if (add_val < 0)
+            add_val = 0;
+        for (i; i > add_val; i--)
+        {
+            counter += HPLeveling[i];
+        }
+        if (permanent)
+        {
+            m_iActorVitality = add_val;
+            m_fHealthLevel -= counter / 100.f;
+        }
+        else
+        {
+            m_iActorVitalityTemp -= val;
+            m_fItemHealth -= counter / 100.f;
+        }
+    }
+}
+void CActorCondition::ChangeStatsStrength(u8 val, bool add, bool permanent)
+{
+    float counter = 0.f;
+    float scaling = 0.f;
+    if (add)
+    {
+        u32 add_val = GetActorStrength() + val;
+        u32 i = GetActorStrength() + 1;
+        if (!permanent)
+        {
+            add_val = val;
+            i = 1;
+        }
+        if (add_val > 99)
+            add_val = 99;
+        for (i; i <= add_val; i++)
+        {
+            counter += GetWeightPerLevel(i);
+            scaling += GetStrScalePerLevel(i);
+        }
+        if (permanent)
+        {
+            m_iActorStrength = add_val;
+            m_fWeightLevel += counter;
+            m_fStrScaleLevel += scaling;
+        }
+        else
+        {
+            m_iActorStrengthTemp += val;
+            m_fBoostAdditionalWeight += counter;
+            m_fStrScaleItem += scaling;
+        }
+    }
+    else
+    {
+        u32 add_val = GetActorStrength() - val;
+        u32 i = GetActorStrength();
+        if (!permanent)
+        {
+            i = m_iActorStrengthTemp;
+            add_val = m_iActorStrengthTemp - val;
+        }
+        if (add_val < 0)
+            add_val = 0;
+        for (i; i > add_val; i--)
+        {
+            counter += GetWeightPerLevel(i);
+            scaling += GetStrScalePerLevel(i);
+        }
+        if (permanent)
+        {
+            m_iActorStrength = add_val;
+            m_fWeightLevel -= counter;
+            m_fStrScaleLevel -= scaling;
+        }
+        else
+        {
+            m_iActorStrengthTemp -= val;
+            m_fBoostAdditionalWeight -= counter;
+            m_fStrScaleItem -= scaling;
+        }
+    }
+}
+void CActorCondition::ChangeStatsIntelligence(u8 val, bool add, bool permanent)
+{
+    float counter = .0f;
+    float scaling = .0f;
+    if (add)
+    {
+        u32 add_val = GetActorIntelligence() + val;
+        u32 i = GetActorIntelligence() + 1;
+        if (!permanent)
+        {
+            add_val = val;
+            i = 1;
+        }
+        if (add_val > 99)
+            add_val = 99;
+        for (i; i <= add_val; i++)
+        {
+            counter += GetPsyHealthPerLevel(i);
+            scaling += GetIntScalePerLevel(i);
+        }
+        if (permanent)
+        {
+            m_iActorIntelligence = add_val;
+            m_fPsyHealthLevel += counter / 100.f;
+            m_fIntScaleLevel += scaling;
+            m_fLvlUpPsyHeal = counter / 100.f;
+        }
+        else
+        {
+            m_iActorIntelligenceTemp += val;
+            m_fItemPsyHealth += counter / 100.f;
+            m_fIntScaleItem += scaling;
+        }
+    }
+    else
+    {
+        u32 add_val = GetActorIntelligence() - val;
+        u32 i = GetActorIntelligence();
+        if (!permanent)
+        {
+            i = m_iActorIntelligenceTemp;
+            add_val = m_iActorIntelligenceTemp - val;
+        }
+        if (add_val < 0)
+            add_val = 0;
+        for (i; i > add_val; i--)
+        {
+            counter += GetPsyHealthPerLevel(i);
+            scaling += GetIntScalePerLevel(i);
+        }
+        if (permanent)
+        {
+            m_iActorIntelligence = add_val;
+            m_fPsyHealthLevel -= counter / 100.f;
+            m_fIntScaleLevel -= scaling;
+        }
+        else
+        {
+            m_iActorIntelligenceTemp -= val;
+            m_fItemPsyHealth -= counter / 100.f;
+            m_fIntScaleItem -= scaling;
+        }
+    }
+}
+void CActorCondition::ChangeStatsDexterity(u8 val, bool add, bool permanent)
+{
+    float counter = 0.f;
+    float scaling = 0.f;
+    if (add)
+    {
+        u32 add_val = GetActorDexterity() + val;
+        u32 i = GetActorDexterity() + 1;
+        if (!permanent)
+        {
+            add_val = val;
+            i = 1;
+        }
+        if (add_val > 99)
+            add_val = 99;
+        for (i; i <= add_val; i++)
+        {
+            counter += GetPowerPerLevel(i);
+            scaling += GetDexScalePerLevel(i);
+        }
+        if (permanent)
+        {
+            m_iActorDexterity = add_val;
+            m_fPowerLevel += counter / 100.f;
+            m_fDexScaleLevel += scaling;
+            m_fLvlUpPower = counter / 100.f;
+        }
+        else
+        {
+            m_iActorDexterityTemp += val;
+            m_fItemPower += counter / 100.f;
+            m_fDexScaleItem += scaling;
+        }
+    }
+    else
+    {
+        u32 add_val = GetActorDexterity() - val;
+        u32 i = GetActorDexterity();
+        if (!permanent)
+        {
+            i = m_iActorDexterityTemp;
+            add_val = m_iActorDexterityTemp - val;
+        }
+        if (add_val < 0)
+            add_val = 0;
+        for (i; i > add_val; i--)
+        {
+            counter += GetPowerPerLevel(i);
+            scaling += GetDexScalePerLevel(i);
+        }
+        if (permanent)
+        {
+            m_iActorDexterity = add_val;
+            m_fPowerLevel -= counter / 100.f;
+            m_fDexScaleLevel -= scaling;
+        }
+        else
+        {
+            m_iActorDexterityTemp -= val;
+            m_fItemPower -= counter / 100.f;
+            m_fDexScaleItem -= scaling;
+        }
     }
 }
 void CActorCondition::UpdateSatiety()
@@ -511,6 +818,36 @@ CWound* CActorCondition::ConditionHit(SHit* pHDS)
 {
     if (GodMode())
         return NULL;
+    bool bAddWound = pHDS->add_wound;
+    float const hit_power_org = pHDS->damage();
+    float hit_power = hit_power_org;
+    float hit_frac = 0.05f;
+    float protect = HitOutfitEffect(hit_power_org, pHDS->hit_type, pHDS->boneID, pHDS->armor_piercing, 
+        bAddWound, hit_frac);
+    float one = 10.f;
+    float def = (0.3f * protect * one) / (1.2f + 0.3f * abs(protect * one));
+    if (pHDS->hit_type == ALife::eHitTypeFireWound)
+    {
+        if (pHDS->armor_piercing > hit_frac)
+        {
+            hit_power *= (1.f - def / 2);
+        }
+        else
+        {
+            hit_power *= (1.f - def);
+            bAddWound = false;
+        }
+    }
+    else
+    {
+        hit_power *= 1.0f - def;
+    }
+    if (hit_power < 0.f)
+        hit_power = 0.f;
+    Msg("Actor have hits power start[end] = %f[%f], HF = %f, AP = %f, Def = %f", 
+        hit_power_org, hit_power, hit_frac, pHDS->armor_piercing, def);
+    pHDS->add_wound = bAddWound;
+    pHDS->power = hit_power;
     return inherited::ConditionHit(pHDS);
 }
 
@@ -603,14 +940,6 @@ void CActorCondition::save(NET_Packet& output_packet)
     save_data(m_curr_medicine_influence.fTimeTotal, output_packet);
     save_data(m_curr_medicine_influence.fTimeCurrent, output_packet);
 
-    output_packet.w_u8((u8)m_booster_influences.size());
-    BOOSTER_MAP::iterator b = m_booster_influences.begin(), e = m_booster_influences.end();
-    for (; b != e; ++b)
-    {
-        output_packet.w_u8((u8)b->second.m_type);
-        output_packet.w_float(b->second.fBoostValue);
-        output_packet.w_float(b->second.fBoostTime);
-    }
     save_data(m_iActorLevel, output_packet);
     save_data(m_iActorPoint, output_packet);
     save_data(m_iActorVitality, output_packet);
@@ -619,6 +948,24 @@ void CActorCondition::save(NET_Packet& output_packet)
     save_data(m_iActorDexterity, output_packet);
     save_data(m_fActorExperience, output_packet);
     save_data(m_fActorRequiredExperience, output_packet);
+
+    save_data(m_fHealthLevel, output_packet);
+    save_data(m_fPowerLevel, output_packet);
+    save_data(m_fWeightLevel, output_packet);
+    save_data(m_fPsyHealthLevel, output_packet);
+
+    save_data(m_fStrScaleLevel, output_packet);
+    save_data(m_fDexScaleLevel, output_packet);
+    save_data(m_fIntScaleLevel, output_packet);
+
+    output_packet.w_u8((u8)m_booster_influences.size());
+    BOOSTER_MAP::iterator b = m_booster_influences.begin(), e = m_booster_influences.end();
+    for (; b != e; ++b)
+    {
+        output_packet.w_u8((u8)b->second.m_type);
+        output_packet.w_float(b->second.fBoostValue);
+        output_packet.w_float(b->second.fBoostTime);
+    }
 }
 
 void CActorCondition::load(IReader& input_packet)
@@ -638,6 +985,24 @@ void CActorCondition::load(IReader& input_packet)
     load_data(m_curr_medicine_influence.fTimeTotal, input_packet);
     load_data(m_curr_medicine_influence.fTimeCurrent, input_packet);
 
+    load_data(m_iActorLevel, input_packet);
+    load_data(m_iActorPoint, input_packet);
+    load_data(m_iActorVitality, input_packet);
+    load_data(m_iActorStrength, input_packet);
+    load_data(m_iActorIntelligence, input_packet);
+    load_data(m_iActorDexterity, input_packet);
+    load_data(m_fActorExperience, input_packet);
+    load_data(m_fActorRequiredExperience, input_packet);
+
+    load_data(m_fHealthLevel, input_packet);
+    load_data(m_fPowerLevel, input_packet);
+    load_data(m_fWeightLevel, input_packet);
+    load_data(m_fPsyHealthLevel, input_packet);
+
+    load_data(m_fStrScaleLevel, input_packet);
+    load_data(m_fDexScaleLevel, input_packet);
+    load_data(m_fIntScaleLevel, input_packet);
+
     u8 cntr = input_packet.r_u8();
     for (; cntr > 0; cntr--)
     {
@@ -648,14 +1013,17 @@ void CActorCondition::load(IReader& input_packet)
         m_booster_influences[B.m_type] = B;
         BoostParameters(B);
     }
-    load_data(m_iActorLevel, input_packet);
-    load_data(m_iActorPoint, input_packet);
-    load_data(m_iActorVitality, input_packet);
-    load_data(m_iActorStrength, input_packet);
-    load_data(m_iActorIntelligence, input_packet);
-    load_data(m_iActorDexterity, input_packet);
-    load_data(m_fActorExperience, input_packet);
-    load_data(m_fActorRequiredExperience, input_packet);
+
+    float add_value = 0.5f + m_fBoostHealthIncrease + m_fHealthLevel + m_fItemHealth;
+    max_health() = add_value;
+    add_value = 0.7f + m_fBoostPowerIncrease + m_fPowerLevel + m_fItemPower;
+    SetMaxPower(add_value);
+    add_value = 0.7f + m_fPsyHealthLevel + m_fItemPsyHealth;
+    SetPsyHealthMax(add_value);
+    add_value = stored_MaxWalkWeight + m_fBoostAdditionalWeight + m_fWeightLevel;
+    m_MaxWalkWeight = add_value;
+    add_value = m_object->inventory().GetStoredWeight() + m_fBoostAdditionalWeight + m_fWeightLevel;
+    m_object->inventory().SetMaxWeight(add_value);
 }
 
 void CActorCondition::reinit()
@@ -733,8 +1101,8 @@ void CActorCondition::DisableBoostParameters(const SBooster& B)
     case eBoostTelepaticProtection: BoostTelepaticProtection(-B.fBoostValue); break;
     case eBoostChemicalBurnProtection: BoostChemicalBurnProtection(-B.fBoostValue); break;
     case eBoostGraveImmunity: BoostGraveImmunity(-B.fBoostValue); break;
-    case eBoostHealthIncrease: BoostHealthMinus(B.fBoostValue); break;
-    case eBoostPowerIncrease: BoostStaminaMinus(B.fBoostValue); break;
+    case eBoostHealthIncrease: BoostHealthIncrease(-B.fBoostValue); break;
+    case eBoostPowerIncrease: BoostPowerIncrease(-B.fBoostValue); break;
     case eBoostSniper: BoostSniper(-B.fBoostValue); break;
     case eBoostDoubleShot: BoostDoubleShot(-B.fBoostValue); break;
     case eBoostSpeedShot: BoostSpeedShot(-B.fBoostValue); break;
@@ -787,7 +1155,7 @@ void CActorCondition::BoostBleedingRestore(const float value) { m_change_v.m_fV_
 void CActorCondition::BoostMaxWeight(const float value)
 {
     m_object->inventory().SetMaxWeight(object().inventory().GetMaxWeight() + value);
-    m_MaxWalkWeight += value;
+    m_fBoostAdditionalWeight += value;
 }
 void CActorCondition::BoostBurnImmunity(const float value) { m_fBoostBurnImmunity += value; }
 void CActorCondition::BoostShockImmunity(const float value) { m_fBoostShockImmunity += value; }
@@ -802,16 +1170,8 @@ void CActorCondition::BoostRadiationProtection(const float value) { m_fBoostRadi
 void CActorCondition::BoostTelepaticProtection(const float value) { m_fBoostTelepaticProtection += value; }
 void CActorCondition::BoostChemicalBurnProtection(const float value) { m_fBoostChemicalBurnProtection += value; }
 void CActorCondition::BoostGraveImmunity(const float value) { m_fBoostGraveImmunity += value; }
-void CActorCondition::BoostHealthIncrease(const float value) 
-{
-    m_fBoostHealthIncrease = GetMaxHealth() * (value + 1.f);
-    object().SetMaxHealth(m_fBoostHealthIncrease);
-}
-void CActorCondition::BoostPowerIncrease(const float value) 
-{ 
-    m_fBoostPowerIncrease = GetMaxPower() * (value + 1.f);
-    SetMaxPower(m_fBoostPowerIncrease);
-}
+void CActorCondition::BoostHealthIncrease(const float value) { m_fBoostHealthIncrease += value; }
+void CActorCondition::BoostPowerIncrease(const float value) { m_fBoostPowerIncrease += value; }
 void CActorCondition::BoostSniper(const float value) { m_fBoostSniper += value; }
 void CActorCondition::BoostDoubleShot(const float value) { m_fBoostDoubleShot += value; }
 void CActorCondition::BoostSpeedShot(const float value) { m_fBoostSpeedShot += value; }
@@ -826,17 +1186,6 @@ void CActorCondition::BoostJumpIncrease(const float value)
     m_fBoostJumpIncrease = (1.f + value) * object().character_physics_support()->movement()->GetJumpUpVelocity();
     object().character_physics_support()->movement()->SetJumpUpVelocity(m_fBoostJumpIncrease);
 }
-
-void CActorCondition::BoostHealthMinus(const float value)
-{
-    m_fBoostHealthIncrease = GetMaxHealth() / (value + 1.f);
-    object().SetMaxHealth(m_fBoostHealthIncrease);
-}
-void CActorCondition::BoostStaminaMinus(const float value) 
-{
-    m_fBoostPowerIncrease = GetMaxPower() / (value + 1.f);
-    SetMaxPower(m_fBoostPowerIncrease);
-}
 void CActorCondition::BoostMoveSpeedMinus(const float value) 
 {
     m_fBoostMoveSpeedIncrease = object().m_fSprintFactor / (1.f + value);
@@ -849,6 +1198,181 @@ void CActorCondition::BoostJumpMinus(const float value)
 }
 
 //-------------------------------END BOOSTER-------------------------------------
+u16 CActorCondition::GetHealthPerLevel(u8 current_level)
+{ 
+    if (current_level < 100 && current_level > 0)
+    {
+        return HPLeveling[current_level];
+    }
+    else
+    {
+        return 20;
+    }
+}
+float CActorCondition::GetWeightPerLevel(u8 current_level)
+{
+    if (current_level <= 30)
+    {
+        return 1.2f;
+    }
+    else if (current_level <= 40)
+    {
+        return 0.8f;
+    }
+    else if (current_level <= 60)
+    {
+        return 0.5f;
+    }
+    else
+    {
+        return 1.0f;
+    }
+}
+u16 CActorCondition::GetPsyHealthPerLevel(u8 current_level)
+{
+    if (current_level <= 30)
+    {
+        return 4;
+    }
+    else if (current_level <= 40)
+    {
+        return 2;
+    }
+    else if (current_level <= 60)
+    {
+        return 1;
+    }
+    else
+    {
+        return 3;
+    }
+}
+
+u16 CActorCondition::GetPowerPerLevel(u8 current_level)
+{
+    if (current_level <= 40)
+    {
+        return 2;
+    }
+    else if (current_level <= 60)
+    {
+        return 1;
+    }
+    else
+    {
+        return 3;
+    }
+}
+
+float CActorCondition::GetStrScalePerLevel(u8 current_level)
+{
+    if (current_level <= 10)
+    {
+        return .005f;
+    }
+    else if (current_level <= 20)
+    {
+        return .01f;
+    }
+    else if (current_level <= 50)
+    {
+        return .017f;
+    }
+    else
+    {
+        return .007f;
+    }
+}
+
+float CActorCondition::GetDexScalePerLevel(u8 current_level)
+{
+    if (current_level <= 10)
+    {
+        return .01f;
+    }
+    else if (current_level <= 25)
+    {
+        return .02f;
+    }
+    else if (current_level <= 40)
+    {
+        return .01f;
+    }
+    else
+    {
+        return .005f;
+    }
+}
+
+float CActorCondition::GetIntScalePerLevel(u8 current_level)
+{
+    if (current_level <= 10)
+    {
+        return .005f;
+    }
+    else if (current_level <= 30)
+    {
+        return 0.0225f;
+    }
+    else if (current_level <= 60)
+    {
+        return .01f;
+    }
+    else
+    {
+        return .0041f;
+    }
+}
+
+float CActorCondition::GetActorHTProtection(ALife::EHitType hit_type)
+{ 
+    float protection = 0.f;
+    CCustomOutfit* outfit = object().GetOutfit();
+    CHelmet* helmet = smart_cast<CHelmet*>(object().inventory().ItemFromSlot(HELMET_SLOT));
+    CActorGlove* glove = object().GetItemFromSlot<CActorGlove>(ACTORGLOVE_SLOT);
+    if (outfit)
+        protection += outfit->GetDefHitTypeProtection(hit_type);
+    if (helmet)
+        protection += helmet->GetDefHitTypeProtection(hit_type);
+    if (glove)
+        protection += glove->GetDefHitTypeProtection(hit_type);
+    protection += object().GetProtection_ArtefactsOnBelt(hit_type);
+    switch (hit_type)
+    {
+    case ALife::eHitTypeTelepatic: protection += m_fBoostTelepaticProtection; break;
+    case ALife::eHitTypeChemicalBurn: protection += m_fBoostChemicalBurnProtection; break;
+    case ALife::eHitTypeRadiation: protection += m_fBoostRadiationProtection; break;
+    default: break;
+    }
+    return protection;
+}
+
+float CActorCondition::GetActorHTProtection(bool head)
+{
+    float protection = 0.f;
+    CCustomOutfit* outfit = object().GetOutfit();
+    CHelmet* helmet = smart_cast<CHelmet*>(object().inventory().ItemFromSlot(HELMET_SLOT));
+    CActorGlove* glove = object().GetItemFromSlot<CActorGlove>(ACTORGLOVE_SLOT);
+    if (head)
+    {
+        if (outfit && !outfit->bIsHelmetAvaliable)
+            protection += outfit->GetHeadDefProtection();
+        else if (helmet)
+            protection += helmet->GetDefHitTypeProtection(ALife::eHitTypeFireWound);
+    }
+    else
+    {
+        if (outfit)
+            protection += outfit->GetDefHitTypeProtection(ALife::eHitTypeFireWound);
+        if (glove)
+            protection += glove->GetDefHitTypeProtection(ALife::eHitTypeFireWound);
+
+    }
+    protection += object().GetProtection_ArtefactsOnBelt(ALife::eHitTypeFireWound);
+    return protection;
+}
+
+
 
 void CActorCondition::UpdateTutorialThresholds()
 {

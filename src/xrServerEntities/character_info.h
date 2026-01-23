@@ -124,6 +124,7 @@ public:
 
     shared_str StartDialog() const;
     const DIALOG_ID_VECTOR& ActorDialogs() const;
+    const DIALOG_ID_VECTOR& StartDialogs() const;
 #endif
 
 protected:

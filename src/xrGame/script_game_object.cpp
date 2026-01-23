@@ -461,6 +461,28 @@ u32 CScriptGameObject::Cost() const
     return (inventory_item->Cost());
 }
 
+u8 CScriptGameObject::GetRarity() const
+{ 
+    CInventoryItem* inventory_item = smart_cast<CInventoryItem*>(&object());
+    if (!inventory_item)
+    {
+        GEnv.ScriptEngine->script_log(LuaMessageType::Error, "CSciptEntity : cannot access class member rar!");
+        return (false);
+    }
+    return (inventory_item->RarityItem());
+}
+
+void CScriptGameObject::SetRarity(u8 val) const
+{
+    CInventoryItem* inventory_item = smart_cast<CInventoryItem*>(&object());
+    if (!inventory_item)
+    {
+        GEnv.ScriptEngine->script_log(LuaMessageType::Error, "CSciptEntity : cannot access class member rar!");
+        return;
+    }
+    inventory_item->SetRarityItem(val);
+}
+
 float CScriptGameObject::GetCondition() const
 {
     CInventoryItem* inventory_item = smart_cast<CInventoryItem*>(&object());
@@ -484,6 +506,15 @@ void CScriptGameObject::SetCondition(float val)
     }
     val -= inventory_item->GetCondition();
     inventory_item->ChangeCondition(val);
+}
+
+void CScriptGameObject::ActorClassSelectorStart() const 
+{
+    CActor* pActor = smart_cast<CActor*>(&object());
+    if (pActor)
+    {
+        pActor->ActorClassSelector();
+    }
 }
 
 void CScriptGameObject::eat(CScriptGameObject* item)

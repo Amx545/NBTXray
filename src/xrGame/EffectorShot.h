@@ -52,7 +52,7 @@ public:
     void SetRndSeed(s32 Seed);
 
     void Shot(CWeapon* weapon);
-    void Shot2(float angle);
+    void Shot2(float angle, float dfdex = 1.f);
 
     void GetDeltaAngle(Fvector& angle);
     void GetLastDelta(Fvector& delta_angle);

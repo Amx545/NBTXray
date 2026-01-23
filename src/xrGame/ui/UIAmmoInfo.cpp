@@ -44,7 +44,7 @@ bool CUIAmmoParams::InitFromXml(CUIXml& xml)
     m_damg = CreateItem(xml, "damg", "st_prop_hit");
     m_dist = CreateItem(xml, "dist", "st_prop_bullet_speed");
     m_pirc = CreateItem(xml, "pirc", "st_prop_pierce");
-    m_airr = CreateItem(xml, "airr", "st_prop_air_resist");
+    //m_airr = CreateItem(xml, "airr", "st_prop_air_resist");
     m_buck = CreateItem(xml, "buck", "st_prop_bucks");
     m_impr = CreateItem(xml, "impr", "st_prop_impair");
 
@@ -151,7 +151,7 @@ void CUIAmmoParams::SetInfo(CWeaponAmmo* cur_ammo)
         }
     }
 
-    if (m_airr)
+    /** if (m_airr)
     {
         val = cur_ammo->cartridge_param.kAirRes;
         val = (val - 1.f) * 100;
@@ -159,7 +159,7 @@ void CUIAmmoParams::SetInfo(CWeaponAmmo* cur_ammo)
         {
             setValue(m_airr);
         }
-    }
+    }*/
 
     if (m_buck)
     {

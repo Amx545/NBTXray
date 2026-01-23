@@ -41,11 +41,14 @@ private:
 
     CUIStatic* m_ui_weapon_sign_ammo;
     CUIStatic* m_ui_weapon_icon;
+    CUIStatic* m_ui_actor_level;
     Frect m_ui_weapon_icon_rect;
 
     CUIProgressBar* m_ui_health_bar;
     CUIProgressBar* m_ui_armor_bar;
     CUIProgressBar* m_ui_stamina_bar;
+    CUIProgressBar* m_ui_psyhealth_bar;
+    CUIProgressBar* m_ui_experience_bar;
 
     CUIProgressShape* m_progress_self;
     CUIStatic* m_radia_damage;
@@ -89,7 +92,7 @@ public:
     void InitFromXml(CUIXml& xml, LPCSTR path);
     void Load_section();
     virtual void Update();
-    //	virtual void	Draw				();
+    virtual void Draw();
 
     void on_connected();
     void reset_ui();

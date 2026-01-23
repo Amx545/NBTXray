@@ -71,14 +71,27 @@ void CAI_PhraseDialogManager::AnswerPhrase(DIALOG_SHARED_PTR& phrase_dialog)
 
 void CAI_PhraseDialogManager::SetStartDialog(shared_str phrase_dialog) { m_sStartDialog = phrase_dialog; }
 void CAI_PhraseDialogManager::SetDefaultStartDialog(shared_str phrase_dialog) { m_sDefaultStartDialog = phrase_dialog; }
+void CAI_PhraseDialogManager::SetStartDialogs(const DIALOG_ID_VECTOR& dialogs) 
+{ 
+    
+    for (u8 i = 0; i < dialogs.size(); i++)
+        start_dialogs.push_back(dialogs[i]);
+}
 void CAI_PhraseDialogManager::RestoreDefaultStartDialog() { m_sStartDialog = m_sDefaultStartDialog; }
 void CAI_PhraseDialogManager::UpdateAvailableDialogs(CPhraseDialogManager* partner)
 {
     m_AvailableDialogs.clear();
     m_CheckedDialogs.clear();
 
-    if (*m_sStartDialog)
-        inherited::AddAvailableDialog(*m_sStartDialog, partner);
+    //if (*m_sStartDialog)
+    //    inherited::AddAvailableDialog(*m_sStartDialog, partner);
+    for (u8 i = 0; i < start_dialogs.size(); i++)
+    {
+        if (*start_dialogs[i])
+        {
+            AddAvailableDialog(start_dialogs[i], partner);
+        }
+    }
     inherited::AddAvailableDialog("hello_dialog", partner);
 
     inherited::UpdateAvailableDialogs(partner);

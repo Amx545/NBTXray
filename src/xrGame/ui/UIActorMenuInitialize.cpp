@@ -194,32 +194,33 @@ void CUIActorMenu::InitializeUniversal(CUIXml& uiXml)
 
     constexpr std::tuple<eActorMenuListType, cpcstr, cpcstr, cpcstr, cpcstr, bool> inventory_lists[] =
     {
-        // { id,                   "xml_section_name",         "condition_indicator,  "highlighter",             "blocker",          required }
-        { eInventoryKnifeList,     "dragdrop_knife",           "progess_bar_knife",   "inv_slot1_highlight",     nullptr,            false },
-        { eInventoryPistolList,    "dragdrop_pistol",          "progess_bar_weapon1", "inv_slot2_highlight",     nullptr,            true },
-        { eInventoryAutomaticList, "dragdrop_automatic",       "progess_bar_weapon2", "inv_slot3_highlight",     nullptr,            true },
+        // { id,                   "xml_section_name",         "condition_indicator,  "highlighter",              "blocker",          required }
+        { eInventoryKnifeList,     "dragdrop_knife",           "progess_bar_knife",   "inv_slot1_highlight",      nullptr,            false },
+        { eInventoryPistolList,    "dragdrop_pistol",          "progess_bar_weapon1", "inv_slot2_highlight",      nullptr,            true },
+        { eInventoryAutomaticList, "dragdrop_automatic",       "progess_bar_weapon2", "inv_slot3_highlight",      nullptr,            true },
 
-        { eInventoryOutfitList,    "dragdrop_outfit",          "progess_bar_outfit",  "outfit_slot_highlight",   nullptr,            true },
-        { eInventoryHelmetList,    "dragdrop_helmet",          "progess_bar_helmet",  "helmet_slot_highlight",   "helmet_over",      false },
-        { eInventoryActorBeltList, "dragdrop_actorbelt",       nullptr,               "actorbelt_slot_highlight",nullptr,            false },
+        { eInventoryOutfitList,    "dragdrop_outfit",          "progess_bar_outfit",  "outfit_slot_highlight",    nullptr,            true },
+        { eInventoryHelmetList,    "dragdrop_helmet",          "progess_bar_helmet",  "helmet_slot_highlight",    "helmet_over",      false },
+        { eInventoryActorBeltList, "dragdrop_actorbelt",       nullptr,               "actorbelt_slot_highlight", nullptr,            false },
+        { eInventoryActorGloveList,"dragdrop_actorglove",      "progess_bar_glove",   "actorglove_slot_highlight","glove_over",       false },
 
-        { eInventoryBeltList,      "dragdrop_belt",            nullptr,               "artefact_slot_highlight", "belt_list_over",   true },
-        { eInventoryDetectorList,  "dragdrop_detector",        nullptr,               "detector_slot_highlight", nullptr,            true },
+        { eInventoryBeltList,      "dragdrop_belt",            nullptr,               "artefact_slot_highlight",  "belt_list_over",   true },
+        { eInventoryDetectorList,  "dragdrop_detector",        nullptr,               "detector_slot_highlight",  nullptr,            true },
 
-        { eInventoryBagList,       "dragdrop_bag",             nullptr,               nullptr,                   nullptr,            true },
+        { eInventoryBagList,       "dragdrop_bag",             nullptr,               nullptr,                    nullptr,            true },
 
-        { eTradeActorList,         "dragdrop_actor_trade",     nullptr,               nullptr,                   nullptr,            true },
-        { eTradeActorBagList,      "dragdrop_actor_trade_bag", nullptr,               nullptr,                   nullptr,            true },
+        { eTradeActorList,         "dragdrop_actor_trade",     nullptr,               nullptr,                    nullptr,            true },
+        { eTradeActorBagList,      "dragdrop_actor_trade_bag", nullptr,               nullptr,                    nullptr,            true },
 
-        { eTradePartnerList,       "dragdrop_partner_trade",   nullptr,               nullptr,                   nullptr,            true },
-        { eTradePartnerBagList,    "dragdrop_partner_bag",     nullptr,               nullptr,                   nullptr,            true },
+        { eTradePartnerList,       "dragdrop_partner_trade",   nullptr,               nullptr,                    nullptr,            true },
+        { eTradePartnerBagList,    "dragdrop_partner_bag",     nullptr,               nullptr,                    nullptr,            true },
 
-        { eSearchLootBagList,      "dragdrop_deadbody_bag",    nullptr,               nullptr,                   nullptr,            true },
-        { eSearchLootActorBagList, nullptr,                    nullptr,               nullptr,                   nullptr,            false },
+        { eSearchLootBagList,      "dragdrop_deadbody_bag",    nullptr,               nullptr,                    nullptr,            true },
+        { eSearchLootActorBagList, nullptr,                    nullptr,               nullptr,                    nullptr,            false },
 
-        { eTrashList,              "dragdrop_trash",           nullptr,               nullptr,                   nullptr,            false },
+        { eTrashList,              "dragdrop_trash",           nullptr,               nullptr,                    nullptr,            false },
 
-        { eInventoryBackpackList,  "dragdrop_backpack",        nullptr,               "backpack_slot_highlight", nullptr,            false },
+        { eInventoryBackpackList,  "dragdrop_backpack",        nullptr,               "backpack_slot_highlight",  nullptr,            false },
     };
     static_assert(std::size(inventory_lists) == eListCount,
         "All lists should be listed in the tuple above.");
@@ -256,6 +257,9 @@ void CUIActorMenu::InitializeUniversal(CUIXml& uiXml)
 
     if (m_pLists[eInventoryHelmetList])
         m_pLists[eInventoryHelmetList]->SetMaxCellsCapacity(m_pLists[eInventoryHelmetList]->CellsCapacity());
+
+    if (m_pLists[eInventoryActorGloveList])
+        m_pLists[eInventoryActorGloveList]->SetMaxCellsCapacity(m_pLists[eInventoryActorGloveList]->CellsCapacity());
 
     m_pQuickSlot = UIHelper::CreateDragDropReferenceList(uiXml, "dragdrop_quick_slots", this, false);
     if (m_pQuickSlot)
@@ -527,6 +531,7 @@ void CUIActorMenu::InitCallbacks()
     BindDragDropListEvents(m_pLists[eInventoryOutfitList]);
     BindDragDropListEvents(m_pLists[eInventoryHelmetList]);
     BindDragDropListEvents(m_pLists[eInventoryActorBeltList]);
+    BindDragDropListEvents(m_pLists[eInventoryActorGloveList]);
 
     BindDragDropListEvents(m_pLists[eInventoryBeltList]);
     BindDragDropListEvents(m_pLists[eInventoryDetectorList]);

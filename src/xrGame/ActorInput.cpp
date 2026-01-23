@@ -722,6 +722,11 @@ BOOL CActor::HUDview() const
         ((!m_holder) || (m_holder && m_holder->allowWeapon() && m_holder->HUDView()));
 }
 
+float CActor::GetHitFraction() 
+{ 
+    return conditions().GetOutfitHF(); 
+}
+
 static u16 SlotsToCheck[] = {
     KNIFE_SLOT, // 0
     INV_SLOT_2, // 1

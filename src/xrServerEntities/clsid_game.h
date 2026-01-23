@@ -32,6 +32,8 @@ constexpr CLASS_ID CLSID_AI_DOG_BLACK               = MK_CLSID('A', 'I', '_', 'D
 constexpr CLASS_ID CLSID_AI_DOG_RED                 = MK_CLSID('A', 'I', '_', 'D', 'O', 'G', '_', 'R');
 constexpr CLASS_ID CLSID_AI_DOG_PSY                 = MK_CLSID('A', 'I', '_', 'D', 'O', 'G', '_', 'P');
 constexpr CLASS_ID CLSID_AI_DOG_PSY_PHANTOM         = MK_CLSID('A', 'I', '_', 'D', 'O', 'G', '_', 'F');
+constexpr CLASS_ID CLSID_AI_PSY_STALKER             = MK_CLSID('A', 'I', '_', 'S', 'T', 'L', '_', 'P');
+constexpr CLASS_ID CLSID_AI_PSY_STALKER_PHANTOM     = MK_CLSID('A', 'I', '_', 'S', 'T', 'L', '_', 'F');
 constexpr CLASS_ID CLSID_AI_TRADER                  = MK_CLSID('A', 'I', '_', 'T', 'R', 'A', 'D', 'E');
 constexpr CLASS_ID CLSID_AI_BOAR                    = MK_CLSID('A', 'I', '_', 'B', 'O', 'A', 'R', ' ');
 constexpr CLASS_ID CLSID_AI_SNORK                   = MK_CLSID('A', 'I', '_', 'S', 'N', 'O', 'R', 'K');
@@ -77,6 +79,9 @@ constexpr CLASS_ID CLSID_OBJECT_W_FORT              = MK_CLSID('W', '_', 'F', 'O
 constexpr CLASS_ID CLSID_OBJECT_W_BINOCULAR         = MK_CLSID('W', '_', 'B', 'I', 'N', 'O', 'C', ' ');
 constexpr CLASS_ID CLSID_OBJECT_W_SHOTGUN           = MK_CLSID('W', '_', 'S', 'H', 'O', 'T', 'G', 'N');
 constexpr CLASS_ID CLSID_OBJECT_W_ASHOTGUN          = MK_CLSID('W', '_', 'A', 'S', 'H', 'T', 'G', 'N');
+constexpr CLASS_ID CLSID_OBJECT_W_PROTECTA          = MK_CLSID('W', '_', 'P', 'R', 'O', 'T', 'K', 'T');
+constexpr CLASS_ID CLSID_OBJECT_W_RAIK84            = MK_CLSID('W', '_', 'R', 'A', 'I', 'K', ' ', ' ');
+constexpr CLASS_ID CLSID_OBJECT_W_GAUSS             = MK_CLSID('W', '_', 'G', 'A', 'U', 'S', 'S', ' ');
 //  [8/15/2006]
 constexpr CLASS_ID CLSID_OBJECT_W_MAGAZINED         = MK_CLSID('W', '_', 'W', 'M', 'A', 'G', 'A', 'Z');
 //  [8/15/2006]
@@ -211,6 +216,7 @@ constexpr CLASS_ID CLSID_EQUIPMENT_EXO              = MK_CLSID('E', 'Q', 'U', '_
 constexpr CLASS_ID CLSID_EQUIPMENT_HELMET           = MK_CLSID('E', 'Q', '_', 'H', 'L', 'M', 'E', 'T');
 constexpr CLASS_ID CLSID_EQUIPMENT_BACKPACK         = MK_CLSID('E', 'Q', '_', 'B', 'A', 'K', 'P', 'K');
 constexpr CLASS_ID CLSID_EQUIPMENT_ACTORBELT        = MK_CLSID('E', '_', 'A', 'B', 'E', 'L', 'T', ' ');
+constexpr CLASS_ID CLSID_EQUIPMENT_GLOVE            = MK_CLSID('E', 'Q', '_', 'A', 'G', 'L', 'V', ' ');
 
 // Game types
 constexpr CLASS_ID CLSID_SV_GAME_SINGLE             = MK_CLSID('S', 'V', '_', 'S', 'I', 'N', 'G', 'L');

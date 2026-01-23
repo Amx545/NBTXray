@@ -160,6 +160,8 @@ bool CWeapon::install_upgrade_hit(LPCSTR section, bool test)
         {
             fvHitPower[egdNovice] = (float)atof(_GetItem(*s_sHitPower, 3, buffer));
         }
+        fHitPowerByTypeConfig.at(ALife::eHitTypeFireWound) = fvHitPower[egdMaster];
+        RarityUpdate();
     }
     result |= result2;
 
@@ -205,12 +207,24 @@ bool CWeapon::install_upgrade_hit(LPCSTR section, bool test)
     }
 
     //	LPCSTR weapon_section = cNameSect().c_str();
-    float rpm = 60.0f / fOneShotTime; // pSettings->r_float( weapon_section, "rpm" ); // fOneShotTime * 60.0f;
+    float rpm = 60.0f / fOneShotTime;
+    float rpm_m1 = 60.0f / modeOneShotTime;
+    float rpm_m2 = 60.0f / modeShotTime;
+    float rpm_m3 = 60.0f / modeThreeShotTime;
     result2 = process_if_exists(section, "rpm", &CInifile::r_float, rpm, test);
+    process_if_exists(section, "rpm", &CInifile::r_float, rpm_m1, test);
+    process_if_exists(section, "rpm", &CInifile::r_float, rpm_m2, test);
+    process_if_exists(section, "rpm", &CInifile::r_float, rpm_m3, test);
     if (result2 && !test)
     {
         VERIFY(rpm > 0.0f);
         fOneShotTime = 60.0f / rpm;
+        modeOneShotTime = 60.0f / rpm_m1;
+        if (!cycleDown)
+        {
+            modeShotTime = 60.0f / rpm_m2;
+        }
+        modeThreeShotTime = 60.0f / rpm_m3;
     }
     result |= result2;
 

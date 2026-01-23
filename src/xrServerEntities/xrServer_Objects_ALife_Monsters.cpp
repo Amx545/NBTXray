@@ -126,6 +126,7 @@ CSE_ALifeTraderAbstract::CSE_ALifeTraderAbstract(LPCSTR caSection)
     if (pSettings->line_exist(caSection, "money"))
         m_dwMoney = pSettings->r_u32(caSection, "money");
     m_fMaxItemMass = pSettings->r_float(caSection, "max_item_mass");
+    m_character_level = 1;
 
     m_sCharacterProfile = READ_IF_EXISTS(pSettings, r_string, caSection, "character_profile", "default");
     m_SpecificCharacter = nullptr;
@@ -177,6 +178,7 @@ void CSE_ALifeTraderAbstract::STATE_Write(NET_Packet& tNetPacket)
     tNetPacket.w_s32(NO_RANK);
     tNetPacket.w_s32(NO_REPUTATION);
 #endif
+    tNetPacket.w_u16(m_character_level);
     save_data(m_character_name, tNetPacket);
 
     tNetPacket.w_u8((m_deadbody_can_take) ? 1 : 0);
@@ -244,6 +246,7 @@ void CSE_ALifeTraderAbstract::STATE_Read(NET_Packet& tNetPacket, u16 size)
         {
             tNetPacket.r_s32(m_rank);
             tNetPacket.r_s32(m_reputation);
+            tNetPacket.r_u16(m_character_level);
         }
 
         if (m_wVersion > 104)
@@ -344,11 +347,11 @@ shared_str CSE_ALifeTraderAbstract::specific_character()
                         _abs(spec_char.Reputation() - char_info.data()->m_Reputation) < REPUTATION_DELTA)
                     {
 #ifdef XRGAME_EXPORTS
-                        int* count = NULL;
-                        if (ai().get_alife())
-                            count = ai().alife().registry(specific_characters).object(id, true);
+                            int* count = NULL;
+                            if (ai().get_alife())
+                                count = ai().alife().registry(specific_characters).object(id, true);
                         //если индекс еще не был использован
-                        if (NULL == count)
+                            if (NULL == count)
 #endif
                             m_CheckedCharacters.push_back(id);
                     }
@@ -452,7 +455,15 @@ void CSE_ALifeTraderAbstract::set_specific_character(shared_str new_spec_char)
         m_character_name += " ";
 
         n = "lname_";
-        n += subset;
+
+        if (!subset.compare("major") || !subset.compare("ensign") || !subset.compare("сolonel"))
+        {
+            n += "lieutenant";
+        }
+        else
+        {
+            n += subset;
+        }
         n += "_";
         n += xr_itoa(::Random.randI(last_name_cnt), S, 10);
         m_character_name += *(StringTable().translate(n.c_str()));
@@ -465,6 +476,16 @@ void CSE_ALifeTraderAbstract::set_specific_character(shared_str new_spec_char)
         if (min_m != max_m)
             m_dwMoney += ::Random.randI(max_m - min_m);
     }
+    u16 min_level = selected_char.GetLevelDef().min_level;
+    u16 max_level = selected_char.GetLevelDef().max_level;
+    u16 calc_level = 1;
+    if (min_level != 0 && max_level != 0)
+    {
+        calc_level = min_level;
+        if (min_level < max_level)
+            calc_level += ::Random.randI(max_level - min_level);
+    }
+    m_character_level = calc_level;
 #else
     //в редакторе специфический профиль оставляем не заполненым
     m_SpecificCharacter = nullptr;
@@ -491,6 +512,12 @@ void CSE_ALifeTraderAbstract::SetRank(CHARACTER_RANK_VALUE val)
 {
     specific_character();
     m_rank = val;
+}
+
+u16 CSE_ALifeTraderAbstract::CharacterLevel()
+{
+    specific_character();
+    return m_character_level;
 }
 
 CHARACTER_REPUTATION_VALUE CSE_ALifeTraderAbstract::Reputation()
@@ -1666,6 +1693,7 @@ void CSE_ALifeMonsterZombie::FillProps(LPCSTR pref, PropItemVec& items)
 CSE_ALifeMonsterBase::CSE_ALifeMonsterBase(LPCSTR caSection)
     : CSE_ALifeMonsterAbstract(caSection), CSE_PHSkeleton(caSection)
 {
+    set_health((READ_IF_EXISTS(pSettings, r_float, caSection, "MaxHealthValue", 100.f)) / 100.f);
     set_visual(pSettings->r_string(caSection, "visual"));
     m_spec_object_id = 0xffff;
 }
@@ -1734,6 +1762,9 @@ void CSE_ALifePsyDogPhantom::FillProps(LPCSTR pref, PropItemVec& values) { inher
 CSE_ALifeHumanAbstract::CSE_ALifeHumanAbstract(LPCSTR caSection)
     : CSE_ALifeTraderAbstract(caSection), CSE_ALifeMonsterAbstract(caSection)
 {
+    //float level = (float)(CharacterLevel() - 1);
+    //set_health(5.f + level * 0.1f);
+    set_health(500.f);
 }
 
 CSE_ALifeHumanAbstract::~CSE_ALifeHumanAbstract() {}
@@ -1805,6 +1836,7 @@ CSE_ALifeHumanStalker::CSE_ALifeHumanStalker(LPCSTR caSection)
 {
     m_trader_flags.set(eTraderFlagInfiniteAmmo, true);
     m_start_dialog = "";
+    m_spec_object_id = 0xffff;
 }
 
 CSE_ALifeHumanStalker::~CSE_ALifeHumanStalker() {}
@@ -1812,6 +1844,8 @@ void CSE_ALifeHumanStalker::STATE_Write(NET_Packet& tNetPacket)
 {
     inherited1::STATE_Write(tNetPacket);
     inherited2::STATE_Write(tNetPacket);
+
+    tNetPacket.w_u16(m_spec_object_id);
 }
 
 void CSE_ALifeHumanStalker::STATE_Read(NET_Packet& tNetPacket, u16 size)
@@ -1823,6 +1857,9 @@ void CSE_ALifeHumanStalker::STATE_Read(NET_Packet& tNetPacket, u16 size)
 
     if ((m_wVersion > 90) && (m_wVersion < 111))
         tNetPacket.r_u8();
+
+    if (m_wVersion >= 109)
+        tNetPacket.r_u16(m_spec_object_id);
 }
 
 void CSE_ALifeHumanStalker::UPDATE_Write(NET_Packet& tNetPacket)

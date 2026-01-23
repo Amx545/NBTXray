@@ -10,6 +10,7 @@ class CMotionDef;
 #include "inventory_space.h"
 #include "HudSound.h"
 
+constexpr u8 MAX_SCOPES = 6;
 struct attachable_hud_item;
 class motion_marks;
 
@@ -154,6 +155,7 @@ public:
 protected:
     IC void SetPending(BOOL H) { m_huditem_flags.set(fl_pending, H); }
     shared_str hud_sect;
+    shared_str sCurrentHudSect;
 
     //кадры момента пересчета XFORM и FirePos
     u32 dwFP_Frame;
@@ -171,6 +173,7 @@ private:
 
 public:
     const shared_str& HudSection() const { return hud_sect; }
+    const shared_str& CurrentHudSection() const { return sCurrentHudSect; }
     IC CPhysicItem& object() const
     {
         VERIFY(m_object);
@@ -185,7 +188,7 @@ public:
     virtual void on_renderable_Render(u32 context_id, IRenderable* root) = 0;
 
     virtual CHudItem* cast_hud_item() { return this; }
-    void PlayAnimIdleMovingCrouch(); //AVO: new crouch idle animation
+    virtual void PlayAnimIdleMovingCrouch(); //AVO: new crouch idle animation
     bool isHUDAnimationExist(pcstr anim_name) const;
     pcstr WhichHUDAnimationExist(pcstr anim_name, pcstr anim_name2) const;
 };

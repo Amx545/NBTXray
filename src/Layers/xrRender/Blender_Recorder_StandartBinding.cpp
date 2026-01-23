@@ -329,6 +329,14 @@ static class cl_screen_res : public R_constant_setup
     }
 } binder_screen_res;
 
+static class cl_subscreen_res : public R_constant_setup
+{
+    void setup(CBackend& cmd_list, R_constant* C) override
+    {
+        cmd_list.set_c(C, (float)Device.dwWidth, (float)Device.dwHeight,1.f,1.f);
+    }
+} binder_subscreen_res;
+
 // SM_TODO: cmd_list.hemi заменить на более "логичное" место
 static class cl_hud_params : public R_constant_setup //--#SM+#--
 {
@@ -681,6 +689,7 @@ void CBlender_Compile::SetMapping()
     r_Constant("L_ambient", &binder_amb_color);
 #endif
     r_Constant("screen_res", &binder_screen_res);
+    r_Constant("minscreen_res", &binder_subscreen_res);
 
     // detail
     // if (bDetail  && detail_scaler)

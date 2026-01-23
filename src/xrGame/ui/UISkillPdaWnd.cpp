@@ -14,9 +14,12 @@
 #include "xrUICore/Windows/UIFrameLineWnd.h"
 #include "xrUICore/Hint/UIHint.h"
 #include "xrUICore/Buttons/UI3tButton.h"
+//#include "Include/xrRender/Kinematics.h"
 
 #include "Actor.h"
 #include "Actorcondition.h"
+#include "Actorhelmet.h"
+#include "customoutfit.h"
 #include "ai_space.h"
 
 #include "xrScriptEngine/script_engine.hpp"
@@ -42,6 +45,10 @@ CUISkillPdaWnd::CUISkillPdaWnd() : CUIWindow("CUISkillPdaWnd")
     m_dex_store = 0;
     m_str_store = 0;
     m_int_store = 0;
+    m_health_store = 0;
+    m_psy_health_store = 0;
+    m_power_store = 0;
+    m_weight_store = 0.f;
 }
 
 CUISkillPdaWnd::~CUISkillPdaWnd()
@@ -67,16 +74,27 @@ bool CUISkillPdaWnd::Init()
 
     
     constexpr std::tuple<EStatsInfo, cpcstr, bool, bool> stats_list[] = {
-        {eStatLevel,        "stat_level",       false, false},
-        {eStatPoint,        "stat_point",       false, true}, 
-        {eStatExperience,   "stat_experience",  false, false},
-        {eStatHealth,       "stat_health",      false, true},
-        {eStatStamina,      "stat_stamina",     false, true},
-        {eStatPower,        "stat_power",       false, true},
-        {eStatVitality,     "stat_vitality",    true,  true}, 
-        {eStatStrength,     "stat_strength",    true,  true},
-        {eStatIntelligence, "stat_intelligence",true,  true}, 
-        {eStatDexterity,    "stat_dexterity",   true,  true}
+        {eStatLevel,        "stat_level",        false, false},
+        {eStatPoint,        "stat_point",        false, true},
+        {eStatExperience,   "stat_experience",   false, false},
+        {eStatHealth,       "stat_health",       false, true},
+        {eStatPsyHealth,    "stat_psyhealth",    false, true},
+        {eStatStamina,      "stat_stamina",      false, true},
+        {eStatPower,        "stat_power",        false, true},
+        {eStatBurn,         "stat_burn",         false, true},
+        {eStatShock,        "stat_shock",        false, true},
+        {eStatChemicalBurn, "stat_chemic",       false, true},
+        {eStatRadiation,    "stat_radiation",    false, true},
+        {eStatTelepatic,    "stat_telepatic",    false, true},
+        {eStatStrike,       "stat_strike",       false, true},
+        {eStatWound,        "stat_wound",        false, true},
+        {eStatFireWound,    "stat_firewound",    false, true},
+        {eStatFireWoundHelm,"stat_firewoundhelm",false, true},
+        {eStatExplosion,    "stat_explosion",    false, true},
+        {eStatVitality,     "stat_vitality",     true,  true},
+        {eStatStrength,     "stat_strength",     true,  true},
+        {eStatIntelligence, "stat_intelligence", true,  true},
+        {eStatDexterity,    "stat_dexterity",    true,  true}
     };
 
     for (auto [type, path, button, cval] : stats_list)
@@ -120,8 +138,6 @@ bool CUISkillPdaWnd::Init()
     Register(btn_stats_apply);
     btn_stats_cancel = UIHelper::Create3tButton(xml, "button_cancel", this);
     Register(btn_stats_cancel);
-    //AddCallback(btn_stats_cancel, BUTTON_DOWN, CUIWndCallback::void_function(this, &CUISkillPdaWnd::OnBtnСancel_Push));
-    //AddCallback(btn_stats_apply, BUTTON_DOWN, CUIWndCallback::void_function(this, &CUISkillPdaWnd::OnBtnApply_Push));
 
 	m_Sstats_ramka = UIHelper::CreateFrameWindow(xml, "Sstats_ramka", this);   
     return true;
@@ -130,14 +146,16 @@ bool CUISkillPdaWnd::Init()
 void CUISkillPdaWnd::UpdateInfo() 
 {
     CActor* pActor = smart_cast<CActor*>(Level().CurrentViewEntity());
-    float cur_val = 0.f;
-    float max_val = 0.f;
-    u32 cur_point = 0;
-    u32 max_point = 0;
+
     for (auto It = m_skill_stats.begin(); It != m_skill_stats.end(); It++)
     {
         if (!It->Item)
             continue;
+        float cur_val = 0.f;
+        float max_val = 0.f;
+        u32 cur_point = 0;
+        u32 max_point = 0;
+        s16 temp_point = 0;
         UpdateButtons(*It);
         switch (It->type)
         {
@@ -159,39 +177,107 @@ void CUISkillPdaWnd::UpdateInfo()
             cur_val = pActor->conditions().GetHealth();
             max_val = pActor->conditions().GetMaxHealth();
             SetValue(It->value, "%.0f", cur_val * 100, max_val * 100);
+            m_vit_store != 0 ? SetValue(It->change, "+%d", m_health_store) : It->change->SetText("");
+            break;
+        case (eStatPsyHealth):
+            cur_val = pActor->conditions().GetPsyHealth();
+            max_val = pActor->conditions().GetPsyHealthMax();
+            SetValue(It->value, "%.0f", cur_val * 100, max_val * 100);
+            m_int_store != 0 ? SetValue(It->change, "+%d", m_psy_health_store) : It->change->SetText("");
             break;
         case (eStatStamina):
             cur_val = pActor->conditions().GetPower();
             max_val = pActor->conditions().GetMaxPower();
             SetValue(It->value, "%.0f", cur_val * 100, max_val * 100);
+            m_dex_store != 0 ? SetValue(It->change, "+%d", m_power_store) : It->change->SetText("");
             break;
         case (eStatPower):
-            cur_val = pActor->inventory().GetMaxWeight();
-            max_val = pActor->conditions().m_MaxWalkWeight;
-            SetValue(It->value, "%.1f", cur_val, max_val);
+            cur_val = pActor->MaxWalkWeight();
+            SetValue(It->value, "%.1f", cur_val);
+            m_str_store != 0 ? SetValue(It->change, "+%.1f", m_weight_store) : It->change->SetText("");
+            break;
+        case (eStatBurn):
+            cur_val = pActor->conditions().GetActorHTProtection(ALife::eHitTypeBurn);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
+            break;
+        case (eStatShock):
+            cur_val = pActor->conditions().GetActorHTProtection(ALife::eHitTypeShock);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
+            break;
+        case (eStatChemicalBurn):
+            cur_val = pActor->conditions().GetActorHTProtection(ALife::eHitTypeChemicalBurn);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
+            break;
+        case (eStatRadiation):
+            cur_val = pActor->conditions().GetActorHTProtection(ALife::eHitTypeRadiation);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
+            break;
+        case (eStatTelepatic):
+            cur_val = pActor->conditions().GetActorHTProtection(ALife::eHitTypeTelepatic);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
+            break;
+        case (eStatStrike):
+            cur_val = pActor->conditions().GetActorHTProtection(ALife::eHitTypeStrike);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
+            break;
+        case (eStatWound):
+            cur_val = pActor->conditions().GetActorHTProtection(ALife::eHitTypeWound);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
+            break;
+        case (eStatFireWound):
+            cur_val = pActor->conditions().GetActorHTProtection(false);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
+            break;
+        case (eStatFireWoundHelm):
+            cur_val = pActor->conditions().GetActorHTProtection(true);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
+            break;
+        case (eStatExplosion):
+            cur_val = pActor->conditions().GetActorHTProtection(ALife::eHitTypeExplosion);
+            cur_val *= 1000.f;
+            SetValue(It->value, "%.1f", cur_val);
             break;
         case (eStatVitality):
             cur_point = pActor->conditions().GetActorVitality();
-            SetValue(It->value, "%d", cur_point);
+            temp_point = pActor->conditions().GetActorVitalityTemp();
+            SetValue(It->value, "%d", cur_point + temp_point);
             m_vit_store != 0 ? SetValue(It->change, "+%d", m_vit_store) : It->change->SetText("");
             break;
         case (eStatStrength):
             cur_point = pActor->conditions().GetActorStrength();
-            SetValue(It->value, "%d", cur_point);
+            temp_point = pActor->conditions().GetActorStrengthTemp();
+            SetValue(It->value, "%d", cur_point + temp_point);
             m_str_store != 0 ? SetValue(It->change, "+%d", m_str_store) : It->change->SetText("");
             break;
         case (eStatIntelligence):
             cur_point = pActor->conditions().GetActorIntelligence();
-            SetValue(It->value, "%d", cur_point);
+            temp_point = pActor->conditions().GetActorIntelligenceTemp();
+            SetValue(It->value, "%d", cur_point + temp_point);
             m_int_store != 0 ? SetValue(It->change, "+%d", m_int_store) : It->change->SetText("");
             break;
         case (eStatDexterity):
             cur_point = pActor->conditions().GetActorDexterity();
-            SetValue(It->value, "%d", cur_point);
+            temp_point = pActor->conditions().GetActorDexterityTemp();
+            SetValue(It->value, "%d", cur_point + temp_point);
             m_dex_store != 0 ? SetValue(It->change, "+%d", m_dex_store) : It->change->SetText("");
             break;
         default: break;
         }
+        if (temp_point > 0)
+            It->value->SetTextColor(getIntFromColor(170, 255, 170));
+        else if (temp_point < 0)
+            It->value->SetTextColor(getIntFromColor(255, 170, 170));
+        else
+            It->value->SetTextColor(getIntFromColor(170, 170, 170));
     }
 }
 
@@ -240,6 +326,7 @@ void CUISkillPdaWnd::OnBtnApply_Push()
     if (btn_stats_apply->CursorOverWindow() && btn_stats_apply->GetButtonState() == CUIButton::BUTTON_PUSHED)
     {
         m_btn_valid = false;
+        float cur_value = 0.f;
         CActor* pActor = smart_cast<CActor*>(Level().CurrentViewEntity());
         if (!pActor)
             return;
@@ -250,33 +337,41 @@ void CUISkillPdaWnd::OnBtnApply_Push()
             case eStatVitality:
                 if (m_vit_store <= 0)
                     continue;
-                pActor->conditions().SetActorVitality(m_vit_store + pActor->conditions().GetActorVitality());
+                cur_value = pActor->conditions().GetActorHealthLevel();
+                pActor->conditions().ChangeStatsVitality(m_vit_store, true, true);
                 pActor->conditions().SetActorPointLevel(pActor->conditions().GetActorPointLevel() - m_vit_store);
                 m_point_store -= m_vit_store;
+                m_health_store = 0;
                 m_vit_store = 0;
                 break;
             case eStatStrength:
                 if (m_str_store <= 0)
                     continue;
-                pActor->conditions().SetActorStrength(m_str_store + pActor->conditions().GetActorStrength());
+                cur_value = pActor->conditions().GetActorWeightLevel();
+                pActor->conditions().ChangeStatsStrength(m_str_store, true, true);
                 pActor->conditions().SetActorPointLevel(pActor->conditions().GetActorPointLevel() - m_str_store);
                 m_point_store -= m_str_store;
+                m_weight_store = 0;
                 m_str_store = 0;
                 break;
             case eStatIntelligence:
                 if (m_int_store <= 0)
                     continue;
-                pActor->conditions().SetActorIntelligence(m_int_store + pActor->conditions().GetActorIntelligence());
+                cur_value = pActor->conditions().GetActorPsyHealthLevel();
+                pActor->conditions().ChangeStatsIntelligence(m_int_store, true, true);
                 pActor->conditions().SetActorPointLevel(pActor->conditions().GetActorPointLevel() - m_int_store);
                 m_point_store -= m_int_store;
+                m_psy_health_store = 0;
                 m_int_store = 0;
                 break;
             case eStatDexterity:
                 if (m_dex_store <= 0)
                     continue;
-                pActor->conditions().SetActorDexterity(m_dex_store + pActor->conditions().GetActorDexterity());
+                cur_value = pActor->conditions().GetActorPowerLevel();
+                pActor->conditions().ChangeStatsDexterity(m_dex_store, true, true);
                 pActor->conditions().SetActorPointLevel(pActor->conditions().GetActorPointLevel() - m_dex_store);
                 m_point_store -= m_dex_store;
+                m_power_store = 0;
                 m_dex_store = 0;
                 break;
             default: continue; break;
@@ -298,6 +393,10 @@ void CUISkillPdaWnd::OnBtnСancel_Push()
         m_dex_store = 0;
         m_str_store = 0;
         m_int_store = 0;
+        m_health_store = 0;
+        m_psy_health_store = 0;
+        m_power_store = 0;
+        m_weight_store = 0.f;
         m_btn_valid = false;
     }
 }
@@ -344,16 +443,32 @@ void CUISkillPdaWnd::UpdateButtons(SSkillItem &item)
         switch (item.type)
         {
         case eStatVitality:
+            if ((m_vit_store + pActor->conditions().GetActorVitality())>=99)
+                return;
             m_vit_store += 1;
+            m_health_store += pActor->conditions().GetHealthPerLevel(
+                m_vit_store + pActor->conditions().GetActorVitality());
             break;
         case eStatStrength:
-            m_str_store += 1;
+            if ((m_str_store + pActor->conditions().GetActorStrength()) >= 99)
+                return;
+            m_str_store += 1; 
+            m_weight_store += pActor->conditions().GetWeightPerLevel(
+                m_str_store + pActor->conditions().GetActorStrength());
             break;
         case eStatIntelligence:
+            if ((m_int_store + pActor->conditions().GetActorIntelligence()) >= 99)
+                return;
             m_int_store += 1;
+            m_psy_health_store += pActor->conditions().GetPsyHealthPerLevel(
+                m_int_store + pActor->conditions().GetActorIntelligence());
             break;
         case eStatDexterity:
+            if ((m_dex_store + pActor->conditions().GetActorDexterity()) >= 99)
+                return;
             m_dex_store += 1;
+            m_power_store += pActor->conditions().GetPowerPerLevel(
+                m_dex_store + pActor->conditions().GetActorDexterity());
             break;
         default: return; break;
         }
@@ -367,21 +482,29 @@ void CUISkillPdaWnd::UpdateButtons(SSkillItem &item)
         case eStatVitality:
             if (m_vit_store <= 0)
                 return;
+            m_health_store -= pActor->conditions().GetHealthPerLevel(
+                pActor->conditions().GetActorVitality() + m_vit_store);
             m_vit_store -= 1;
             break;
         case eStatStrength:
             if (m_str_store <= 0)
                 return;
+            m_weight_store -= pActor->conditions().GetWeightPerLevel(
+                m_str_store + pActor->conditions().GetActorStrength());
             m_str_store -= 1;
             break;
         case eStatIntelligence:
             if (m_int_store <= 0)
                 return;
+            m_psy_health_store -= pActor->conditions().GetPsyHealthPerLevel(
+                m_int_store + pActor->conditions().GetActorIntelligence());
             m_int_store -= 1;
             break;
         case eStatDexterity:
             if (m_dex_store <= 0)
                 return;
+            m_power_store -= pActor->conditions().GetPowerPerLevel(
+                m_dex_store + pActor->conditions().GetActorDexterity());
             m_dex_store -= 1;
             break;
         default: return; break;

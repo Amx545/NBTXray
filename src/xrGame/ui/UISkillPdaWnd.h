@@ -27,9 +27,20 @@ enum EStatsInfo
     eStatLevel = 0,
     eStatPoint,
     eStatHealth,
+    eStatPsyHealth,
     eStatStamina,
     eStatExperience,
     eStatPower,
+    eStatBurn,
+    eStatShock,
+    eStatChemicalBurn,
+    eStatRadiation,
+    eStatTelepatic,
+    eStatStrike,
+    eStatWound,
+    eStatFireWound,
+    eStatFireWoundHelm,
+    eStatExplosion,
     eStatVitality,
     eStatStrength,
     eStatIntelligence,
@@ -80,6 +91,11 @@ private:
     u32 m_dex_store;
     u32 m_str_store;
     u32 m_int_store;
+
+    u32 m_health_store;
+    u32 m_psy_health_store;
+    u32 m_power_store;
+    float m_weight_store;
 
 private:
     void OnBtnApply_Push();

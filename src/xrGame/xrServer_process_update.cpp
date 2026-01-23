@@ -40,6 +40,7 @@ void xrServer::Process_update(NET_Packet& P, ClientID sender)
             {
                 string16 tmp;
                 CLSID2TEXT(E->m_tClassID, tmp);
+                Msg("NAME,SIZE,TELL,POS* %s : %d - %d", E->name(), size, P.r_tell() - _pos);
                 xrDebug::Fatal(DEBUG_INFO,
                     "Beer from the creator of '%s'; initiator: 0x%08x, r_tell() = %d, pos = %d, objectID = %d", tmp,
                     CL->ID.value(), P.r_tell(), _pos, E->ID);

@@ -172,9 +172,15 @@ void CGrenade::Throw()
 
     if (pGrenade)
     {
-        pGrenade->set_destroy_time(m_dwDestroyTimeMax);
+        if (m_iDestroyMode == 0)
+            pGrenade->set_destroy_time(m_dwDestroyTimeMax);
         //установить ID того кто кинул гранату
         pGrenade->SetInitiator(H_Parent()->ID());
+    }
+    CAI_Stalker* stalker_owner = smart_cast<CAI_Stalker*>(Parent);
+    if (stalker_owner)
+    {
+        m_power_boost = (stalker_owner->GetStalkerLevel() * .01f) + 1.f;
     }
     inherited::Throw();
     m_fake_missile->processing_activate(); //@sliph

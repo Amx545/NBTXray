@@ -34,16 +34,16 @@ public:
         if (result != FALSE)
         {
             //modes.emplace_back(RENDERER_R2A_MODE, 1);
-            modes.emplace_back(RENDERER_R2_MODE, 2);
-            modes.emplace_back(RENDERER_R2_5_MODE, 3);
+            //modes.emplace_back(RENDERER_R2_MODE, 2);
+            //modes.emplace_back(RENDERER_R2_5_MODE, 3);
         }
         switch (result)
         {
         case TRUE:
-            modes.emplace_back(RENDERER_R3_MODE, 4);
+            //modes.emplace_back(RENDERER_R3_MODE, 4);
             break;
         case TRUE+TRUE: // XXX: remove hack
-            modes.emplace_back(RENDERER_R3_MODE, 4); // don't optimize this switch with fallthrough, because
+            //modes.emplace_back(RENDERER_R3_MODE, 4); // don't optimize this switch with fallthrough, because
             modes.emplace_back(RENDERER_R4_MODE, 5); // order matters: R3 should be first, R4 should be second.
         }
         return modes;

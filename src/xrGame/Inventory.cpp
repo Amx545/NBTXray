@@ -6,6 +6,9 @@
 #include "trade.h"
 #include "Weapon.h"
 #include "Grenade.h"
+#include "Artefact.h"
+#include "BlackDrops.h"
+#include "ActorCondition.h"
 #include "inventory_space.h"
 
 #include "ui/UIInventoryUtilities.h"
@@ -50,12 +53,14 @@ bool defaultSlotActiveness[] =
     true, // artefact
     false, // helmet
     false, // helmet
-    false // belt
+    false, // belt
+    false // glove
 };
 
 CInventory::CInventory()
 {
-    m_fMaxWeight = pSettings->r_float("inventory", "max_weight");
+    stored_fMaxWeight = pSettings->r_float("inventory", "max_weight");
+    m_fMaxWeight = stored_fMaxWeight;
     m_iMaxBelt = pSettings->read_if_exists<s32>("inventory", "max_belt", 12);
 
     u16 slotsCount = SLOTS_COUNT;
@@ -460,6 +465,23 @@ bool CInventory::Belt(PIItem pIItem, bool strict_placement)
     m_pOwner->OnItemBelt(pIItem, p);
     pIItem->OnMoveToBelt(p);
 
+    CActor* pActor = smart_cast<CActor*>(m_pOwner);
+    CArtefact* pArtefact = smart_cast<CArtefact*>(pIItem);
+    float additional_value = 0.f;
+    if (pActor && pArtefact)
+    {
+        additional_value = pActor->conditions().GetActorItemHealth() + pArtefact->AdditionalHealth();
+        pActor->conditions().SetActorItemHealth(additional_value);
+        additional_value = pActor->conditions().GetActorItemPower() + pArtefact->AdditionalPower();
+        pActor->conditions().SetActorItemPower(additional_value);
+        additional_value = pActor->conditions().GetActorItemPsyHealth() + pArtefact->AdditionalPsyHealth();
+        pActor->conditions().SetActorItemPsyHealth(additional_value);
+        pActor->conditions().ChangeStatsVitality(pArtefact->AdditionalVitality(), true, false);
+        pActor->conditions().ChangeStatsStrength(pArtefact->AdditionalVigor(), true, false);
+        pActor->conditions().ChangeStatsIntelligence(pArtefact->AdditionalMind(), true, false);
+        pActor->conditions().ChangeStatsDexterity(pArtefact->AdditionalSkill(), true, false);
+    }
+
     if (in_slot)
         pIItem->object().processing_deactivate();
 
@@ -485,6 +507,7 @@ bool CInventory::Ruck(PIItem pIItem, bool strict_placement)
     }
 
     bool in_slot = InSlot(pIItem);
+    bool in_belt = InBelt(pIItem);
     //вещь была в слоте
     if (in_slot)
     {
@@ -496,6 +519,25 @@ bool CInventory::Ruck(PIItem pIItem, bool strict_placement)
     else
     {
         //вещь была на поясе или вообще только поднята с земли
+        if (in_belt)
+        {
+            CActor* pActor = smart_cast<CActor*>(m_pOwner);
+            CArtefact* pArtefact = smart_cast<CArtefact*>(pIItem);
+            float additional_value;
+            if (pActor && pArtefact)
+            {
+                additional_value = pActor->conditions().GetActorItemHealth() - pArtefact->AdditionalHealth();
+                pActor->conditions().SetActorItemHealth(additional_value);
+                additional_value = pActor->conditions().GetActorItemPower() - pArtefact->AdditionalPower();
+                pActor->conditions().SetActorItemPower(additional_value);
+                additional_value = pActor->conditions().GetActorItemPsyHealth() - pArtefact->AdditionalPsyHealth();
+                pActor->conditions().SetActorItemPsyHealth(additional_value);
+                pActor->conditions().ChangeStatsVitality(pArtefact->AdditionalVitality(), false, false);
+                pActor->conditions().ChangeStatsStrength(pArtefact->AdditionalVigor(), false, false);
+                pActor->conditions().ChangeStatsIntelligence(pArtefact->AdditionalMind(), false, false);
+                pActor->conditions().ChangeStatsDexterity(pArtefact->AdditionalSkill(), false, false);
+            }
+        }
         TIItemContainer::iterator it = std::find(m_belt.begin(), m_belt.end(), pIItem);
         if (m_belt.end() != it)
             m_belt.erase(it);
@@ -1060,9 +1102,7 @@ bool CInventory::Eat(PIItem pIItem)
 {
     //устанаовить съедобна ли вещь
     CEatableItem* pItemToEat = smart_cast<CEatableItem*>(pIItem);
-    if (!pItemToEat)
-        return false;
-
+    CBlackDrops* pItemShard = smart_cast<CBlackDrops*>(pIItem);
     CEntityAlive* entity_alive = smart_cast<CEntityAlive*>(m_pOwner);
     if (!entity_alive)
         return false;
@@ -1071,45 +1111,69 @@ bool CInventory::Eat(PIItem pIItem)
     if (!IO)
         return false;
 
-    CInventory* pInventory = pItemToEat->m_pInventory;
-    if (!pInventory || pInventory != this)
-        return false;
-    if (pInventory != IO->m_inventory)
-        return false;
-    if (pItemToEat->object().H_Parent()->ID() != entity_alive->ID())
-        return false;
-
-    if (!pItemToEat->UseBy(entity_alive))
-        return false;
-
-#ifdef MP_LOGGING
-    Msg("--- Actor [%d] use or eat [%d][%s]", entity_alive->ID(), pItemToEat->object().ID(),
-        pItemToEat->object().cNameSect().c_str());
-#endif // MP_LOGGING
-
-
-    CActor* pActor = smart_cast<CActor*>(Level().CurrentControlEntity());
-    if (pActor && pActor->m_inventory == this)
+    if (pItemToEat)
     {
-        if (IsGameTypeSingle())
-            pActor->callback(GameObject::eUseObject)(smart_cast<CGameObject*>(pIItem)->lua_game_object());
-
-        if (pItemToEat->IsUsingCondition() && pItemToEat->GetRemainingUses() < 1 && pItemToEat->CanDelete())
-            CurrentGameUI()->GetActorMenu().RefreshCurrentItemCell();
-
-        CurrentGameUI()->GetActorMenu().SetCurrentItem(nullptr);
-    }
-
-
-    if (pItemToEat->Empty())
-    {
-        if (!pItemToEat->CanDelete())
+        CInventory* pInventory = pItemToEat->m_pInventory;
+        if (!pInventory || pInventory != this)
+            return false;
+        if (pInventory != IO->m_inventory)
+            return false;
+        if (pItemToEat->object().H_Parent()->ID() != entity_alive->ID())
             return false;
 
-        pIItem->SetDropManual(true);
-    }
+        if (!pItemToEat->UseBy(entity_alive))
+            return false;
 
-    return true;
+#ifdef MP_LOGGING
+        Msg("--- Actor [%d] use or eat [%d][%s]", entity_alive->ID(), pItemToEat->object().ID(),
+            pItemToEat->object().cNameSect().c_str());
+#endif // MP_LOGGING
+
+        CActor* pActor = smart_cast<CActor*>(Level().CurrentControlEntity());
+        if (pActor && pActor->m_inventory == this)
+        {
+            if (IsGameTypeSingle())
+                pActor->callback(GameObject::eUseObject)(smart_cast<CGameObject*>(pIItem)->lua_game_object());
+
+            if (pItemToEat->IsUsingCondition() && pItemToEat->GetRemainingUses() < 1 && pItemToEat->CanDelete())
+                CurrentGameUI()->GetActorMenu().RefreshCurrentItemCell();
+
+            CurrentGameUI()->GetActorMenu().SetCurrentItem(nullptr);
+        }
+
+        if (pItemToEat->Empty())
+        {
+            if (!pItemToEat->CanDelete())
+                return false;
+
+            pIItem->SetDropManual(true);
+        }
+        return true;
+    }
+    else if (pItemShard)  
+    {
+        CInventory* pInventory = pItemShard->m_pInventory;
+        if (!pInventory || pInventory != this)
+            return false;
+        if (pInventory != IO->m_inventory)
+            return false;
+        if (pIItem->object().H_Parent()->ID() != entity_alive->ID())
+            return false;
+
+        CActor* pActor = smart_cast<CActor*>(Level().CurrentControlEntity());
+        if (pActor && pActor->m_inventory == this)
+        {
+            if (IsGameTypeSingle())
+                pActor->callback(GameObject::eUseObject)(smart_cast<CGameObject*>(pIItem)->lua_game_object());
+
+            CurrentGameUI()->GetActorMenu().RefreshCurrentItemCell();
+            CurrentGameUI()->GetActorMenu().SetCurrentItem(nullptr);
+            pIItem->SetDropManual(true);
+            pItemShard->UseShard(pActor);
+        }
+        return true;
+    }
+    return false;
 }
 
 bool CInventory::ClientEat(PIItem pIItem)
@@ -1173,13 +1237,17 @@ bool CInventory::CanPutInSlot(PIItem pIItem, u16 slot_id) const
     if (!GetOwner()->CanPutInSlot(pIItem, slot_id))
         return false;
 
+    CCustomOutfit* pOutfit = m_pOwner->GetOutfit();
     if (slot_id == HELMET_SLOT)
     {
-        CCustomOutfit* pOutfit = m_pOwner->GetOutfit();
         if (pOutfit && !pOutfit->bIsHelmetAvaliable)
             return false;
     }
-
+    if (slot_id == ACTORGLOVE_SLOT)
+    {
+        if (pOutfit && !pOutfit->bIsGlovesAvaliable)
+            return false;
+    }
     if (slot_id != NO_ACTIVE_SLOT && NULL == ItemFromSlot(slot_id))
         return true;
 
@@ -1197,10 +1265,28 @@ bool CInventory::CanPutInBelt(PIItem pIItem)
         return false;
     if (m_belt.size() >= BeltWidth())
         return false;
-
+    if (!CanPutArtefactInBelt(pIItem))
+        return false;
     return FreeRoom_inBelt(m_belt, pIItem, BeltWidth(), 1);
 }
-//проверяет можем ли поместить вещь в рюкзак,
+// проверяет можем ли поместить артефакт на пояс без замены
+bool CInventory::CanPutArtefactInBelt(PIItem pIItem)
+{
+    CArtefact* new_artefact = smart_cast<CArtefact*>(pIItem);
+    if (new_artefact)
+    {
+        for (auto it = m_belt.begin(); it != m_belt.end(); it++)
+        {
+            CArtefact* simple_artefact = smart_cast<CArtefact*>(*it);
+            if (simple_artefact && !xr_strcmp(simple_artefact->GetIItemType(), new_artefact->GetIItemType()))
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+    //проверяет можем ли поместить вещь в рюкзак,
 //при этом реально ничего не меняется
 bool CInventory::CanPutInRuck(PIItem pIItem) const
 {

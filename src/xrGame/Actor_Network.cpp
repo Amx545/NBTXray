@@ -843,6 +843,8 @@ void CActor::SetCallbacks()
     V->LL_GetBoneInstance(u16(spine1_bone)).set_callback(bctCustom, Spin1Callback, this);
     V->LL_GetBoneInstance(u16(shoulder_bone)).set_callback(bctCustom, ShoulderCallback, this);
     V->LL_GetBoneInstance(u16(head_bone)).set_callback(bctCustom, HeadCallback, this);
+	V->LL_GetBoneInstance(V->LL_GetBoneRoot()).set_callback(bctCustom,
+		[](CBoneInstance* B) {static_cast<CActor*>(B->callback_param())->legs_shift_callback(B); }, this);
 }
 void CActor::ResetCallbacks()
 {
@@ -856,6 +858,7 @@ void CActor::ResetCallbacks()
     V->LL_GetBoneInstance(u16(spine1_bone)).reset_callback();
     V->LL_GetBoneInstance(u16(shoulder_bone)).reset_callback();
     V->LL_GetBoneInstance(u16(head_bone)).reset_callback();
+    V->LL_GetBoneInstance(u16(V->LL_GetBoneRoot())).reset_callback();
 }
 
 void CActor::OnChangeVisual()

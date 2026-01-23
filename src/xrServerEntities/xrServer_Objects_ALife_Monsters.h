@@ -50,6 +50,8 @@ public:
     CHARACTER_COMMUNITY_INDEX m_community_index;
     CHARACTER_REPUTATION_VALUE m_reputation;
     CHARACTER_RANK_VALUE m_rank;
+
+    u16 m_character_level;
     xr_string m_character_name;
     shared_str m_icon_name;
 
@@ -62,6 +64,7 @@ public:
     CHARACTER_COMMUNITY_INDEX Community() const;
     LPCSTR CommunityName() const;
     CHARACTER_RANK_VALUE Rank();
+    u16 CharacterLevel();
     CHARACTER_REPUTATION_VALUE Reputation();
     void SetRank(CHARACTER_RANK_VALUE val);
 
@@ -641,6 +644,7 @@ class CSE_ALifeHumanStalker : public CSE_ALifeHumanAbstract, public CSE_PHSkelet
 
 public:
     shared_str m_start_dialog;
+    u16 m_spec_object_id;
 
     CSE_ALifeHumanStalker(LPCSTR caSection);
     virtual ~CSE_ALifeHumanStalker();

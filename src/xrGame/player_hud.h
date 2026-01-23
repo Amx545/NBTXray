@@ -127,12 +127,16 @@ struct attachable_hud_item
 class player_hud
 {
 public:
-    player_hud() = default;
+    player_hud();
     ~player_hud();
     void load(const shared_str& model_name);
-    void load_default() { load("actor_hud_05"); };
+    void load_hand(const shared_str& model_name);
+    void load_default() { load("actor_hud"); }
+    void load_default_hand() { load_hand("actor_hud_hand"); }
+    void set_hand_visible(bool visible);
     void update(const Fmatrix& trans);
     void render_hud(u32 context_id, IRenderable* root);
+    void render_legs(u32 context_id, IRenderable* root);
     void render_item_ui() const;
     bool render_item_ui_query() const;
     u32 anim_play(u16 part, const MotionID& M, BOOL bMixIn, const CMotionDef*& md, float speed, IKinematicsAnimated* itemModel);
@@ -143,6 +147,7 @@ public:
     bool allow_activation(CHudItem* item) const;
     attachable_hud_item* attached_item(u16 item_idx) { return m_attached_items[item_idx]; };
     void detach_item_idx(u16 idx);
+    void detach_item_idx(u16 part_idR, u32 bland_count);
     void detach_item(CHudItem* item);
     void detach_all_items()
     {
@@ -161,14 +166,22 @@ private:
     void update_inertion(Fmatrix& trans) const;
     void update_additional(Fmatrix& trans) const;
     bool inertion_allowed() const;
+    void LeftArmCallback(CBoneInstance* B);
+    const Fvector& attach_rot() const;
+    const Fvector& attach_pos() const;
 
 private:
     shared_str m_sect_name;
+    shared_str sHandName;
 
-    Fmatrix m_attach_offset{};
+    Fmatrix m_attach_offset;
+    Fmatrix m_attach_offset_l;
 
-    Fmatrix m_transform{ Fidentity };
+    Fmatrix m_transform;
+    Fmatrix m_transformL;
     IKinematicsAnimated* m_model{};
+    IKinematicsAnimated* pHandModel{};
+    IKinematics* pLegsModel{};
     xr_vector<u16> m_ancors;
     attachable_hud_item* m_attached_items[2]{};
     xr_unordered_map<shared_str, attachable_hud_item*> m_pool;

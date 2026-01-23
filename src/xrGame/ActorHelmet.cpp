@@ -29,7 +29,7 @@ void CHelmet::Load(LPCSTR section)
     m_HitTypeProtection[ALife::eHitTypeTelepatic] = pSettings->r_float(section, "telepatic_protection");
     m_HitTypeProtection[ALife::eHitTypeChemicalBurn] = pSettings->r_float(section, "chemical_burn_protection");
     m_HitTypeProtection[ALife::eHitTypeExplosion] = pSettings->r_float(section, "explosion_protection");
-    m_HitTypeProtection[ALife::eHitTypeFireWound] = 0.0f; // pSettings->r_float(section,"fire_wound_protection");
+    m_HitTypeProtection[ALife::eHitTypeFireWound] = pSettings->read_if_exists<float>(section, "fire_wound_protection",0.f);
     m_HitTypeProtection[ALife::eHitTypePhysicStrike] = pSettings->read_if_exists<float>(
         section, "physic_strike_protection", m_HitTypeProtection[ALife::eHitTypeStrike]);
     m_HitTypeProtection[ALife::eHitTypeLightBurn] = m_HitTypeProtection[ALife::eHitTypeBurn];
@@ -127,7 +127,14 @@ void CHelmet::OnMoveToRuck(const SInvItemPlace& previous_place)
 void CHelmet::Hit(float hit_power, ALife::EHitType hit_type)
 {
     hit_power *= GetHitImmunity(hit_type);
-    ChangeCondition(-hit_power);
+    float cound = hit_power;
+    float ampl = 0.f;
+    for (int i = 0; i < RarityItem(); i++)
+    {
+        ampl += 0.1 + 0.02 * (i + 1);
+    }
+    cound /= (1.f + ampl);
+    ChangeCondition(-cound);
 }
 
 float CHelmet::GetDefHitTypeProtection(ALife::EHitType hit_type)
@@ -211,52 +218,32 @@ void CHelmet::AddBonesProtection(LPCSTR bones_section)
 
 float CHelmet::HitThroughArmor(float hit_power, s16 element, float ap, bool& add_wound, ALife::EHitType hit_type)
 {
-    float NewHitPower = hit_power;
+    float protect = GetDefHitTypeProtection(hit_type);
     if (hit_type == ALife::eHitTypeFireWound)
     {
-        float ba = GetBoneArmor(element);
-        if (ba < 0.0f)
-            return NewHitPower;
-
-        float BoneArmor = ba * GetCondition();
-        if (/*!fis_zero(ba, EPS) && */ (ap > BoneArmor))
+        IGameObject* parent = H_Parent();
+        if (IsGameTypeSingle())
+            parent = smart_cast<IGameObject*>(Level().CurrentViewEntity());
+        if (parent && parent->Visual())
         {
-            //пуля пробила бронь
-            if (!IsGameTypeSingle())
+            IKinematics* kin = smart_cast<IKinematics*>(parent->Visual());
+            if (xr_strcmp(kin->LL_BoneName_dbg(element), "bip01_neck") &&
+                xr_strcmp(kin->LL_BoneName_dbg(element), "bip01_head") &&
+                xr_strcmp(kin->LL_BoneName_dbg(element), "eyelid_1") &&
+                xr_strcmp(kin->LL_BoneName_dbg(element), "eye_left") &&
+                xr_strcmp(kin->LL_BoneName_dbg(element), "eye_right") &&
+                xr_strcmp(kin->LL_BoneName_dbg(element), "jaw_1"))
             {
-                float hit_fraction = (ap - BoneArmor) / ap;
-                if (hit_fraction < m_boneProtection->m_fHitFracActor)
-                    hit_fraction = m_boneProtection->m_fHitFracActor;
-
-                NewHitPower *= hit_fraction;
-                NewHitPower *= m_boneProtection->getBoneProtection(element);
+                protect = 0.f;
             }
-
-            VERIFY(NewHitPower >= 0.0f);
         }
         else
         {
-            //пуля НЕ пробила бронь
-            NewHitPower *= m_boneProtection->m_fHitFracActor;
-            add_wound = false; //раны нет
+            protect = 0.f;
         }
     }
-    else
-    {
-        float one = 0.1f;
-        if (hit_type == ALife::eHitTypeStrike || hit_type == ALife::eHitTypeWound ||
-            hit_type == ALife::eHitTypeWound_2 || hit_type == ALife::eHitTypeExplosion)
-        {
-            one = 1.0f;
-        }
-        float protect = GetDefHitTypeProtection(hit_type);
-        NewHitPower -= protect * one;
 
-        if (NewHitPower < 0.f)
-            NewHitPower = 0.f;
-    }
-    //увеличить изношенность шлема
     Hit(hit_power, hit_type);
 
-    return NewHitPower;
+    return protect;
 }

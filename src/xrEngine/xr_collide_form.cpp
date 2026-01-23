@@ -90,6 +90,9 @@ CCF_Skeleton::CCF_Skeleton(IGameObject* O) : ICollisionForm(O, cftObject)
     IRenderVisual* pVisual = O->Visual();
     VERIFY3(PKinematics(pVisual), "Can't create skeleton without Kinematics.", *O->cNameVisual());
     // bv_box.set (K->vis.box);
+    if (!*O->cNameVisual())
+        Msg("Collide form for name[section, visual]: %s[%s, %s]", *O->cName(), *O->cNameVisual(), *O->cNameSect());
+    R_ASSERT2(*O->cNameVisual(), "Incorrect visual path");
     bv_box.set(pVisual->getVisData().box);
     bv_box.getsphere(bv_sphere.P, bv_sphere.R);
     vis_mask = 0;

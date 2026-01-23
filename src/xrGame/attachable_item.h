@@ -10,10 +10,10 @@
 #include "xrCore/xr_types.h"
 #include "xrCore/_matrix.h"
 #include "xrCore/xrstring.h"
-#ifdef DEBUG
+//#ifdef DEBUG
 #include "xrCore/log.h"
 #include "xrCore/_vector3d.h"
-#endif
+//#endif
 
 class CPhysicsShellHolder;
 class CInventoryItem;

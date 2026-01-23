@@ -206,6 +206,7 @@ public:
     virtual CScriptEntity* cast_script_entity() { return this; }
     void load_killer_clsids(LPCSTR section);
     bool is_special_killer(IGameObject* obj);
+    virtual float GetHitFraction() { return 0.f; }
 
     IC CMemoryManager& memory() const;
     virtual float feel_vision_mtl_transp(IGameObject* O, u32 element);

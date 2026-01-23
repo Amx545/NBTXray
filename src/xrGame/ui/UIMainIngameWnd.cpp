@@ -44,6 +44,7 @@
 #include "xrUICore/ProgressBar/UIProgressShape.h"
 #include "UIArtefactPanel.h"
 #include "UIBoostStatesWnd.h"
+#include "entity_alive.h"
 
 #include "Include/xrRender/Kinematics.h"
 
@@ -53,8 +54,10 @@ using namespace InventoryUtilities;
 
 static constexpr pcstr MAININGAME_XML = "maingame.xml";
 
-CUIMainIngameWnd::CUIMainIngameWnd()
-    : CUIWindow(CUIMainIngameWnd::GetDebugType()), UIZoneMap(xr_new<CUIZoneMap>()) {}
+CUIMainIngameWnd::CUIMainIngameWnd() : CUIWindow(CUIMainIngameWnd::GetDebugType()), UIZoneMap(xr_new<CUIZoneMap>())
+{
+    m_iTargetDelay = 5;
+}
 
 extern CUIProgressShape* g_MissileForceShape;
 
@@ -227,8 +230,8 @@ void CUIMainIngameWnd::Init()
 
         m_quick_slots_icons.push_back(slot);
 
-        xr_sprintf(path, "quick_slot%d_text", i);
-        m_quick_slots_texts.emplace_back(UIHelper::CreateStatic(uiXml, path, this));
+        //xr_sprintf(path, "quick_slot%d_text", i);
+        //m_quick_slots_texts.emplace_back(UIHelper::CreateStatic(uiXml, path, this));
 
         i++;
     }
@@ -238,6 +241,10 @@ void CUIMainIngameWnd::Init()
     AttachChild(m_ui_boost_states);
     m_ui_boost_states->InitFromXml(uiXml, "booster_states");
 
+    m_pTargetHealth = UIHelper::CreateProgressBar(uiXml, "target_health_bar", this);
+    m_pTargetHealthCount = UIHelper::CreateStatic(uiXml, "target_health_value", this);
+    m_pTargetHealth->Show(false);
+    m_pTargetHealthCount->Show(false);
     HUD_SOUND_ITEM::LoadSound("maingame_ui", "snd_new_contact", m_contactSnd, SOUND_TYPE_IDLE);
 }
 
@@ -288,6 +295,8 @@ void CUIMainIngameWnd::Draw()
     CUIWindow::Draw();
     UIMotionIcon->Show(tmp);
 
+    //m_ui_hud_states->Draw();
+
     RenderQuickInfos();
 }
 
@@ -319,6 +328,7 @@ void CUIMainIngameWnd::Update()
     UIMotionIcon->SetPower(pActor->conditions().GetPower() * 100.0f);
 
     UpdatePickUpItem();
+    ClearTargetHealth();
 
     if (Device.dwFrame % 10)
         return;
@@ -544,6 +554,29 @@ void CUIMainIngameWnd::AnimateContacts(bool b_snd)
 
     if (b_snd)
         HUD_SOUND_ITEM::PlaySound(m_contactSnd, Fvector().set(0, 0, 0), 0, true);
+}
+
+void CUIMainIngameWnd::SetTargetHealth(CEntityAlive* target) 
+{
+    float max_health = iCeil(target->GetMaxHealth() * 100.0f * 35.f) / 35.f;
+    m_pTargetHealth->SetRange(0.f, max_health);
+    float cur_health = iCeil(target->GetfHealth() * 100.0f * 35.f) / 35.f;
+    m_pTargetHealth->SetProgressPos(cur_health);
+    string64 buff;
+    xr_sprintf(buff, "%.1f", cur_health);
+    m_pTargetHealthCount->SetText(buff);
+    m_pTargetHealth->Show(true);
+    m_pTargetHealthCount->Show(true);
+    m_iTargetDelay = Device.dwTimeGlobal;
+}
+void CUIMainIngameWnd::ClearTargetHealth() 
+{
+    if (!m_pTargetHealth->IsShown() && !m_pTargetHealthCount->IsShown())
+        return;
+    if ((Device.dwTimeGlobal - m_iTargetDelay) <= 500)
+        return;
+    m_pTargetHealth->Show(false);
+    m_pTargetHealthCount->Show(false);
 }
 
 void CUIMainIngameWnd::SetPickUpItem(CInventoryItem* PickUpItem) { m_pPickUpItem = PickUpItem; };
@@ -803,15 +836,18 @@ void CUIMainIngameWnd::UpdateQuickSlots()
     int i = 1;
     string32 tmp;
 
-    for (const auto& slot : m_quick_slots_texts)
+    if (!m_quick_slots_texts.empty())
     {
-        xr_sprintf(tmp, "quick_use_str_%d", i);
-        pcstr str = StringTable().translate(tmp).c_str();
-        strncpy_s(tmp, sizeof(tmp), str, 3);
-        if (tmp[2] == ',')
-            tmp[2] = '\0';
-        slot->SetTextST(tmp);
-        ++i;
+        for (const auto& slot : m_quick_slots_texts)
+        {
+            xr_sprintf(tmp, "quick_use_str_%d", i);
+            pcstr str = StringTable().translate(tmp).c_str();
+            strncpy_s(tmp, sizeof(tmp), str, 3);
+            if (tmp[2] == ',')
+                tmp[2] = '\0';
+            slot->SetTextST(tmp);
+            ++i;
+        }
     }
 
     CActor* pActor = smart_cast<CActor*>(Level().CurrentViewEntity());
@@ -875,14 +911,20 @@ void CUIMainIngameWnd::DrawMainIndicatorsForInventory()
 
     UpdateQuickSlots();
     UpdateBoosterIndicators(pActor->conditions().GetCurBoosterInfluences());
+    m_ui_hud_states->Update();
 
     for (const auto& slot : m_quick_slots_icons)
         slot->Draw();
-
-    for (const auto& slot : m_quick_slots_texts)
-        slot->Draw();
+    if (!m_quick_slots_texts.empty())
+    {
+        for (const auto& slot : m_quick_slots_texts)
+        {
+            slot->Draw();
+        }
+    }
     m_ui_boost_states->DrawBoosterIndicators();
     m_ui_hud_states->DrawZoneIndicators();
+    m_ui_hud_states->Draw();
 }
 void CUIMainIngameWnd::UpdateBoosterIndicators(const CEntityCondition::BOOSTER_MAP& influences) 
 {

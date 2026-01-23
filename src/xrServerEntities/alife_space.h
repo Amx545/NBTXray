@@ -111,6 +111,10 @@ enum EInfluenceType
     infl_acid,
     infl_psi,
     infl_electra,
+    infl_strike,
+    infl_wound,
+    infl_explosion,
+    infl_fire_wound,
     infl_max_count
 };
 
@@ -121,6 +125,7 @@ enum EConditionRestoreType
     ePowerRestoreSpeed,
     eBleedingRestoreSpeed,
     eRadiationRestoreSpeed,
+    ePsyHealthRestoreSpeed,
     eRestoreTypeMax,
 };
 

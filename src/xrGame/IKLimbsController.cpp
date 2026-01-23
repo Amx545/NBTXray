@@ -235,7 +235,6 @@ void CIKLimbsController::ShiftObject(const SCalculateData cd[max_size])
     //	skeleton_animated->Bone_Calculate(&BD, &Fidentity );
 }
 
-int ik_shift_object = 1;
 void CIKLimbsController::Calculate()
 {
     update_blend(m_legs_blend);

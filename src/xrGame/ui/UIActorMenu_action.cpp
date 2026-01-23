@@ -27,6 +27,7 @@
 #include "UIMessageBoxEx.h"
 #include "xrUICore/PropertiesBox/UIPropertiesBox.h"
 #include "UIMainIngameWnd.h"
+#include "BlackDrops.h"
 
 bool CUIActorMenu::AllowItemDrops(EDDListType from, EDDListType to)
 {
@@ -239,15 +240,19 @@ bool CUIActorMenu::OnItemDbClick(CUICellItem* itm)
             ToDeadBodyBag(itm, false);
             break;
         }
-        if (m_currMenuMode != mmUpgrade && TryUseItem(itm))
-        {
-            break;
-        }
         if (TryActiveSlot(itm))
         {
             break;
         }
         PIItem iitem_to_place = static_cast<PIItem>(itm->m_pData);
+        CBlackDrops* pShardItem = smart_cast<CBlackDrops*>(iitem_to_place);
+        if (m_currMenuMode != mmUpgrade && !pShardItem)
+        {
+            if (TryUseItem(itm))
+            {
+                break;
+            }
+        }
         if (!m_pActorInvOwner->inventory().SlotIsPersistent(iitem_to_place->BaseSlot())
             && m_pActorInvOwner->inventory().ItemFromSlot(iitem_to_place->BaseSlot()) == iitem_to_place)
         {

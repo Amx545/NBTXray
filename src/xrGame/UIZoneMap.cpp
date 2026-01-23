@@ -129,10 +129,13 @@ void CUIZoneMap::Update()
 
         if (CPda* pda = pActor->GetPDA())
         {
-            const u32 cn = pda->ActiveContactsNum();
-            if (cn > 0)
+            if (false)
             {
-                xr_sprintf(text_str, sizeof(text_str), "%d", cn);
+                const u32 cn = pda->ActiveContactsNum();
+                if (cn > 0)
+                {
+                    xr_sprintf(text_str, sizeof(text_str), "%d", cn);
+                }
             }
         }
         m_Counter_text.SetText(text_str);

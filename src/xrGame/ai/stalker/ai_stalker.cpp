@@ -508,6 +508,11 @@ void CAI_Stalker::Die(IGameObject* who)
     }
 }
 
+float CAI_Stalker::GetHitFraction() 
+{
+    return m_boneHitProtection->m_fHitFracNpc;
+}
+
 void CAI_Stalker::Load(LPCSTR section)
 {
     CCustomMonster::Load(section);
@@ -592,14 +597,19 @@ bool CAI_Stalker::net_Spawn(CSE_Abstract* DC)
 
     static float novice_rank_dispersion = pSettings->r_float("ranks_properties", "dispersion_novice_k");
     static float expirienced_rank_dispersion = pSettings->r_float("ranks_properties", "dispersion_experienced_k");
-
+    m_stalker_level = (float)(tpHuman->CharacterLevel() - 1);
+    SetMaxHealth(0.4f + m_stalker_level * 0.1f);
     CHARACTER_RANK_VALUE rank = Rank();
     clamp(rank, 0, 100);
     float rank_k = float(rank) / 100.f;
-    m_fRankImmunity = novice_rank_immunity + (expirienced_rank_immunity - novice_rank_immunity) * rank_k;
-    m_fRankVisibility = novice_rank_visibility + (expirienced_rank_visibility - novice_rank_visibility) * rank_k;
+    float level_k = m_stalker_level;
+    float level_cup = 200.f;
+    clamp(level_k, 0.f, level_cup);
+    level_k /= level_cup;
+    m_fRankImmunity = 1.f; // novice_rank_immunity + (expirienced_rank_immunity - novice_rank_immunity) * rank_k;
+    m_fRankVisibility = novice_rank_visibility + (expirienced_rank_visibility - novice_rank_visibility) * level_k;
     m_fRankDisperison =
-        expirienced_rank_dispersion + (novice_rank_dispersion - expirienced_rank_dispersion) * (1 - rank_k);
+        expirienced_rank_dispersion + (novice_rank_dispersion - expirienced_rank_dispersion) * (1 - level_k);
 
     if (!fis_zero(SpecificCharacter().panic_threshold()))
         m_panic_threshold = SpecificCharacter().panic_threshold();

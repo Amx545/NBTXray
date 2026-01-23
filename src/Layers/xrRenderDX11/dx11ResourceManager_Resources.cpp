@@ -183,7 +183,7 @@ void CResourceManager::_DeleteConstantBuffer(u32 context_id, const dx11ConstantB
         return;
     if (reclaim(v_constant_buffer[context_id], pBuffer))
         return;
-    Msg("! ERROR: Failed to find compiled constant buffer");
+    //Msg("! ERROR: Failed to find compiled constant buffer");
 }
 
 //--------------------------------------------------------------------------------------------------------------

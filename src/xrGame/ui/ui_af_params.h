@@ -9,7 +9,7 @@ class UIArtefactParamItem;
 class CUIArtefactParams final : public CUIWindow
 {
 public:
-    CUIArtefactParams() : CUIWindow("Artefact Params") {}
+    CUIArtefactParams();
     ~CUIArtefactParams() override;
     bool InitFromXml(CUIXml& xml);
     bool Check(const shared_str& af_section);
@@ -28,6 +28,13 @@ protected:
     UIArtefactParamItem* m_immunity_item[ALife::infl_max_count]{};
     UIArtefactParamItem* m_restore_item[ALife::eRestoreTypeMax]{};
     UIArtefactParamItem* m_additional_weight{};
+    UIArtefactParamItem* m_additional_health{};
+    UIArtefactParamItem* m_additional_power{};
+    UIArtefactParamItem* m_additional_psy_health{};
+    UIArtefactParamItem* m_additional_vitality{};
+    UIArtefactParamItem* m_additional_vigor{};
+    UIArtefactParamItem* m_additional_intelligence{};
+    UIArtefactParamItem* m_additional_dexterity{};
 
     CUIStatic* m_Prop_line{};
 

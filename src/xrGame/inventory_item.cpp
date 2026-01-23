@@ -104,6 +104,7 @@ void CInventoryItem::Load(LPCSTR section)
     m_cost = pSettings->r_u32(section, "cost");
     u32 sl = pSettings->read_if_exists<u32>(section, "slot", NO_ACTIVE_SLOT);
     m_rarity = pSettings->read_if_exists<u8>(section, "rarity", 0);
+    m_sIItemType = READ_IF_EXISTS(pSettings, r_string, section, "item_type", section);
     m_ItemCurrPlace.base_slot_id = (sl == u32(-1)) ? 0 : (sl + 1);
 
     // Description
@@ -361,6 +362,7 @@ void CInventoryItem::save(NET_Packet& packet)
 {
     packet.w_u16(m_ItemCurrPlace.value);
     packet.w_float(m_fCondition);
+    packet.w_u8(m_rarity);
     //--	save_data				(m_upgrades, packet);
 
     if (object().H_Parent())
@@ -754,6 +756,8 @@ void CInventoryItem::load(IReader& packet)
 {
     m_ItemCurrPlace.value = packet.r_u16();
     m_fCondition = packet.r_float();
+    m_rarity = packet.r_u8();
+    RarityUpdate();
 
     //--	load_data( m_upgrades, packet );
     //--	install_loaded_upgrades();
@@ -1447,6 +1451,7 @@ Irect CInventoryItem::GetUpgrIconRect() const
 
 bool CInventoryItem::IsNecessaryItem(CInventoryItem* item) { return IsNecessaryItem(item->object().cNameSect()); };
 BOOL CInventoryItem::IsInvalid() const { return object().getDestroy() || GetDropManual(); }
+void CInventoryItem::RarityUpdate() {}
 u16 CInventoryItem::object_id() const { return object().ID(); }
 u16 CInventoryItem::parent_id() const { return (object().H_Parent()) ? object().H_Parent()->ID() : u16(-1); }
 void CInventoryItem::SetDropManual(BOOL val)

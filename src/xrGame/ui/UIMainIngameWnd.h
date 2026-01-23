@@ -158,7 +158,15 @@ protected:
 
     void UpdatePickUpItem();
 
+private:
+    CUIProgressBar* m_pTargetHealth;
+    CUIStatic* m_pTargetHealthCount;
+    u32 m_iTargetDelay;
+
 public:
+    void SetTargetHealth(CEntityAlive* target);
+    void ClearTargetHealth();
+
     void SetPickUpItem(CInventoryItem* PickUpItem);
 #ifdef DEBUG
     void draw_adjust_mode();

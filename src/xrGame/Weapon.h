@@ -15,6 +15,7 @@
 #include "CameraRecoil.h"
 
 class CEntity;
+class CEntityAlive;
 class ENGINE_API CMotionDef;
 class CSE_ALifeItemWeapon;
 class CSE_ALifeItemWeaponAmmo;
@@ -92,6 +93,14 @@ protected:
     virtual bool IsHudModeNow();
     void LoadScope(const shared_str& section);
 
+private:
+    u8 m_weapon_str{0};
+    u8 m_weapon_dex{0};
+    u8 m_weapon_int{0};
+    float m_weapon_str_scale{0.f};
+    float m_weapon_dex_scale{0.f};
+    float m_weapon_int_scale{0.f};
+
 public:
     void signal_HideComplete();
     virtual bool Action(u16 cmd, u32 flags);
@@ -122,10 +131,20 @@ public:
 
     BOOL IsMisfire() const;
     BOOL CheckForMisfire();
+    BOOL CheckForIntDeg();
 
     BOOL AutoSpawnAmmo() const { return m_bAutoSpawnAmmo; };
     bool IsTriStateReload() const { return m_bTriStateReload; }
     EWeaponSubStates GetReloadState() const { return (EWeaponSubStates)m_sub_state; }
+    u8 GetWeaponStr() { return m_weapon_str; }
+    u8 GetWeaponDex() { return m_weapon_dex; }
+    u8 GetWeaponInt() { return m_weapon_int; }
+    float GetWeaponStrScale() { return m_weapon_str_scale; }
+    float GetWeaponDexScale() { return m_weapon_dex_scale; }
+    float GetWeaponIntScale() { return m_weapon_int_scale; }
+    float dFDex();
+    void calculate_scaling();
+
 protected:
     bool m_bTriStateReload;
 
@@ -165,6 +184,9 @@ public:
     int GetGrenadeLauncherY() { return m_iGrenadeLauncherY; }
     const shared_str& GetGrenadeLauncherName() const { return m_sGrenadeLauncherName; }
     const shared_str GetScopeName() const { return pSettings->r_string(m_scopes[m_cur_scope], "scope_name"); }
+    const bool IsCollimator();
+    shared_str GetScopeBoneName(u8 idx);
+    virtual void SetScopeVisualName(u8 idx, bool setup);
     const shared_str& GetSilencerName() const { return m_sSilencerName; }
     IC void ForceUpdateAmmo() { m_BriefInfo_CalcFrame = 0; }
     u8 GetAddonsState() const { return m_flagsAddOnState; };
@@ -172,6 +194,7 @@ public:
 protected:
     //состояние подключенных аддонов
     u8 m_flagsAddOnState;
+    u8 m_ScopeSectionState;
 
     //возможность подключения различных аддонов
     ALife::EWeaponAddonStatus m_eScopeStatus;
@@ -451,6 +474,7 @@ public:
     using SCOPES_VECTOR = xr_vector<shared_str>;
     SCOPES_VECTOR m_scopes;
     u8 m_cur_scope;
+    BOOL bScopeAction{TRUE};
 
     CWeaponAmmo* m_pCurrentAmmo;
     u8 m_ammoType;
@@ -471,6 +495,9 @@ public:
 protected:
     u32 m_ef_main_weapon_type;
     u32 m_ef_weapon_type;
+    string_path m_sNormalVisual;
+    pcstr m_gl_off_bone;
+    pcstr m_gl_off_bone_hud;
 
 public:
     virtual u32 ef_main_weapon_type() const;
@@ -497,6 +524,8 @@ public:
     bool show_indicators();
     virtual BOOL ParentMayHaveAimBullet();
     virtual BOOL ParentIsActor();
+    virtual void RarityUpdate() override;
+    virtual CEntityAlive* GetAliveOwner();
 
 private:
     virtual bool install_upgrade_ammo_class(LPCSTR section, bool test);

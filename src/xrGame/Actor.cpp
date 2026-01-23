@@ -55,6 +55,7 @@
 #include "xrPhysics/IColisiondamageInfo.h"
 #include "ui/UIMainIngameWnd.h"
 #include "ui/UIArtefactPanel.h"
+#include "ui/UIActorClassSelector.h"
 #include "map_manager.h"
 #include "GametaskManager.h"
 #include "actor_memory.h"
@@ -72,6 +73,7 @@
 #include "ui/UIMotionIcon.h"
 #include "ui/UIActorMenu.h"
 #include "ActorHelmet.h"
+#include "ActorGlove.h"
 #include "ui/UIDragDropReferenceList.h"
 #include "xrCore/xr_token.h"
 
@@ -216,12 +218,14 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
     // Alex ADD: for smooth crouch fix
     CurrentHeight = -1.f;
     actor_save_count = 1;
+    m_pUISelector = nullptr;
 }
 
 CActor::~CActor()
 {
     xr_delete(m_location_manager);
     xr_delete(m_memory);
+    if (m_pUISelector) xr_delete(m_pUISelector);
 
     xr_delete(encyclopedia_registry);
     xr_delete(game_news_registry);
@@ -466,6 +470,12 @@ void CActor::Load(LPCSTR section)
     m_sHeadShotParticle = READ_IF_EXISTS(pSettings, r_string, section, "HeadShotParticle", 0);
 }
 
+void CActor::legs_shift_callback(CBoneInstance* K)
+{
+    if (cam_active == eacFirstEye)
+        K->mTransform.c.mad(K->mTransform.k, -0.55f);
+}
+
 void CActor::PHHit(SHit& H) { m_pPhysics_support->in_Hit(H, false); }
 struct playing_pred
 {
@@ -656,8 +666,6 @@ void CActor::Hit(SHit* pHDS)
             inherited::Hit(&HDS);
         }
 
-        float hit_power = HitArtefactsOnBelt(HDS.damage(), HDS.hit_type);
-        HDS.power = hit_power;
         HDS.add_wound = true;
         if (g_Alive())
         {
@@ -699,8 +707,6 @@ void CActor::Hit(SHit* pHDS)
 
         if (m_bWasBackStabbed)
             hit_power = (HDS.damage() == 0) ? 0 : 100000.0f;
-        else
-            hit_power = HitArtefactsOnBelt(HDS.damage(), HDS.hit_type);
 
         HDS.power = hit_power;
         HDS.add_wound = true;
@@ -1075,8 +1081,10 @@ void CActor::UpdateVisor()
 
     if (pVisor)
     {
-        float condition = 1.1f - pVisor->GetCondition();
-        ps_r2_mask_control.x = round(condition * 10.f);
+        float condition = 1.0f - pVisor->GetCondition();
+        condition = round(condition * 10.f);
+        clamp(condition, 1.f, 10.f);
+        ps_r2_mask_control.x = condition;
         // TODO: dont hardcode these
         // and add cracking sounds when the condition changes
         ps_r2_mask_control.y = 1.f;
@@ -1622,7 +1630,11 @@ void CActor::OnHUDDraw(u32 context_id, CCustomHUD* hud, IRenderable* root)
 {
     R_ASSERT(IsFocused());
     if (!((mstate_real & mcLookout) && !IsGameTypeSingle()))
+    {
         g_player_hud->render_hud(context_id, root);
+        root->renderable_HUD(false);
+        g_player_hud->render_legs(context_id, root);
+    }
 }
 
 void CActor::RenderIndicator(Fvector dpos, float r1, float r2, const ui_shader& IndShader)
@@ -1771,7 +1783,7 @@ void CActor::ForceTransformAndDirection(const Fmatrix& m)
     cam_Active()->Set(-xyz.x, -xyz.y, -xyz.z);
 }
 
-//ENGINE_API extern float psHUD_FOV;
+ENGINE_API extern float psHUD_FOV;
 float CActor::Radius() const
 {
     float R = inherited::Radius();
@@ -1832,11 +1844,19 @@ void CActor::OnItemDrop(CInventoryItem* inventory_item, bool just_before_destroy
     CInventoryOwner::OnItemDrop(inventory_item, just_before_destroy);
 
     CCustomOutfit* outfit = smart_cast<CCustomOutfit*>(inventory_item);
+    CActorGlove* pGlove = smart_cast<CActorGlove*>(inventory_item);
     if (outfit && inventory_item->m_ItemCurrPlace.type == eItemPlaceSlot)
     {
         outfit->ApplySkinModel(this, false, false);
+        if (!outfit->bIsGlovesAvaliable)
+        {
+            g_player_hud->load_default_hand();
+        }
     }
-
+    if (pGlove && inventory_item->m_ItemCurrPlace.type == eItemPlaceSlot)
+    {
+        g_player_hud->load_default_hand();
+    }
     CWeapon* weapon = smart_cast<CWeapon*>(inventory_item);
     if (weapon && inventory_item->m_ItemCurrPlace.type == eItemPlaceSlot)
     {
@@ -1940,11 +1960,15 @@ void CActor::UpdateArtefactsOnBeltAndOutfit()
                 conditions().ChangeRadiation(val * f_update_time);
             }
             else
+            {
                 conditions().ChangeRadiation(artefact->m_fRadiationRestoreSpeed * f_update_time);
+            }
+            conditions().ChangePsyHealth(artefact->GetPsyHealthPower() * f_update_time);
         }
     }
 
     CCustomOutfit* outfit = GetOutfit();
+    CHelmet* pHelmet = GetItemFromSlot<CHelmet>(HELMET_SLOT);
     if (outfit)
     {
         conditions().ChangeBleeding(outfit->m_fBleedingRestoreSpeed * f_update_time);
@@ -1955,7 +1979,6 @@ void CActor::UpdateArtefactsOnBeltAndOutfit()
     }
     else
     {
-        CHelmet* pHelmet = smart_cast<CHelmet*>(inventory().ItemFromSlot(HELMET_SLOT));
         if (!pHelmet)
         {
             CTorch* pTorch = smart_cast<CTorch*>(inventory().ItemFromSlot(TORCH_SLOT));
@@ -1964,6 +1987,23 @@ void CActor::UpdateArtefactsOnBeltAndOutfit()
                 pTorch->SwitchNightVision(false);
             }
         }
+    }
+    if (pHelmet)
+    {
+        conditions().ChangeBleeding(pHelmet->m_fBleedingRestoreSpeed * f_update_time);
+        conditions().ChangeHealth(pHelmet->m_fHealthRestoreSpeed * f_update_time);
+        conditions().ChangePower(pHelmet->m_fPowerRestoreSpeed * f_update_time);
+        conditions().ChangeSatiety(pHelmet->m_fSatietyRestoreSpeed * f_update_time);
+        conditions().ChangeRadiation(pHelmet->m_fRadiationRestoreSpeed * f_update_time);
+    }
+    CActorGlove* pGlove = GetItemFromSlot<CActorGlove>(ACTORGLOVE_SLOT);
+    if (pGlove)
+    {
+        conditions().ChangeBleeding(pGlove->m_fBleedingRestoreSpeed * f_update_time);
+        conditions().ChangeHealth(pGlove->m_fHealthRestoreSpeed * f_update_time);
+        conditions().ChangePower(pGlove->m_fPowerRestoreSpeed * f_update_time);
+        conditions().ChangeSatiety(pGlove->m_fSatietyRestoreSpeed * f_update_time);
+        conditions().ChangeRadiation(pGlove->m_fRadiationRestoreSpeed * f_update_time);
     }
 }
 
@@ -2148,6 +2188,12 @@ float CActor::GetRestoreSpeed(ALife::EConditionRestoreType const& type)
         const auto outfit = GetOutfit();
         if (outfit)
             res += outfit->m_fHealthRestoreSpeed;
+        const CHelmet* helmet = GetItemFromSlot<CHelmet>(HELMET_SLOT);
+        if (helmet)
+            res += helmet->m_fHealthRestoreSpeed;
+        const CActorGlove* glove = GetItemFromSlot<CActorGlove>(ACTORGLOVE_SLOT);
+        if (glove)
+            res += glove->m_fHealthRestoreSpeed;
 
         break;
     }
@@ -2163,6 +2209,12 @@ float CActor::GetRestoreSpeed(ALife::EConditionRestoreType const& type)
         const auto outfit = GetOutfit();
         if (outfit)
             res += outfit->m_fRadiationRestoreSpeed;
+        const CHelmet* helmet = GetItemFromSlot<CHelmet>(HELMET_SLOT);
+        if (helmet)
+            res += helmet->m_fRadiationRestoreSpeed;
+        const CActorGlove* glove = GetItemFromSlot<CActorGlove>(ACTORGLOVE_SLOT);
+        if (glove)
+            res += glove->m_fRadiationRestoreSpeed;
 
         break;
     }
@@ -2180,6 +2232,12 @@ float CActor::GetRestoreSpeed(ALife::EConditionRestoreType const& type)
         const auto outfit = GetOutfit();
         if (outfit)
             res += outfit->m_fSatietyRestoreSpeed;
+        const CHelmet* helmet = GetItemFromSlot<CHelmet>(HELMET_SLOT);
+        if (helmet)
+            res += helmet->m_fSatietyRestoreSpeed;
+        const CActorGlove* glove = GetItemFromSlot<CActorGlove>(ACTORGLOVE_SLOT);
+        if (glove)
+            res += glove->m_fSatietyRestoreSpeed;
 
         break;
     }
@@ -2193,6 +2251,13 @@ float CActor::GetRestoreSpeed(ALife::EConditionRestoreType const& type)
             if (artefact)
                 res += artefact->m_fPowerRestoreSpeed;
         }
+
+        const CHelmet* helmet = GetItemFromSlot<CHelmet>(HELMET_SLOT);
+        if (helmet)
+            res += helmet->m_fPowerRestoreSpeed;
+        const CActorGlove* glove = GetItemFromSlot<CActorGlove>(ACTORGLOVE_SLOT);
+        if (glove)
+            res += glove->m_fPowerRestoreSpeed;
         auto outfit = GetOutfit();
         if (outfit)
         {
@@ -2219,9 +2284,16 @@ float CActor::GetRestoreSpeed(ALife::EConditionRestoreType const& type)
         const auto outfit = GetOutfit();
         if (outfit)
             res += outfit->m_fBleedingRestoreSpeed;
+        const CHelmet* helmet = GetItemFromSlot<CHelmet>(HELMET_SLOT);
+        if (helmet)
+            res += helmet->m_fBleedingRestoreSpeed;
+        const CActorGlove* glove = GetItemFromSlot<CActorGlove>(ACTORGLOVE_SLOT);
+        if (glove)
+            res += glove->m_fBleedingRestoreSpeed;
 
         break;
     }
+    case ALife::ePsyHealthRestoreSpeed: break;
     } // switch
 
     return res;
@@ -2234,6 +2306,17 @@ void CActor::On_SetEntity()
         g_player_hud->load_default();
     else
         pOutfit->ApplySkinModel(this, true, true);
+    g_player_hud->load_default_hand();
+}
+
+void CActor::ActorClassSelector() 
+{
+    if (!m_pUISelector)
+    {
+        m_pUISelector = xr_new<CUIActorClassSelector>();
+        m_pUISelector->Init();
+    }
+    m_pUISelector->ShowDialog(true);
 }
 
 bool CActor::unlimited_ammo() { return !!psActorFlags.test(AF_UNLIMITEDAMMO); }

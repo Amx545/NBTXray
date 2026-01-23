@@ -230,6 +230,7 @@ void CAI_Stalker::Hit(SHit* pHDS)
     HDS.add_wound = true;
 
     float hit_power = HDS.power * m_fRankImmunity;
+    float hit_power_org = hit_power;
 
     if (m_boneHitProtection && HDS.hit_type == ALife::eHitTypeFireWound)
     {
@@ -257,11 +258,14 @@ void CAI_Stalker::Hit(SHit* pHDS)
                 HDS.add_wound = false;
             }
         }
-        else if (!fis_zero(BoneArmor, EPS))
+        else if (BoneArmor>=ap)
         {
-            if (ap > BoneArmor)
+            hit_power *= m_boneHitProtection->m_fHitFracNpc;
+            HDS.add_wound = false;
+            //!fis_zero(BoneArmor, EPS)&& 
+            /**if (ap > BoneArmor)
             {
-                float d_hit_power = (ap - BoneArmor) / ap;
+                 float d_hit_power = (ap - BoneArmor) / ap;
                 if (d_hit_power < m_boneHitProtection->m_fHitFracNpc)
                     d_hit_power = m_boneHitProtection->m_fHitFracNpc;
 
@@ -272,13 +276,16 @@ void CAI_Stalker::Hit(SHit* pHDS)
             {
                 hit_power *= m_boneHitProtection->m_fHitFracNpc;
                 HDS.add_wound = false;
-            }
-        }
+            }*/
 
-        if (wounded()) //уже лежит => добивание
+        }
+        Msg("Stalkerter have hit on stalker fire start[end] = %f[%f], HF = %f, AP = %f, BA = %f", 
+            hit_power_org, hit_power, m_boneHitProtection->m_fHitFracNpc, ap, BoneArmor);
+        //hit_power *= BoneArmor;
+        /** if (wounded()) // уже лежит => добивание
         {
             hit_power = 1000.f;
-        }
+        }*/
     }
     HDS.power = hit_power;
 

@@ -61,6 +61,18 @@ void CWeaponPistol::PlayAnimIdleMoving()
     }
 }
 
+void CWeaponPistol::PlayAnimIdleMovingCrouch()
+{
+    if (iAmmoElapsed == 0)
+    {
+        PlayHUDMotion("anm_idle_moving_crouch_empty", "anim_empty", TRUE, NULL, GetState());
+    }
+    else
+    {
+        inherited::PlayAnimIdleMovingCrouch();
+    }
+}
+
 void CWeaponPistol::PlayAnimIdle()
 {
     if (TryPlayAnimIdle())
@@ -117,7 +129,11 @@ void CWeaponPistol::PlayAnimShoot()
     VERIFY(GetState() == eFire);
     if (IsZoomed() && isHUDAnimationExist("anm_shots_aim") && isHUDAnimationExist("anm_shot_l_aim"))
     {
-        if (iAmmoElapsed > 1)
+        if (bDoubleShotMode && iAmmoElapsed == 2)
+        {
+            PlayHUDMotion("anm_shot_l_aim", "anim_shot_last", FALSE, this, GetState());
+        }
+        else if (iAmmoElapsed > 1)
         {
             PlayHUDMotion("anm_shots_aim", "anim_shoot", FALSE, this, GetState());
         }
@@ -129,7 +145,11 @@ void CWeaponPistol::PlayAnimShoot()
     }
     else
     {
-        if (iAmmoElapsed > 1)
+        if (bDoubleShotMode && iAmmoElapsed == 2)
+        {
+            PlayHUDMotion("anm_shot_l", "anim_shot_last", FALSE, this, GetState());
+        }
+        else if (iAmmoElapsed > 1)
         {
             PlayHUDMotion("anm_shots", "anim_shoot", FALSE, this, GetState());
         }

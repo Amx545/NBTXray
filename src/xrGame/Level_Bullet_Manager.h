@@ -15,6 +15,14 @@ struct SBullet_Hit
 {
     float power; // power          * cartridge
     float impulse; // impulse        * cartridge
+    xr_map<ALife::EHitType, float> power_by_type;
+};
+
+// for particles
+struct SParticleLife
+{
+    float time;
+    CParticlesObject* m_pParticle;
 };
 
 //структура, описывающая пулю и ее свойства в полете
@@ -42,6 +50,16 @@ struct SBullet
     Fvector bullet_pos; //текущая позиция
     Fvector dir;
     float speed; //текущая скорость
+
+    //для нестандартных пуль
+    CParticlesObject* m_pTracerParticle{nullptr};
+    float m_fGravity{9.81f};
+    float m_fBulletTimeFactor{1.f};
+    float m_fParticleLifeTime{1.f};
+    float m_fBulletSize{0.08f};
+    shared_str m_sTracerParticle;
+    bool m_bUseTracer;
+    //--
 
     u16 parent_id; // ID персонажа который иницировал действие
     u16 weapon_id; // ID оружия из которого была выпущены пуля
@@ -80,12 +98,28 @@ struct SBullet
     float density;
     Fvector begin_density;
     bool operator==(u32 ID) { return ID == m_dwID; }
+
 public:
     SBullet(const Fvector& position, const Fvector& direction, float start_speed, float power,
-        /*float power_critical,*/ float impulse, u16 sender_id, u16 sendersweapon_id, ALife::EHitType e_hit_type,
-        float maximum_distance, const CCartridge& cartridge, float const air_resistance_factor, bool SendHit);
+        xr_map<ALife::EHitType, float>& hit_by_type, float impulse, u16 sender_id, u16 sendersweapon_id,
+        ALife::EHitType e_hit_type, float maximum_distance, const CCartridge& cartridge,
+        float const air_resistance_factor, bool SendHit, float power_boost);
 
     bool CanBeRenderedNow() const { return (Device.dwFrame > init_frame_num); }
+};
+
+// параметры взрыва
+
+struct SBullet_Explosion
+{
+    CPhysicsShellHolder* pHolder;
+    Fvector position;
+    float power;
+    float impulse;
+    float radius;
+    float throw_factor;
+    u16 parent_id;
+    u16 weapon_id;
 };
 
 class CLevel;
@@ -125,6 +159,8 @@ class CBulletManager
 protected:
     xr_vector<ref_sound> m_WhineSounds;
     xr_vector<shared_str> m_ExplodeParticles;
+    xr_vector<SBullet_Explosion> m_BulletExplosionTargets;
+    xr_vector<SParticleLife> m_PartLifeTime;
 
     //список пуль находящихся в данный момент на уровне
     //.	Lock		m_Lock				;
@@ -174,6 +210,10 @@ protected:
     void RegisterEvent(EventType Type, BOOL _dynamic, SBullet* bullet, const Fvector& end_point, collide::rq_result& R,
         u16 target_material);
 
+    // Explosion event
+    void RegisterExplosionEvent();
+    void SendExplosionEvent(SBullet_Explosion bullet);
+
     //попадание по динамическому объекту
     void DynamicObjectHit(_event& E);
 
@@ -205,9 +245,17 @@ public:
     void Load();
     void Clear();
     void AddBullet(const Fvector& position, const Fvector& direction, float starting_speed, float power,
-        /*float power_critical,*/ float impulse, u16 sender_id, u16 sendersweapon_id, ALife::EHitType e_hit_type,
-        float maximum_distance, const CCartridge& cartridge, float const air_resistance_factor, bool SendHit,
-        bool AimBullet = false);
+        xr_map<ALife::EHitType, float>& hit_by_type, float impulse, u16 sender_id,
+        u16 sendersweapon_id,ALife::EHitType e_hit_type, float maximum_distance, const CCartridge& cartridge, 
+        float const air_resistance_factor, bool SendHit, bool AimBullet = false, float power_boost = 1.f);
+   
+    void AddNonStandartBullet(const Fvector& position, const Fvector& direction, float starting_speed, float power,
+                              xr_map<ALife::EHitType, float>& hit_by_type, float impulse, u16 sender_id, u16 sendersweapon_id,
+                              ALife::EHitType e_hit_type, float maximum_distance,
+                              const CCartridge& cartridge, float const air_resistance_factor, bool SendHit, 
+                              bool AimBullet, bool use_trace, float bullet_gravity,
+                              float bullet_time_factor, float tracer_time_factor, float bullet_size,
+                              float power_boost = 1.f, shared_str bullet_particle = nullptr);
 
     void CommitEvents(); // @ the start of frame
     void CommitRenderSet(); // @ the end of frame

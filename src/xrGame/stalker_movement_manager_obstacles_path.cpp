@@ -169,7 +169,7 @@ void stalker_movement_manager_obstacles::build_level_path()
             if (!pure_search_result)
             {
 #ifndef MASTER_GOLD
-                Msg("! level_path().failed() during navigation");
+                //Msg("! level_path().failed() during navigation");
 #endif // #ifndef MASTER_GOLD
                 break;
             }

@@ -7,6 +7,7 @@
 #include "Weapon.h"
 #include "InventoryOwner.h"
 #include "Actor.h"
+#include "ActorCondition.h"
 #include "inventory_item_impl.h"
 
 #include "ActorEffector.h"
@@ -30,7 +31,19 @@ float CWeapon::GetFireDispersion(bool with_cartridge, bool for_crosshair)
 
 float CWeapon::GetBaseDispersion(float cartridge_k)
 {
-    return fireDispersionBase * cur_silencer_koef.fire_dispersion * cartridge_k * GetConditionDispersionFactor();
+    float disp = fireDispersionBase * cur_silencer_koef.fire_dispersion * cartridge_k * GetConditionDispersionFactor();
+    if (Actor()->conditions().GetActorDexterity() < GetWeaponDex() && ParentIsActor())
+    {
+        float skill = (float)Actor()->conditions().GetActorDexterity();
+        float dd = 1.f; 
+        if (GetWeaponDex() - skill <= 7)
+            dd = ((GetWeaponDex() - skill) * 0.27f) + 1.f;
+        else
+            dd = ((GetWeaponDex() - skill) * 0.5f) + 1.f;
+        clamp(dd, 1.f, 16.f);
+        disp *= dd;
+    }
+    return disp;
 }
 
 //текущая дисперсия (в радианах) оружия с учетом используемого патрона

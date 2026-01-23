@@ -180,8 +180,12 @@ public:
     LPCSTR Section() const;
     // CInventoryItem
     u32 Cost() const;
+    u8 GetRarity() const;
+    void SetRarity(u8 val) const;
     float GetCondition() const;
     void SetCondition(float val);
+
+    void ActorClassSelectorStart() const;
 
     // CEntity
     _DECLARE_FUNCTION10(DeathTime, u32);

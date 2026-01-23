@@ -5,66 +5,58 @@
 #include "xrUICore/ProgressBar/UIDoubleProgressBar.h"
 #include "CustomOutfit.h"
 #include "ActorHelmet.h"
+#include "ActorGlove.h"
 #include "Actor.h"
 #include "ActorCondition.h"
 #include "player_hud.h"
 #include "UIHelper.h"
 
-constexpr cpcstr immunity_names[] =
-{
-    "burn_immunity",
-    "shock_immunity",
-    "chemical_burn_immunity",
-    "radiation_immunity",
-    "telepatic_immunity",
-    "wound_immunity",
-    "fire_wound_immunity",
-    "strike_immunity",
-    "explosion_immunity",
-    nullptr
-};
-
-constexpr cpcstr immunity_st_names[] =
-{
-    "ui_inv_outfit_burn_protection",
-    "ui_inv_outfit_shock_protection",
-    "ui_inv_outfit_chemical_burn_protection",
-    "ui_inv_outfit_radiation_protection",
-    "ui_inv_outfit_telepatic_protection",
-    "ui_inv_outfit_wound_protection",
-    "ui_inv_outfit_fire_wound_protection",
-    "ui_inv_outfit_strike_protection",
-    "ui_inv_outfit_explosion_protection",
-    nullptr
+constexpr std::tuple<cpcstr, cpcstr, const u8, LPCSTR> outfit_info_list[] = {
+    {"burn_immunity", "ui_inv_outfit_burn_protection", 0, "burn"}, 
+    {"shock_immunity", "ui_inv_outfit_shock_protection", 1, "shock"},
+    {"chemical_burn_immunity", "ui_inv_outfit_chemical_burn_protection", 2, "chemical_burn"}, 
+    {"radiation_immunity", "ui_inv_outfit_radiation_protection", 3, "radiation"},
+    {"telepatic_immunity", "ui_inv_outfit_telepatic_protection", 4, "telepatic"}, 
+    {"wound_immunity", "ui_inv_outfit_wound_protection", 5, "wound"},
+    {"fire_wound_immunity", "ui_inv_outfit_fire_wound_protection", 6, "fire_wound"},
+    {"fire_wound_head_immunity", "ui_inv_outfit_fire_wound_head_protection", 7, "fire_wound"}, 
+    {"strike_immunity", "ui_inv_outfit_strike_protection", 8, "strike"},
+    {"explosion_immunity", "ui_inv_outfit_explosion_protection", 9, "explosion"},
+    {"artefact_count", "ui_inv_outfit_artefact_count", 10, nullptr},
+    {"additional_weight", "ui_inv_outfit_additional_weight", 11, nullptr},
+    {"power_loss", "ui_inv_outfit_power_loss", 12, nullptr},
+    {"health_restore_speed", "ui_inv_outfit_health_restore_speed", 13, nullptr},
+    {"radiation_restore_speed", "ui_inv_outfit_radiation_restore_speed", 14, nullptr},
+    {"satiety_restore_speed", "ui_inv_outfit_satiety_restore_speed", 15, nullptr},
+    {"power_restore_speed", "ui_inv_outfit_power_restore_speed", 16, nullptr},
+    {"bleeding_restore_speed", "ui_inv_outfit_bleeding_restore_speed", 17, nullptr}
 };
 
 CUIOutfitImmunity::CUIOutfitImmunity()
-    : CUIWindow("CUIOutfitImmunity"), m_name("Name"), m_value("Value")
+    : CUIWindow("CUIOutfitImmunity"), m_name("Name"), m_value("Value"), m_value2("Value2")
 {
     AttachChild(&m_name);
-    AttachChild(&m_progress);
     AttachChild(&m_value);
-    m_magnitude = 1.0f;
+    AttachChild(&m_value2);
+    m_magnitude = 1000.0f;
+
 }
 
-bool CUIOutfitImmunity::InitFromXml(CUIXml& xml_doc, LPCSTR base_str, u32 hit_type)
+bool CUIOutfitImmunity::InitFromXml(CUIXml& xml_doc, LPCSTR base_str, cpcstr name_str, cpcstr desc_str)
 {
     CUIXmlInit::InitWindow(xml_doc, base_str, 0, this);
 
     string256 buf;
 
-    strconcat(sizeof(buf), buf, base_str, ":", immunity_names[hit_type]);
+    strconcat(sizeof(buf), buf, base_str, ":", name_str);
     if (!CUIXmlInit::InitWindow(xml_doc, buf, 0, this, false))
         return false;
 
     CUIXmlInit::InitStatic(xml_doc, buf, 0, &m_name);
-    m_name.TextItemControl()->SetTextST(immunity_st_names[hit_type]);
+    m_name.TextItemControl()->SetTextST(desc_str);
 
-    strconcat(sizeof(buf), buf, base_str, ":", immunity_names[hit_type], ":progress_immunity");
-    m_progress.InitFromXml(xml_doc, buf);
-
-    strconcat(sizeof(buf), buf, base_str, ":", immunity_names[hit_type], ":static_value");
-    if (xml_doc.NavigateToNode(buf, 0) && !CallOfPripyatMode)
+    strconcat(sizeof(buf), buf, base_str, ":", name_str, ":static_value");
+    if (xml_doc.NavigateToNode(buf, 0))
     {
         CUIXmlInit::InitStatic(xml_doc, buf, 0, &m_value);
         m_value.Show(true);
@@ -73,20 +65,53 @@ bool CUIOutfitImmunity::InitFromXml(CUIXml& xml_doc, LPCSTR base_str, u32 hit_ty
     {
         m_value.Show(false);
     }
+    strconcat(sizeof(buf), buf, base_str, ":", name_str, ":static_value2");
+    if (xml_doc.NavigateToNode(buf, 0))
+    {
+        CUIXmlInit::InitStatic(xml_doc, buf, 0, &m_value2);
+        m_value2.Show(true);
+    }
+    else
+    {
+        m_value2.Show(false);
+    }
 
     m_magnitude = xml_doc.ReadAttribFlt(buf, 0, "magnitude", 1.0f);
     return true;
 }
 
-void CUIOutfitImmunity::SetProgressValue(float cur, float comp)
+void CUIOutfitImmunity::SetValue(float cur, float comp, bool items_equal)
 {
     cur *= m_magnitude;
     comp *= m_magnitude;
-    m_progress.SetTwoPos(cur, comp);
     string32 buf;
-    //	xr_sprintf( buf, sizeof(buf), "%d %%", (int)cur );
     xr_sprintf(buf, sizeof(buf), "%.0f", cur);
     m_value.SetText(buf);
+    xr_sprintf(buf, sizeof(buf), "%.0f", comp);
+    if (items_equal)
+    {
+        m_value2.SetText(buf);
+        m_value2.Show(true);
+    }
+    else
+    {
+        m_value2.Show(false);
+    }
+    if (cur > comp)
+    {
+        m_value2.SetTextColor(color_argb(255, 255, 170, 170));
+        m_value.SetTextColor(color_argb(255, 170, 255, 170));
+    }
+    else if (cur < comp)
+    {
+        m_value2.SetTextColor(color_argb(255, 170, 255, 170));
+        m_value.SetTextColor(color_argb(255, 255, 170, 170));
+    }
+    else
+    {
+        m_value2.SetTextColor(color_argb(255, 170, 170, 170));
+        m_value.SetTextColor(color_argb(255, 170, 170, 170));
+    }
 }
 
 // ===========================================================================================
@@ -112,10 +137,10 @@ void CUIOutfitInfo::InitFromXml(CUIXml& xml_doc)
     else if (m_caption)
         pos.set(0.0f, m_caption->GetWndSize().y);
 
-    for (u32 i = 0; i < max_count; ++i)
+    for (auto [name, descr, idx, htype] : outfit_info_list)
     {
         auto immunity = xr_new<CUIOutfitImmunity>();
-        if (!immunity->InitFromXml(xml_doc, base_str, i))
+        if (!immunity->InitFromXml(xml_doc, base_str, name, descr))
         {
             xr_delete(immunity);
             continue;
@@ -125,8 +150,9 @@ void CUIOutfitInfo::InitFromXml(CUIXml& xml_doc)
         immunity->SetWndPos(pos);
         pos.y += immunity->GetWndSize().y;
 
-        m_items[i] = immunity;
+        m_items[idx] = immunity;
     }
+
     pos.x = GetWndSize().x;
     SetWndSize(pos);
 }
@@ -138,58 +164,137 @@ void CUIOutfitInfo::UpdateInfo(CCustomOutfit* cur_outfit, CCustomOutfit* slot_ou
     {
         return;
     }
+    Fvector2 pos;
+    pos.set(0.0f, 0.0f);
+    if (m_Prop_line)
+        pos.set(0.0f, m_Prop_line->GetWndPos().y + m_Prop_line->GetWndSize().y);
 
-    for (u32 i = 0; i < max_count; ++i)
+    for (auto [name, descr, idx, htype] : outfit_info_list)
     {
-        if (!m_items[i])
+        if (!m_items[idx])
             continue;
-
-        if (i == ALife::eHitTypeFireWound)
+        if (ITEMS_ARRAY_MAX <= idx)
+            break;
+        float cur = 0.f;
+        float slot = 0.f;
+        //Для хит тайпов
+        if (htype)
+        {
+            ALife::EHitType hit_type = ALife::g_tfString2HitType(htype);
+            cur = cur_outfit->GetDefHitTypeProtection(hit_type);
+            if (idx == 7)
+            {
+                if (!cur_outfit->bIsHelmetAvaliable)
+                    cur = cur_outfit->GetHeadDefProtection();
+                else
+                    cur = 0.f;
+            }
+            slot = cur;
+            if (slot_outfit)
+            {
+                slot = slot_outfit->GetDefHitTypeProtection(hit_type);
+                if (idx == 7)
+                {
+                    if (!slot_outfit->bIsHelmetAvaliable)
+                        slot = slot_outfit->GetHeadDefProtection();
+                    else
+                        slot = 0.f;
+                }
+            }
+        }
+        else
+        {
+            if (idx == 10)
+            {
+                cur = float(cur_outfit->get_artefact_count());
+                slot = cur;
+                if (slot_outfit)
+                {
+                    slot = float(slot_outfit->get_artefact_count());
+                }
+            }
+            if (idx == 11)
+            {
+                cur = cur_outfit->m_additional_weight;
+                slot = cur;
+                if (slot_outfit)
+                {
+                    slot = slot_outfit->m_additional_weight;
+                }
+            }
+            if (idx == 12)
+            {
+                cur = 1.f - cur_outfit->m_fPowerLoss;
+                slot = cur;
+                if (slot_outfit)
+                {
+                    slot = 1.f - slot_outfit->m_fPowerLoss;
+                }
+            }
+            if (idx == 13)
+            {
+                cur = cur_outfit->m_fHealthRestoreSpeed;
+                slot = cur;
+                if (slot_outfit)
+                {
+                    slot = slot_outfit->m_fHealthRestoreSpeed;
+                }
+            }
+            if (idx == 14)
+            {
+                cur = cur_outfit->m_fRadiationRestoreSpeed;
+                slot = cur;
+                if (slot_outfit)
+                {
+                    slot = slot_outfit->m_fRadiationRestoreSpeed;
+                }
+            }
+            if (idx == 15)
+            {
+                cur = cur_outfit->m_fSatietyRestoreSpeed;
+                slot = cur;
+                if (slot_outfit)
+                {
+                    slot = slot_outfit->m_fSatietyRestoreSpeed;
+                }
+            }
+            if (idx == 16)
+            {
+                cur = cur_outfit->m_fPowerRestoreSpeed;
+                slot = cur;
+                if (slot_outfit)
+                {
+                    slot = slot_outfit->m_fPowerRestoreSpeed;
+                }
+            }
+            if (idx == 17)
+            {
+                cur = cur_outfit->m_fBleedingRestoreSpeed;
+                slot = cur;
+                if (slot_outfit)
+                {
+                    slot = slot_outfit->m_fBleedingRestoreSpeed;
+                }
+            }
+        }
+        bool l_equal = slot_outfit && (cur_outfit != slot_outfit);
+        m_items[idx]->SetValue(cur, slot,l_equal);
+        //Убираем нулёвые показатели
+        if (fis_zero(cur) && fis_zero(slot))
+        {
+            m_items[idx]->Show(false);
             continue;
-
-        ALife::EHitType hit_type = (ALife::EHitType)i;
-        float max_power = actor->conditions().GetZoneMaxPower(hit_type);
-
-        float cur = cur_outfit->GetDefHitTypeProtection(hit_type);
-        cur /= max_power; // = 0..1
-        float slot = cur;
-
-        if (slot_outfit)
-        {
-            slot = slot_outfit->GetDefHitTypeProtection(hit_type);
-            slot /= max_power; //  = 0..1
         }
-        m_items[i]->SetProgressValue(cur, slot);
-    }
-
-    if (m_items[ALife::eHitTypeFireWound])
-    {
-        IKinematics* ikv = smart_cast<IKinematics*>(actor->Visual());
-        VERIFY(ikv);
-        u16 spine_bone = ikv->LL_BoneID("bip01_spine");
-
-        float cur = cur_outfit->GetBoneArmor(spine_bone) * cur_outfit->GetCondition();
-        // if(!cur_outfit->bIsHelmetAvaliable)
-        //{
-        //	spine_bone = ikv->LL_BoneID("bip01_head");
-        //	cur += cur_outfit->GetBoneArmor(spine_bone);
-        //}
-        float slot = cur;
-        if (slot_outfit)
+        else if(!m_items[idx]->IsShown())
         {
-            spine_bone = ikv->LL_BoneID("bip01_spine");
-            slot = slot_outfit->GetBoneArmor(spine_bone) * slot_outfit->GetCondition();
-            // if(!slot_outfit->bIsHelmetAvaliable)
-            //{
-            //	spine_bone = ikv->LL_BoneID("bip01_head");
-            //	slot += slot_outfit->GetBoneArmor(spine_bone);
-            //}
+            m_items[idx]->Show(true);
         }
-        float max_power = actor->conditions().GetMaxFireWoundProtection();
-        cur /= max_power;
-        slot /= max_power;
-        m_items[ALife::eHitTypeFireWound]->SetProgressValue(cur, slot);
+        // Сдвиг
+        m_items[idx]->SetWndPos(pos);
+        pos.y += m_items[idx]->GetWndSize().y;
     }
+    pos.x = GetWndSize().x;
+    SetWndSize(pos);
 }
 
 void CUIOutfitInfo::UpdateInfo(CHelmet* cur_helmet, CHelmet* slot_helmet)
@@ -199,39 +304,209 @@ void CUIOutfitInfo::UpdateInfo(CHelmet* cur_helmet, CHelmet* slot_helmet)
     {
         return;
     }
+    Fvector2 pos;
+    pos.set(0.0f, 0.0f);
+    if (m_Prop_line)
+        pos.set(0.0f, m_Prop_line->GetWndPos().y + m_Prop_line->GetWndSize().y);
 
-    for (u32 i = 0; i < max_count; ++i)
+    for (auto [name, descr, idx, htype] : outfit_info_list)
     {
-        if (!m_items[i])
+        if (!m_items[idx])
             continue;
-
-        if (i == ALife::eHitTypeFireWound)
-            continue;
-
-        ALife::EHitType hit_type = (ALife::EHitType)i;
-        float max_power = actor->conditions().GetZoneMaxPower(hit_type);
-
-        float cur = cur_helmet->GetDefHitTypeProtection(hit_type);
-        cur /= max_power; // = 0..1
-        float slot = cur;
-
-        if (slot_helmet)
+        if (ITEMS_ARRAY_MAX <= idx)
+            break;
+        float cur = 0.f;
+        float slot = 0.f;
+        // Для хит тайпов
+        if (htype)
         {
-            slot = slot_helmet->GetDefHitTypeProtection(hit_type);
-            slot /= max_power; //  = 0..1
+            ALife::EHitType hit_type = ALife::g_tfString2HitType(htype);
+            cur = cur_helmet->GetDefHitTypeProtection(hit_type);
+            if (idx == 6)
+            {
+                    cur = 0.f;
+            }
+            slot = cur;
+            if (slot_helmet)
+            {
+                slot = slot_helmet->GetDefHitTypeProtection(hit_type);
+                if (idx == 6)
+                {
+                        slot = 0.f;
+                }
+            }
         }
-        m_items[i]->SetProgressValue(cur, slot);
+        else
+        {
+            if (idx == 13)
+            {
+                cur = cur_helmet->m_fHealthRestoreSpeed;
+                slot = cur;
+                if (slot_helmet)
+                {
+                        slot = slot_helmet->m_fHealthRestoreSpeed;
+                }
+            }
+            if (idx == 14)
+            {
+                cur = cur_helmet->m_fRadiationRestoreSpeed;
+                slot = cur;
+                if (slot_helmet)
+                {
+                        slot = slot_helmet->m_fRadiationRestoreSpeed;
+                }
+            }
+            if (idx == 15)
+            {
+                cur = cur_helmet->m_fSatietyRestoreSpeed;
+                slot = cur;
+                if (slot_helmet)
+                {
+                        slot = slot_helmet->m_fSatietyRestoreSpeed;
+                }
+            }
+            if (idx == 16)
+            {
+                cur = cur_helmet->m_fPowerRestoreSpeed;
+                slot = cur;
+                if (slot_helmet)
+                {
+                        slot = slot_helmet->m_fPowerRestoreSpeed;
+                }
+            }
+            if (idx == 17)
+            {
+                cur = cur_helmet->m_fBleedingRestoreSpeed;
+                slot = cur;
+                if (slot_helmet)
+                {
+                        slot = slot_helmet->m_fBleedingRestoreSpeed;
+                }
+            }
+        }
+        bool l_equal = slot_helmet && (cur_helmet != slot_helmet);
+        m_items[idx]->SetValue(cur, slot, l_equal);
+        // Убираем нулёвые показатели
+        if (fis_zero(cur) && fis_zero(slot))
+        {
+            m_items[idx]->Show(false);
+            continue;
+        }
+        else if (!m_items[idx]->IsShown())
+        {
+            m_items[idx]->Show(true);
+        }
+        // Сдвиг
+        m_items[idx]->SetWndPos(pos);
+        pos.y += m_items[idx]->GetWndSize().y;
     }
+    pos.x = GetWndSize().x;
+    SetWndSize(pos);
+}
 
-    if (m_items[ALife::eHitTypeFireWound])
+void CUIOutfitInfo::UpdateInfo(CActorGlove* cur_glove, CActorGlove* slot_glove)
+{
+    CActor* actor = smart_cast<CActor*>(Level().CurrentViewEntity());
+    if (!actor || !cur_glove)
     {
-        IKinematics* ikv = smart_cast<IKinematics*>(actor->Visual());
-        VERIFY(ikv);
-        u16 spine_bone = ikv->LL_BoneID("bip01_head");
-
-        float cur = cur_helmet->GetBoneArmor(spine_bone) * cur_helmet->GetCondition();
-        float slot = (slot_helmet) ? slot_helmet->GetBoneArmor(spine_bone) * slot_helmet->GetCondition() : cur;
-
-        m_items[ALife::eHitTypeFireWound]->SetProgressValue(cur, slot);
+        return;
     }
+    Fvector2 pos;
+    pos.set(0.0f, 0.0f);
+    if (m_Prop_line)
+        pos.set(0.0f, m_Prop_line->GetWndPos().y + m_Prop_line->GetWndSize().y);
+
+    for (auto [name, descr, idx, htype] : outfit_info_list)
+    {
+        if (!m_items[idx])
+            continue;
+        if (ITEMS_ARRAY_MAX <= idx)
+            break;
+        float cur = 0.f;
+        float slot = 0.f;
+        // Для хит тайпов
+        if (htype)
+        {
+            ALife::EHitType hit_type = ALife::g_tfString2HitType(htype);
+            cur = cur_glove->GetDefHitTypeProtection(hit_type);
+            if (idx == 7)
+            {
+                cur = 0.f;
+            }
+            slot = cur;
+            if (slot_glove)
+            {
+                slot = slot_glove->GetDefHitTypeProtection(hit_type);
+                if (idx == 7)
+                {
+                        slot = 0.f;
+                }
+            }
+        }
+        else
+        {
+            if (idx == 13)
+            {
+                cur = cur_glove->m_fHealthRestoreSpeed;
+                slot = cur;
+                if (slot_glove)
+                {
+                        slot = slot_glove->m_fHealthRestoreSpeed;
+                }
+            }
+            if (idx == 14)
+            {
+                cur = cur_glove->m_fRadiationRestoreSpeed;
+                slot = cur;
+                if (slot_glove)
+                {
+                        slot = slot_glove->m_fRadiationRestoreSpeed;
+                }
+            }
+            if (idx == 15)
+            {
+                cur = cur_glove->m_fSatietyRestoreSpeed;
+                slot = cur;
+                if (slot_glove)
+                {
+                        slot = slot_glove->m_fSatietyRestoreSpeed;
+                }
+            }
+            if (idx == 16)
+            {
+                cur = cur_glove->m_fPowerRestoreSpeed;
+                slot = cur;
+                if (slot_glove)
+                {
+                        slot = slot_glove->m_fPowerRestoreSpeed;
+                }
+            }
+            if (idx == 17)
+            {
+                cur = cur_glove->m_fBleedingRestoreSpeed;
+                slot = cur;
+                if (slot_glove)
+                {
+                        slot = slot_glove->m_fBleedingRestoreSpeed;
+                }
+            }
+        }
+        bool l_equal = slot_glove && (cur_glove != slot_glove);
+        m_items[idx]->SetValue(cur, slot, l_equal);
+        // Убираем нулёвые показатели
+        if (fis_zero(cur) && fis_zero(slot))
+        {
+            m_items[idx]->Show(false);
+            continue;
+        }
+        else if (!m_items[idx]->IsShown())
+        {
+            m_items[idx]->Show(true);
+        }
+        // Сдвиг
+        m_items[idx]->SetWndPos(pos);
+        pos.y += m_items[idx]->GetWndSize().y;
+    }
+    pos.x = GetWndSize().x;
+    SetWndSize(pos);
 }

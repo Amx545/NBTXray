@@ -42,6 +42,7 @@ public:
     float GetSatietyPower() const { return m_fSatietyRestoreSpeed; }
     float GetPowerPower() const { return m_fPowerRestoreSpeed; }
     float GetBleedingPower() const { return m_fBleedingRestoreSpeed; }
+    float GetPsyHealthPower() const { return m_fPsyHealthRestoreSpeed; }
 
     void SetHealthPower(const float value) { m_fHealthRestoreSpeed = value; }
     void SetRadiationPower(const float value) { m_fRadiationRestoreSpeed = value; }
@@ -65,6 +66,14 @@ protected:
     u8 m_af_rank;
     bool m_bLightsEnabled;
     float m_additional_weight{};
+    float m_additional_health{};
+    float m_additional_power{};
+    float m_additional_psy_health{};
+    u8 m_additional_vitality{};
+    u8 m_additional_vigor{};
+    u8 m_additional_intelligence{};
+    u8 m_additional_dexterity{};
+    float m_fPsyHealthRestoreSpeed;
 
     virtual void UpdateLights();
 
@@ -84,6 +93,13 @@ public:
     virtual void PhTune(float step){};
 
     float AdditionalInventoryWeight() const { return m_additional_weight; }
+    float AdditionalHealth() const { return m_additional_health; }
+    float AdditionalPower() const { return m_additional_power; }
+    float AdditionalPsyHealth() const { return m_additional_psy_health; }
+    u8 AdditionalVitality() const { return m_additional_vitality; }
+    u8 AdditionalVigor() const { return m_additional_vigor; }
+    u8 AdditionalMind() const { return m_additional_intelligence; }
+    u8 AdditionalSkill() const { return m_additional_dexterity; }
     bool m_bCanSpawnZone;
     float m_fHealthRestoreSpeed;
     float m_fRadiationRestoreSpeed;

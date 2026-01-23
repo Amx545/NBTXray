@@ -16,6 +16,7 @@ protected:
     virtual void PlayReloadSound();
     virtual void PlayAnimIdle();
     virtual void PlayAnimIdleMoving();
+    virtual void PlayAnimIdleMovingCrouch();
     virtual void PlayAnimIdleSprint();
     virtual void PlayAnimShow();
     virtual void PlayAnimHide();

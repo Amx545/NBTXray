@@ -56,6 +56,7 @@ public:
 
     bool CanPutInSlot(PIItem pIItem, u16 slot_id) const;
     bool CanPutInBelt(PIItem pIItem);
+    bool CanPutArtefactInBelt(PIItem pIItem);
     bool CanPutInRuck(PIItem pIItem) const;
 
     bool CanTakeItem(CInventoryItem* inventory_item) const;
@@ -135,6 +136,7 @@ public:
     void AddAvailableItems(TIItemContainer& items_container, bool for_trade) const;
 
     float GetMaxWeight() const { return m_fMaxWeight; }
+    float GetStoredWeight() const { return stored_fMaxWeight; }
     void SetMaxWeight(float weight) { m_fMaxWeight = weight; }
     u32 BeltWidth() const;
     u32 BeltMaxWidth() const;
@@ -167,6 +169,7 @@ protected:
 
     // максимальный вес инвентаря
     float m_fMaxWeight;
+    float stored_fMaxWeight{50.0f};
     // текущий вес в инвентаре
     float m_fTotalWeight{ -1.0f };
 

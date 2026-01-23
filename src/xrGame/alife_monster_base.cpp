@@ -18,14 +18,27 @@ void CSE_ALifeMonsterBase::on_spawn()
 
     if (!pSettings->line_exist(s_name, "Spawn_Inventory_Item_Section"))
         return;
-
-    LPCSTR item_section = pSettings->r_string(s_name, "Spawn_Inventory_Item_Section");
-    float spawn_probability = pSettings->r_float(s_name, "Spawn_Inventory_Item_Probability");
-    float probability = randF();
-    if ((probability >= spawn_probability) && !fsimilar(spawn_probability, 1.f))
-        return;
-
-    alife().spawn_item(item_section, o_Position, m_tNodeID, m_tGraphID, ID)->ID_Parent = ID;
+    // LPCSTR item_section = pSettings->r_string(s_name, "Spawn_Inventory_Item_Section");
+    // float spawn_probability = pSettings->r_float(s_name, "Spawn_Inventory_Item_Probability");
+    string128 buffer;
+    float temp_sp;
+    pstr temp_is;
+    shared_str item_section = pSettings->r_string_wb(s_name, "Spawn_Inventory_Item_Section");
+    shared_str spawn_probability = pSettings->r_string_wb(s_name, "Spawn_Inventory_Item_Probability");
+    u8 num_item_sections = _GetItemCount(*item_section);
+    u8 num_spawn_probability = _GetItemCount(*item_section);
+    for (u8 i = 0; i < num_item_sections; i++)
+    //float probability = randF();
+    {
+        if (num_spawn_probability > i)
+            temp_sp = (float)atof(_GetItem(*spawn_probability, i, buffer));
+        else
+            temp_sp = (float)atof(_GetItem(*spawn_probability, 0, buffer));
+        temp_is = _GetItem(*item_section, i, buffer);
+        if ((randF() >= temp_sp) && !fsimilar(temp_sp, 1.f))
+            continue;
+        alife().spawn_item(temp_is, o_Position, m_tNodeID, m_tGraphID, ID)->ID_Parent = ID;
+    }
 }
 
 extern void add_online_impl(CSE_ALifeDynamicObject* object, const bool& update_registries);

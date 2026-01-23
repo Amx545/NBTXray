@@ -64,7 +64,10 @@ void CWeapon::FireTrace(const Fvector& P, const Fvector& D)
     bool is_tracer = m_bHasTracers && !!l_cartridge.m_flags.test(CCartridge::cfTracer);
     if (is_tracer && !IsGameTypeSingle())
         is_tracer = is_tracer /*&& (m_magazine.size() % 3 == 0)*/ && !IsSilencerAttached();
-
+    if (fHitPowerByType.find(ALife::eHitTypeExplosion)->second > 0.1f)
+    {
+        l_cartridge.m_flags.set(CCartridge::cfExplosive, true);
+    }
     l_cartridge.m_flags.set(CCartridge::cfTracer, is_tracer);
     if (m_u8TracerColorID != u8(-1))
         l_cartridge.param_s.u8ColorID = m_u8TracerColorID;
@@ -108,10 +111,20 @@ void CWeapon::FireTrace(const Fvector& P, const Fvector& D)
     }
 
     bool SendHit = SendHitAllowed(H_Parent());
+    if (fArmorIgnoreMode > 0.f)
+    {
+        l_cartridge.param_s.kAP += fArmorIgnoreMode;
+        if (l_cartridge.param_s.kAP >= .9f)
+            l_cartridge.param_s.kAP = 0.9f;
+    }
     //выстерлить пулю (с учетом возможной стрельбы дробью)
     for (int i = 0; i < l_cartridge.param_s.buckShot; ++i)
     {
         FireBullet(P, D, fire_disp, l_cartridge, H_Parent()->ID(), ID(), SendHit);
+        if (bDoubleShotMode && iAmmoElapsed > 1)
+        {
+            FireBullet(P, D, fire_disp, l_cartridge, H_Parent()->ID(), ID(), SendHit);
+        }
     }
 
     StartShotParticles();
@@ -126,6 +139,11 @@ void CWeapon::FireTrace(const Fvector& P, const Fvector& D)
     // Ammo
     m_magazine.pop_back();
     --iAmmoElapsed;
+    if (bDoubleShotMode && iAmmoElapsed > 0)
+    {
+        m_magazine.pop_back();
+        --iAmmoElapsed;
+    }
 
     VERIFY((u32)iAmmoElapsed == m_magazine.size());
 }

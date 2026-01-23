@@ -10,7 +10,9 @@
 #include "Include/xrRender/KinematicsAnimated.h"
 #include "Include/xrRender/Kinematics.h"
 #include "Common/object_broker.h"
+#include "Actor.h"
 #include "ActorHelmet.h"
+#include "ActorGlove.h"
 
 #define MAX_HEALTH 1.0f
 #define MIN_HEALTH -0.01f
@@ -35,6 +37,9 @@ CEntityCondition::CEntityCondition(CEntityAlive* object) : CEntityConditionSimpl
     m_use_limping_state = false;
     m_iLastTimeCalled = 0;
     m_bTimeValid = false;
+    bBurnHitEnable = false;
+    fBurnHitTime = 0.f;
+    fBurnHitDelay = 0.f;
 
     m_fPowerMax = MAX_POWER;
     m_fRadiationMax = MAX_RADIATION;
@@ -62,15 +67,6 @@ CEntityCondition::CEntityCondition(CEntityAlive* object) : CEntityConditionSimpl
     m_fBoostRadiationProtection = 0.f;
     m_fBoostTelepaticProtection = 0.f;
     m_fBoostChemicalBurnProtection = 0.f;
-    m_fBoostGraveImmunity = 0.f;
-    m_fBoostHealthIncrease = 0.f;
-    m_fBoostPowerIncrease = 0.f;
-    m_fBoostSniper = 1.f;
-    m_fBoostDoubleShot = 1.f;
-    m_fBoostSpeedShot = 1.f;
-    m_fBoostSpeedReload = 1.f;
-    m_fBoostMoveSpeedIncrease = 0.f;
-    m_fBoostJumpIncrease = 0.f;
 
     m_fDeltaHealth = 0;
     m_fDeltaPower = 0;
@@ -87,6 +83,7 @@ CEntityCondition::CEntityCondition(CEntityAlive* object) : CEntityConditionSimpl
     m_fLastChanceHealth = 0;
     m_fInvulnerableTime = 0;
     m_fInvulnerableTimeDelta = 0;
+    m_fConfigHealthMax = 1.f;
 
     m_fHitBoneScale = 1.f;
     m_fWoundBoneScale = 1.f;
@@ -114,6 +111,8 @@ void CEntityCondition::LoadCondition(LPCSTR entity_section)
     m_fMinWoundSize = pSettings->r_float(section, "min_wound_size");
     m_fHealthHitPart = pSettings->r_float(section, "health_hit_part");
     m_fPowerHitPart = pSettings->r_float(section, "power_hit_part");
+    fShockMax = READ_IF_EXISTS(pSettings, r_float, section, "max_shock_value", 1.f);
+    fShockIncarnatione = READ_IF_EXISTS(pSettings, r_float, section, "shock_incarnatione", 0.0002f);
 
     m_use_limping_state = !!(READ_IF_EXISTS(pSettings, r_bool, section, "use_limping_state", FALSE));
     m_limping_threshold = READ_IF_EXISTS(pSettings, r_float, section, "limping_threshold", .5f);
@@ -121,6 +120,9 @@ void CEntityCondition::LoadCondition(LPCSTR entity_section)
     m_fKillHitTreshold = READ_IF_EXISTS(pSettings, r_float, section, "killing_hit_treshold", 0.0f);
     m_fLastChanceHealth = READ_IF_EXISTS(pSettings, r_float, section, "last_chance_health", 0.0f);
     m_fInvulnerableTimeDelta = READ_IF_EXISTS(pSettings, r_float, section, "invulnerable_time", 0.0f) / 1000.f;
+    m_fConfigHealthMax = READ_IF_EXISTS(pSettings, r_float, section, "MaxHealthValue", 100.0f) / 100.f;
+    max_health() = m_fConfigHealthMax;
+    bCorrosionEnable = false;
 }
 
 void CEntityCondition::LoadTwoHitsDeathParams(LPCSTR section)
@@ -135,14 +137,14 @@ void CEntityCondition::reinit()
     m_iLastTimeCalled = 0;
     m_bTimeValid = false;
 
-    max_health() = MAX_HEALTH;
+    max_health() = m_fConfigHealthMax;
     m_fPowerMax = MAX_POWER;
     m_fRadiationMax = MAX_RADIATION;
     m_fPsyHealthMax = MAX_PSY_HEALTH;
 
     m_fEntityMorale = m_fEntityMoraleMax = 1.f;
 
-    SetHealth(MAX_HEALTH);
+    //SetHealth(m_fConfigHealthMax);
     m_fPower = MAX_POWER;
     m_fRadiation = 0;
     m_fPsyHealth = MAX_PSY_HEALTH;
@@ -201,6 +203,110 @@ void CEntityCondition::UpdateWounds()
         std::remove_if(m_WoundVector.begin(), m_WoundVector.end(), &RemoveWoundPred), m_WoundVector.end());
 }
 
+void CEntityCondition::UpdateFireBurn()
+{
+    if (!bBurnHitEnable)
+        return;
+    if (Device.fTimeGlobal < fBurnHitDelay)
+        return;
+    if (Device.fTimeGlobal > fBurnHitTime)
+    {
+        bBurnHitEnable = false;
+        fBurnHitDelay = 0.f;
+        fBurnHitTime = 0.f;
+    }
+    else
+    {
+        fBurnHitDelay = Device.fTimeGlobal + 0.5f;
+        Msg("Fire tick hit: Time %f[Delay %f, Delta %f]", bBurnHitEnable, fBurnHitTime, fBurnHitDelay,
+            Device.fTimeGlobal);
+        m_object->Hit(&SBurnHitTick);
+    }
+}
+// Добавляем новый ожёг
+void CEntityCondition::SetFireBurn(SHit* pHDS)
+{
+    if (::Random.randF(1.f) < 0.75f)
+        return;
+    float power = pHDS->power * 0.08f;
+    SBurnHitTick = SHit(
+        power, 
+        pHDS->dir, 
+        pHDS->who,
+        pHDS->boneID,
+        pHDS->p_in_bone_space,
+        0.f, 
+        ALife::eHitTypeLightBurn,
+        0.f,
+        false);
+    fBurnHitTime = Device.fTimeGlobal + ((pHDS->armor_piercing + 1.1f) * 2.f);
+    bBurnHitEnable = true;
+    LPCSTR l_effect = "static\\zharka_static";
+    PlayHitParticle(l_effect);
+}
+
+void CEntityCondition::UpdateCorrosion()
+{
+    if (!bCorrosionEnable)
+        return;
+    if (fCorrosionTime < Device.fTimeGlobal)
+    {
+        Msg("Corrosion Close");
+        bCorrosionEnable = false;
+        fCorrosion = 1.0f;
+    }
+}
+
+void CEntityCondition::SetCorrosion(float power)
+{
+    if (::Random.randF(1.f) < 0.9f)
+        return;
+    bCorrosionEnable = true;
+    fCorrosionTime = Device.fTimeGlobal + ((power + 5.63f) * 1.85f);
+    Msg("Set Corrosion %f, TARGET: %s", fCorrosionTime, m_object->cNameSect().c_str());
+    LPCSTR l_effect = "zones_mine\\zone_acidic_mine_hit";
+    PlayHitParticle(l_effect);
+}
+
+void CEntityCondition::UpdateShock()
+{ 
+    /* old shock
+    if (fShockCurrent >= fShockMax)
+    {
+        fShockDamage = 0.15f * GetHitImmunity(ALife::eHitTypeShock) * fCorrosion;
+        float l_health = GetMaxHealth() * fShockDamage;
+        m_fDeltaHealth -= CanBeHarmed() ? l_health : 0.f;
+        Msg("Shock Shot %f, Target: %s", fShockDamage, m_object->cNameSect().c_str());
+        fShockCurrent = 0.f;
+        fShockDelay = Device.fTimeGlobal + 3.f;
+    }
+    if (fShockCurrent > 0.f)
+    {
+        fShockDelta -= fShockIncarnatione;
+    }*/
+    if (bShockEnable)
+    {
+        fShockDamage = GetHealth() * 0.15f;
+        m_fDeltaHealth -= CanBeHarmed() ? fShockDamage : 0.f;
+        fShockDelay = Device.fTimeGlobal + 3.f;
+        bShockEnable = false;
+        Msg("Shock Shot %f, Target: %s", fShockDamage, m_object->cNameSect().c_str());
+        LPCSTR l_effect = "anomaly2\\electra2_blast";
+        PlayHitParticle(l_effect);
+    }
+}
+
+void CEntityCondition::SetShockHit(float power)
+{
+    if (fShockDelay > Device.fTimeGlobal)
+        return;
+    if (::Random.randF(1.f) < 0.9f)
+        return;
+    bShockEnable = true;
+    //fShockDelta += power * 0.87f; old shock
+
+}
+
 void CEntityCondition::UpdateConditionTime()
 {
     u64 _cur_time = (GameID() == eGameIDSingle) ? Level().GetGameTime() : Level().timeServer();
@@ -251,6 +357,10 @@ void CEntityCondition::UpdateCondition()
     //-----------------------------------------
     UpdateHealth();
     //-----------------------------------------
+    UpdateCorrosion();
+    UpdateFireBurn();
+    UpdateShock();
+    //-----------------------------------------
     if (!CriticalHealth && m_fDeltaHealth + GetHealth() <= 0)
     {
         CriticalHealth = true;
@@ -286,6 +396,7 @@ void CEntityCondition::UpdateCondition()
     m_fPsyHealth += m_fDeltaPsyHealth;
     m_fEntityMorale += m_fDeltaEntityMorale;
     m_fRadiation += m_fDeltaRadiation;
+    fShockCurrent += fShockDelta;
 
     m_fDeltaHealth = 0;
     m_fDeltaPower = 0;
@@ -293,6 +404,7 @@ void CEntityCondition::UpdateCondition()
     m_fDeltaPsyHealth = 0;
     m_fDeltaCircumspection = 0;
     m_fDeltaEntityMorale = 0;
+    fShockDelta = 0.f;
     float l_health = GetHealth();
     clamp(l_health, MIN_HEALTH, max_health());
     SetHealth(l_health);
@@ -303,28 +415,55 @@ void CEntityCondition::UpdateCondition()
 }
 
 float CEntityCondition::HitOutfitEffect(
-    float hit_power, ALife::EHitType hit_type, s16 element, float ap, bool& add_wound)
+    float hit_power, ALife::EHitType hit_type, s16 element, float ap, bool& add_wound, float& hit_frac)
 {
     CInventoryOwner* pInvOwner = smart_cast<CInventoryOwner*>(m_object);
     if (!pInvOwner)
         return hit_power;
 
+    float protection = 0.f;
+
     CCustomOutfit* pOutfit = (CCustomOutfit*)pInvOwner->inventory().ItemFromSlot(OUTFIT_SLOT);
     CHelmet* pHelmet = (CHelmet*)pInvOwner->inventory().ItemFromSlot(HELMET_SLOT);
-    if (!pOutfit && !pHelmet)
-        return hit_power;
+    CActorGlove* pGlove = pInvOwner->GetItemFromSlot<CActorGlove>(ACTORGLOVE_SLOT);
+    CActor* pActor = smart_cast<CActor*>(m_object);
 
-    float new_hit_power = hit_power;
+    if (pActor)
+        protection += pActor->GetProtection_ArtefactsOnBelt(hit_type);
+
     if (pOutfit)
-        new_hit_power = pOutfit->HitThroughArmor(hit_power, element, ap, add_wound, hit_type);
+    {
+        protection += pOutfit->HitThroughArmor(hit_power, element, ap, add_wound, hit_type);
+        hit_frac = pOutfit->GetHitFraction();
+    }
 
     if (pHelmet)
-        new_hit_power = pHelmet->HitThroughArmor(new_hit_power, element, ap, add_wound, hit_type);
+        protection += pHelmet->HitThroughArmor(hit_power, element, ap, add_wound, hit_type);
 
-    if (bDebug)
-        Msg("new_hit_power = %.3f  hit_type = %s  ap = %.3f", new_hit_power, ALife::g_cafHitType2String(hit_type), ap);
+    if (pGlove)
+        protection += pGlove->HitThroughArmor(hit_power, element, ap, add_wound, hit_type);
 
-    return new_hit_power;
+    switch (hit_type)
+    {
+    case ALife::eHitTypeTelepatic: protection += m_fBoostTelepaticProtection; break;
+    case ALife::eHitTypeChemicalBurn: protection += m_fBoostChemicalBurnProtection; break;
+    case ALife::eHitTypeRadiation: protection += m_fBoostRadiationProtection; break;
+    default: break;
+    }
+    //if (bDebug)
+    //    Msg("new_hit_power = %.3f  hit_type = %s  ap = %.3f", new_hit_power, ALife::g_cafHitType2String(hit_type), ap);
+    return protection;
+}
+
+float CEntityCondition::GetOutfitHF()
+{
+    CInventoryOwner* pInvOwner = smart_cast<CInventoryOwner*>(m_object);
+    if (!pInvOwner)
+        return 0.f;
+    CCustomOutfit* pOutfit = (CCustomOutfit*)pInvOwner->inventory().ItemFromSlot(OUTFIT_SLOT);
+    if (!pOutfit)
+        return 0.f;
+    return pOutfit->GetHitFraction();
 }
 
 float CEntityCondition::HitPowerEffect(float power_loss)
@@ -340,6 +479,21 @@ float CEntityCondition::HitPowerEffect(float power_loss)
     float new_power_loss = power_loss * pOutfit->m_fPowerLoss;
 
     return new_power_loss;
+}
+
+void CEntityCondition::PlayHitParticle(LPCSTR effect)
+{
+    Fvector center;
+    VERIFY2(m_object->Visual(), *cName());
+    m_object->renderable.xform.transform_tiny(center, m_object->renderable.visual->getVisData().sphere.P);
+    CParticlesObject* ps = CParticlesObject::Create(effect, true);
+    Fmatrix matrix;
+    matrix.identity();
+    matrix.k.set(Fvector().set(0.f, 1.f, 0.f));
+    Fvector::generate_orthonormal_basis_normalized(matrix.k, matrix.j, matrix.i);
+    matrix.translate_over(center);
+    ps->SetXFORM(matrix);
+    ps->Play(false);
 }
 
 CWound* CEntityCondition::AddWound(float hit_power, ALife::EHitType hit_type, u16 element)
@@ -361,14 +515,14 @@ CWound* CEntityCondition::AddWound(float hit_power, ALife::EHitType hit_type, u1
     if (it == m_WoundVector.end())
     {
         pWound = xr_new<CWound>(element);
-        pWound->AddHit(hit_power * ::Random.randF(0.5f, 1.5f), hit_type);
+        pWound->AddHit(hit_power, hit_type);
         m_WoundVector.push_back(pWound);
     }
     //старая
     else
     {
         pWound = *it;
-        pWound->AddHit(hit_power * ::Random.randF(0.5f, 1.5f), hit_type);
+        pWound->AddHit(hit_power, hit_type);
     }
 
     VERIFY(pWound);
@@ -384,81 +538,77 @@ CWound* CEntityCondition::ConditionHit(SHit* pHDS)
     bool const is_special_hit_2_self = (pHDS->who == m_object) && (pHDS->boneID == BI_NONE);
 
     bool bAddWound = pHDS->add_wound;
-
-    float hit_power_org = pHDS->damage();
-    float hit_power = hit_power_org;
-    hit_power = HitOutfitEffect(hit_power_org, pHDS->hit_type, pHDS->boneID, pHDS->armor_piercing, bAddWound);
-
+    float hit_power = pHDS->damage(), hit_power_org = pHDS->damage();
+    fCorrosion = 1.f;
+    if(bCorrosionEnable)
+    {
+        fCorrosion = 1.05f + (hit_power * 0.1f);
+    }
     switch (pHDS->hit_type)
     {
     case ALife::eHitTypeTelepatic:
-        hit_power -= m_fBoostTelepaticProtection;
-        if (hit_power < 0.f)
-            hit_power = 0.f;
-        hit_power *= GetHitImmunity(pHDS->hit_type) - m_fBoostTelepaticImmunity;
+        hit_power *= GetHitImmunity(ALife::eHitTypeTelepatic) * fCorrosion - m_fBoostTelepaticImmunity;
         ChangePsyHealth(-hit_power);
-        m_fHealthLost = hit_power * m_fHealthHitPart;
-        m_fDeltaHealth -= CanBeHarmed() ? m_fHealthLost : 0;
-        m_fDeltaPower -= hit_power * m_fPowerHitPart;
         bAddWound = false;
         break;
     case ALife::eHitTypeLightBurn:
-    case ALife::eHitTypeBurn:
-        hit_power *= GetHitImmunity(ALife::eHitTypeBurn) - m_fBoostBurnImmunity;
+        hit_power *= GetHitImmunity(ALife::eHitTypeBurn) * fCorrosion - m_fBoostBurnImmunity;
         m_fHealthLost = hit_power * m_fHealthHitPart * m_fHitBoneScale;
         m_fDeltaHealth -= CanBeHarmed() ? m_fHealthLost : 0;
         m_fDeltaPower -= hit_power * m_fPowerHitPart;
-        //		bAddWound		=  is_special_hit_2_self;
+        bAddWound = false;
+        break;
+    case ALife::eHitTypeBurn:
+        hit_power *= GetHitImmunity(ALife::eHitTypeBurn) * fCorrosion - m_fBoostBurnImmunity;
+        m_fHealthLost = hit_power * m_fHealthHitPart * m_fHitBoneScale;
+        m_fDeltaHealth -= CanBeHarmed() ? m_fHealthLost : 0;
+        m_fDeltaPower -= hit_power * m_fPowerHitPart;
+        SetFireBurn(pHDS);
         bAddWound = false;
         break;
     case ALife::eHitTypeChemicalBurn:
-        hit_power -= m_fBoostChemicalBurnProtection;
-        if (hit_power < 0.f)
-            hit_power = 0.f;
-        hit_power *= GetHitImmunity(pHDS->hit_type) - m_fBoostChemicalBurnImmunity;
+        hit_power *= GetHitImmunity(ALife::eHitTypeChemicalBurn) * fCorrosion - m_fBoostChemicalBurnImmunity;
         m_fHealthLost = hit_power * m_fHealthHitPart;
         m_fDeltaHealth -= CanBeHarmed() ? m_fHealthLost : 0;
         m_fDeltaPower -= hit_power * m_fPowerHitPart;
-        bAddWound = false;
+        SetCorrosion(hit_power);
         break;
     case ALife::eHitTypeShock:
-        hit_power *= GetHitImmunity(pHDS->hit_type) - m_fBoostShockImmunity;
+        hit_power *= GetHitImmunity(ALife::eHitTypeShock) * fCorrosion - m_fBoostShockImmunity;
         m_fHealthLost = hit_power * m_fHealthHitPart;
         m_fDeltaHealth -= CanBeHarmed() ? m_fHealthLost : 0;
         m_fDeltaPower -= hit_power * m_fPowerHitPart;
+        SetShockHit(hit_power);
         bAddWound = false;
         break;
     case ALife::eHitTypeRadiation:
-        hit_power -= m_fBoostRadiationProtection;
-        if (hit_power < 0.f)
-            hit_power = 0.f;
-        hit_power *= GetHitImmunity(pHDS->hit_type) - m_fBoostRadiationImmunity;
+        hit_power *= GetHitImmunity(ALife::eHitTypeRadiation) * fCorrosion - m_fBoostRadiationImmunity;
         m_fDeltaRadiation += hit_power;
         bAddWound = false;
         return NULL;
         break;
     case ALife::eHitTypeExplosion:
-        hit_power *= GetHitImmunity(pHDS->hit_type) - m_fBoostExplImmunity;
+        hit_power *= GetHitImmunity(ALife::eHitTypeExplosion) * fCorrosion - m_fBoostExplImmunity;
         m_fHealthLost = hit_power * m_fHealthHitPart;
         m_fDeltaHealth -= CanBeHarmed() ? m_fHealthLost : 0;
         m_fDeltaPower -= hit_power * m_fPowerHitPart;
         break;
     case ALife::eHitTypeStrike:
     case ALife::eHitTypePhysicStrike:
-        hit_power *= GetHitImmunity(pHDS->hit_type) - m_fBoostStrikeImmunity;
+        hit_power *= GetHitImmunity(ALife::eHitTypeStrike) * fCorrosion - m_fBoostStrikeImmunity;
         m_fHealthLost = hit_power * m_fHealthHitPart;
         m_fDeltaHealth -= CanBeHarmed() ? m_fHealthLost : 0;
         m_fDeltaPower -= hit_power * m_fPowerHitPart;
         bAddWound = false;
         break;
     case ALife::eHitTypeFireWound:
-        hit_power *= GetHitImmunity(pHDS->hit_type) - m_fBoostFireWoundImmunity;
+        hit_power *= GetHitImmunity(ALife::eHitTypeFireWound) * fCorrosion - m_fBoostFireWoundImmunity;
         m_fHealthLost = hit_power * m_fHealthHitPart * m_fHitBoneScale;
         m_fDeltaHealth -= CanBeHarmed() ? m_fHealthLost : 0;
         m_fDeltaPower -= hit_power * m_fPowerHitPart;
         break;
     case ALife::eHitTypeWound:
-        hit_power *= GetHitImmunity(pHDS->hit_type) - m_fBoostWoundImmunity;
+        hit_power *= GetHitImmunity(ALife::eHitTypeWound) * fCorrosion - m_fBoostWoundImmunity;
         m_fHealthLost = hit_power * m_fHealthHitPart * m_fHitBoneScale;
         m_fDeltaHealth -= CanBeHarmed() ? m_fHealthLost : 0;
         m_fDeltaPower -= hit_power * m_fPowerHitPart;
@@ -468,16 +618,29 @@ CWound* CEntityCondition::ConditionHit(SHit* pHDS)
     break;
     }
 
+    float hit_wound = hit_power * ::Random.randF(0.6f, 1.2f) * m_fWoundBoneScale;
+    if (pHDS->hit_type == ALife::eHitTypeWound)
+    {
+        hit_wound *= 1.2f;
+        bAddWound = true;
+        if (m_object->GetHitFraction() < pHDS->armor_piercing)
+        {
+            hit_wound /= 1.8f;
+        }
+    }
+    Msg("Entity have hits Resist on cond list start[end] = %f[%f], Def = %f", 
+        hit_power_org, hit_power, GetHitImmunity(pHDS->hit_type));
+
     if (bDebug && !is_special_hit_2_self)
     {
         Msg("%s hitted in %s with %f[%f]", m_object->Name(),
             smart_cast<IKinematics*>(m_object->Visual())->LL_BoneName_dbg(pHDS->boneID), m_fHealthLost * 100.0f,
-            hit_power_org);
+            hit_power);
     }
     //раны добавляются только живому
-    if (bAddWound && GetHealth() > 0)
+    if (bAddWound && GetHealth() > 0.f)
     {
-        return AddWound(hit_power * m_fWoundBoneScale, pHDS->hit_type, pHDS->boneID);
+        return AddWound(hit_wound, pHDS->hit_type, pHDS->boneID);
     }
     else
     {

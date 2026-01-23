@@ -59,6 +59,8 @@ public:
     CUIStatic* UIWeight;
     CUIStatic* UICost;
     CUIStatic* UITradeTip;
+    CUIStatic* UIItemType;
+    CUIStatic* UIArtefactRank;
     //	CUIStatic*			UIDesc_line;
     CUIScrollView* UIDesc;
     bool m_complex_desc;

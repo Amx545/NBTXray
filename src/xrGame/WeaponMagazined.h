@@ -132,6 +132,8 @@ protected:
     xr_vector<s8> m_aFireModes;
     int m_iCurFireMode;
     int m_iPrefferedFireMode;
+    bool m_bQueueProcessed{false};
+    bool m_bTimeReload{false};
 
     //переменная блокирует использование
     //только разных типов патронов

@@ -64,15 +64,21 @@ float CActor::GetWeaponAccuracy() const
 
 void CActor::g_fireParams(const CHudItem* pHudItem, Fvector& fire_pos, Fvector& fire_dir)
 {
+    CHudItem* pHI = const_cast<CHudItem*>(pHudItem);
+    CWeaponMagazined* pWeapon = smart_cast<CWeaponMagazined*>(pHI);
     fire_pos = Cameras().Position();
     fire_dir = Cameras().Direction();
-    
+
     const CMissile* pMissile = smart_cast<const CMissile*>(pHudItem);
     if (pMissile)
     {
         Fvector offset;
         XFORM().transform_dir(offset, pMissile->throw_point_offset());
         fire_pos.add(offset);
+    }
+    if (pWeapon && !pWeapon->IsZoomed())
+    {
+        fire_pos = pWeapon->get_LastFP();
     }
 }
 

@@ -52,24 +52,26 @@ void CWeaponShotEffector::Shot(CWeapon* weapon)
 
     float angle = m_cam_recoil.Dispersion * weapon->cur_silencer_koef.cam_dispersion;
     angle += m_cam_recoil.DispersionInc * weapon->cur_silencer_koef.cam_disper_inc * (float)m_shot_numer;
-    Shot2(angle);
+    angle *= weapon->dFDex();
+    Shot2(angle, weapon->dFDex());
 }
 
-void CWeaponShotEffector::Shot2(float angle)
+void CWeaponShotEffector::Shot2(float angle, float dfdex)
 {
     m_angle_vert +=
         angle * (m_cam_recoil.DispersionFrac + m_Random.randF(-1.0f, 1.0f) * (1.0f - m_cam_recoil.DispersionFrac));
-
-    clamp(m_angle_vert, -m_cam_recoil.MaxAngleVert, m_cam_recoil.MaxAngleVert);
-    if (fis_zero(m_angle_vert - m_cam_recoil.MaxAngleVert))
+    float max_vert = ((dfdex / 10.f)+1.f) * m_cam_recoil.MaxAngleVert;
+    float max_hor = ((dfdex / 10.f)+1.f) * m_cam_recoil.MaxAngleHorz;
+    clamp(m_angle_vert, -max_vert, max_vert);
+    if (fis_zero(m_angle_vert - max_vert))
     {
         m_angle_vert *= m_Random.randF(0.96f, 1.04f);
     }
 
     float rdm = m_Random.randF(-1.0f, 1.0f);
-    m_angle_horz += (m_angle_vert / m_cam_recoil.MaxAngleVert) * rdm * m_cam_recoil.StepAngleHorz;
+    m_angle_horz += (m_angle_vert / max_vert) * rdm * m_cam_recoil.StepAngleHorz;
 
-    clamp(m_angle_horz, -m_cam_recoil.MaxAngleHorz, m_cam_recoil.MaxAngleHorz);
+    clamp(m_angle_horz, -max_hor, max_hor);
 
     m_first_shot = true;
     m_actived = true;

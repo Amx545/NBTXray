@@ -796,30 +796,57 @@ void CKinematicsAnimated::Load(const char* N, IReader* data, u32 dwFlags)
     }
     else if (data->find_chunk(OGF_S_MOTION_REFS2))
     {
+        Msg(make_string("Chunk 2 section '%s'\nmodel '%s' ", current_player_hud_sect.c_str(), N).c_str());
         u32 set_cnt = data->r_u32();
-        m_Motions.reserve(set_cnt);
         string_path nm;
+        BOOL skip = FALSE;
+        if (strstr(make_string("%s", N).c_str(), "wpn_glove_") || strstr(make_string("%s", N).c_str(), "wpn_hand_"))
+        {
+            string64 anim_line;
+            xr_strcpy(anim_line, "anim_1");
+            u8 i = 1;
+            while (pSettings->line_exist("wpn_hand_anim_list", anim_line))
+            {
+                xr_strcpy(nm,pSettings->r_string("wpn_hand_anim_list", anim_line));
+                xr_strcat(nm, ".omf");
+                Msg("Anim_List on LTX Line: %s, Module: '%s'", anim_line, nm);
+                loadOMF(nm);
+                xr_sprintf(anim_line, "anim_%d", ++i);
+            }
+            skip = true;
+            u8 imem = i - u8(1);
+            m_Motions.reserve(imem);
+        }
+        if (!skip)
+            m_Motions.reserve(set_cnt);
         for (u32 k = 0; k < set_cnt; ++k)
         {
             data->r_stringZ(nm, sizeof(nm));
-            if (strstr(nm, "\\*.omf"))
+            if (!skip)
             {
-                FS_FileSet fset;
-                FS.file_list(fset, "$game_meshes$", FS_ListFiles, nm);
-                FS.file_list(fset, "$level$", FS_ListFiles, nm);
-
-                if (fset.size())
+                if (strstr(nm, "\\*.omf"))
                 {
-                    m_Motions.reserve(fset.size() - 1);
+                    FS_FileSet fset;
+                    FS.file_list(fset, "$game_meshes$", FS_ListFiles, nm);
+                    FS.file_list(fset, "$level$", FS_ListFiles, nm);
 
-                    for (FS_FileSet::iterator it = fset.begin(); it != fset.end(); it++)
-                        loadOMF((*it).name.c_str());
+                    if (fset.size())
+                    {
+                        m_Motions.reserve(fset.size() - 1);
+
+                        for (FS_FileSet::iterator it = fset.begin(); it != fset.end(); it++)
+                        {
+                            loadOMF((*it).name.c_str());
+                            Msg("Anim_List '%s'", (*it).name.c_str());
+                        }
+                    }
+
+                    continue;
                 }
-
-                continue;
+                xr_strcat(nm, ".omf");
+                Msg("Anim_List no OF '%s'", nm);
+                loadOMF(nm);
             }
-            xr_strcat(nm, ".omf");
-            loadOMF(nm);
         }
     }
     else

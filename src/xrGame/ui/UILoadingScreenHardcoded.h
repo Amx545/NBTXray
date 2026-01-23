@@ -47,8 +47,8 @@ R"(<w>
             <texture>ui_mm_loading_right_widepanel</texture>
         </auto_static>
     </background>
-    <loading_logo x="102" y="173" width="819" height="512" stretch="1"/>
-    <loading_progress x="310" y="599" width="405" height="5" horz="1" min="0" max="100" pos="0" inertion="5.0">
+    <loading_logo x="0" y="0" width="1024" height="616" stretch="1"/>
+    <loading_progress x="305" y="713" width="425" height="5" horz="1" min="0" max="100" pos="0" inertion="5.0">
         <progress>
             <texture>ui_mm_loading_progress_bar</texture>
         </progress>
@@ -56,7 +56,7 @@ R"(<w>
             <texture width="405" height="5" r="0" g="0" b="0" a="255">ui_mm_loading_progress_bar</texture>
         </background>
     </loading_progress>
-    <loading_stage x="310" y="530" width="405" height="20" stretch="1">
+    <loading_stage x="310" y="622" width="405" height="20" stretch="1">
         <text align="c" r="170" g="170" b="170" font="letterica18"/>
     </loading_stage>
     <loading_header x="310" y="622" width="405" height="20" stretch="1">
@@ -155,12 +155,10 @@ R"(<w>
 constexpr cpcstr LoadingScreenXMLTexturesDescription =
 R"(<w>
     <file name="ui\ui_actor_loadgame_screen">
-        <texture id="ui_mm_loading_screen" x="0" y="0" width="1024" height="768" />
-        <texture id="ui_mm_loading_progress_bar" x="0" y="772" width="506" height="4" />
-    </file>
-    <file name="ui\ui_actor_widescreen_sidepanels">
-        <texture id="ui_mm_loading_left_widepanel" x="0" y="0" width="128" height="768" />
-        <texture id="ui_mm_loading_right_widepanel" x="128" y="0" width="128" height="768" />
+        <texture id="ui_mm_loading_screen" x="170" y="0" width="1024" height="768" />
+        <texture id="ui_mm_loading_progress_bar" x="170" y="772" width="506" height="4" />
+        <texture id="ui_mm_loading_left_widepanel" x="0" y="0" width="170" height="768" />
+        <texture id="ui_mm_loading_right_widepanel" x="1194" y="0" width="170" height="768" />
    </file>
 </w>)";
 

@@ -70,10 +70,10 @@ void UILoadingScreen::Initialize()
     loadingLogo = UIHelper::CreateStatic(uiXml, xmlNode, this);
 
     loadingProgressPercent = UIHelper::CreateStatic(uiXml, "loading_progress_percent", this, false);
-    loadingStage = UIHelper::CreateStatic(uiXml, "loading_stage", this, false);
-    loadingHeader = UIHelper::CreateStatic(uiXml, "loading_header", this, false);
-    loadingTipNumber = UIHelper::CreateStatic(uiXml, "loading_tip_number", this, false);
-    loadingTip = UIHelper::CreateStatic(uiXml, "loading_tip", this, false);
+    //loadingStage = UIHelper::CreateStatic(uiXml, "loading_stage", this, false);
+    //loadingHeader = UIHelper::CreateStatic(uiXml, "loading_header", this, false);
+    //loadingTipNumber = UIHelper::CreateStatic(uiXml, "loading_tip_number", this, false);
+    //loadingTip = UIHelper::CreateStatic(uiXml, "loading_tip", this, false);
 }
 
 void UILoadingScreen::Update(const int stagesCompleted, const int stagesTotal)

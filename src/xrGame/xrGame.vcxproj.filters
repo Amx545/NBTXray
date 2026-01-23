@@ -2248,6 +2248,21 @@
     <Filter Include="UI\Common\InventoryWnd\InventoryUpgrade">
       <UniqueIdentifier>{76bab9d1-1438-407c-829b-154c9329cc09}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon Protecta">
+      <UniqueIdentifier>{37f70594-7f67-42f6-905d-57960ddfacfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\RAYK84">
+      <UniqueIdentifier>{3e713e3c-479f-46f2-9107-6eea4d4e8bfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\Common\ClassSelector">
+      <UniqueIdentifier>{2e9c09b2-da98-4178-8cfd-0e65d33a5198}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\GAUSS">
+      <UniqueIdentifier>{e42dbd82-2eea-4269-8dc7-c8f3a009834c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\AMonsters\humans\boss_phantom">
+      <UniqueIdentifier>{eedaa879-95d5-4e71-b047-fa46316caebf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mt_config.h">
@@ -6507,6 +6522,33 @@
     <ClInclude Include="ui\UISkillPdaWnd.h">
       <Filter>UI\Common\PDA\Statistics &amp; Rankings</Filter>
     </ClInclude>
+    <ClInclude Include="ui\UIAbilityPdaWnd.h">
+      <Filter>UI\Common\PDA\Statistics &amp; Rankings</Filter>
+    </ClInclude>
+    <ClInclude Include="WeaponProtecta.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon Protecta</Filter>
+    </ClInclude>
+    <ClInclude Include="ActorGlove.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Outfit</Filter>
+    </ClInclude>
+    <ClInclude Include="WeaponRAIK84.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\RAYK84</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIActorClassSelector.h">
+      <Filter>UI\Common\ClassSelector</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIDragDropCustomList.h">
+      <Filter>UI\UIWindows\DragDrop</Filter>
+    </ClInclude>
+    <ClInclude Include="WeaponGauss.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\GAUSS</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIWeaponGauss.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\GAUSS</Filter>
+    </ClInclude>
+    <ClInclude Include="ai\stalker\ai_phantom_stalker.h">
+      <Filter>AI\AMonsters\humans\boss_phantom</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
@@ -9866,14 +9908,47 @@
     <ClCompile Include="ui\UIMapFilters.cpp">
       <Filter>UI\Common\PDA\Tasks</Filter>
     </ClCompile>
-    <ClCompile Include="ActorBelt.cpp" />
-    <ClCompile Include="ui\UIAmmoInfo.cpp" />
-    <ClCompile Include="WeaponUSP45.cpp" />
     <ClCompile Include="ui\UIBoostStatesWnd.cpp">
       <Filter>UI\Common\MainIngame</Filter>
     </ClCompile>
     <ClCompile Include="ui\UISkillPdaWnd.cpp">
       <Filter>UI\Common\PDA\Statistics &amp; Rankings</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIAbilityPdaWnd.cpp">
+      <Filter>UI\Common\PDA\Statistics &amp; Rankings</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIAmmoInfo.cpp">
+      <Filter>UI\Common\ui-item-infos</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponUSP45.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon USP45</Filter>
+    </ClCompile>
+    <ClCompile Include="ActorBelt.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Outfit</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponProtecta.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon Protecta</Filter>
+    </ClCompile>
+    <ClCompile Include="ActorGlove.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Outfit</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponRAIK84.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\RAYK84</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIActorClassSelector.cpp">
+      <Filter>UI\Common\ClassSelector</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIDragDropCustomList.cpp">
+      <Filter>UI\UIWindows\DragDrop</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponGauss.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\GAUSS</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIWeaponGauss.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\GAUSS</Filter>
+    </ClCompile>
+    <ClCompile Include="ai\stalker\ai_phantom_stalker.cpp">
+      <Filter>AI\AMonsters\humans\boss_phantom</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

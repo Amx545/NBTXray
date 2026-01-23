@@ -25,7 +25,7 @@ extern Flags32 psAI_Flags;
 void CSE_ALifeTraderAbstract::spawn_supplies()
 {
     CSE_ALifeDynamicObject* dynamic_object = smart_cast<CSE_ALifeDynamicObject*>(this);
-    VERIFY(dynamic_object);
+    VERIFY2(dynamic_object, "supplie spawn");
     CSE_Abstract* abstract = dynamic_object->alife().spawn_item(
         "device_pda", base()->o_Position, dynamic_object->m_tNodeID, dynamic_object->m_tGraphID, base()->ID);
     CSE_ALifeItemPDA* pda = smart_cast<CSE_ALifeItemPDA*>(abstract);

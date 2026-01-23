@@ -168,3 +168,42 @@ void CWeaponRG6::OnEvent(NET_Packet& P, u16 type)
     break;
     }
 }
+
+void CWeaponRG6::UnloadMagazine(bool spawn_ammo)
+{
+    CWeaponMagazined::UnloadMagazine(spawn_ammo);
+    if (m_rockets.size())
+        m_rockets.clear();
+}
+
+void CWeaponRG6::PlayAnimAddOneCartridgeWeapon() 
+{
+    VERIFY(GetState() == eReload);
+    switch (m_magazine.size())
+    {
+    case 0: {
+        PlayHUDMotion("anm_add_cartridge1", FALSE, this, GetState());
+        break;
+    }
+    case 1: {
+        PlayHUDMotion("anm_add_cartridge2", FALSE, this, GetState());
+        break;
+    }
+    case 2: {
+        PlayHUDMotion("anm_add_cartridge3", FALSE, this, GetState());
+        break;
+    }
+    case 3: {
+        PlayHUDMotion("anm_add_cartridge4", FALSE, this, GetState());
+        break;
+    }
+    case 4: {
+        PlayHUDMotion("anm_add_cartridge5", FALSE, this, GetState());
+        break;
+    }
+    default:{
+        PlayHUDMotion("anm_add_cartridge", FALSE, this, GetState());
+        break;
+    }
+    }
+}
